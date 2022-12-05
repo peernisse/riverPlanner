@@ -1,16 +1,27 @@
 #' The application User-Interface
-#'
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
-#' @import shiny
+#' @import shiny bslib bsplus shinyBS
 #' @noRd
 app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
     # Your application UI logic
-    fluidPage(
-      h1("riverPlanner")
+    navbarPage('River Planner',
+               header = tags$head(
+                 tags$link(rel="stylesheet",
+                           href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
+                           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u",
+                           crossorigin="anonymous"),
+                 tags$link(rel="stylesheet", type = "text/css", href="www/style.css"),
+               ),
+      tabPanel('Home'),
+      tabPanel('Menu',
+        mod_menu_ui('menu')
+      ),
+      tabPanel('Crew'),
+      tabPanel('Gear')
     )
   )
 }

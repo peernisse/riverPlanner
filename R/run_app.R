@@ -22,7 +22,7 @@ run_app <- function(
       options = options,
       enableBookmarking = enableBookmarking,
       uiPattern = uiPattern
-    ),
+      ),
     golem_opts = list(...)
   )
 }
