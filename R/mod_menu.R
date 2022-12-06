@@ -21,10 +21,11 @@ mod_menu_ui <- function(id){
       ),
       column(width = 8,
         h1('My Menu'),
-        bs_accordion(id = ns('myMeals')) %>%
-          bs_set_opts(panel_type = "default", use_heading_link = TRUE) %>%
-          bs_append(title = 'Selected', content = tableOutput(outputId = ns('selMeals'))
-        )
+        # bs_accordion(id = ns('myMeals')) %>%
+        #   bs_set_opts(panel_type = "default", use_heading_link = TRUE) %>%
+        #   bs_append(title = 'Selected', content = tableOutput(outputId = ns('selMeals'))
+        # ),
+        uiOutput(ns('myMeals'))
       )
     )
   )
@@ -49,6 +50,13 @@ mod_menu_server <- function(id, data = mdata){
     output$dinner <- makeMealCards(input, output, session, mtype = 'Dinner', LOCAL, buttonIDs)
     output$appetizer <- makeMealCards(input, output, session, mtype = 'Appetizer', LOCAL,  buttonIDs)
     output$dessert <- makeMealCards(input, output, session, mtype = 'Dessert', LOCAL, buttonIDs)
+
+    # Make meal boxes
+
+    output$myMeals <- renderUI({
+      ns <- session$ns
+      makeMealBoxes(session, outer = 'mealBoxes', data = LOCAL$myMeals)
+    })
 
   })
 }

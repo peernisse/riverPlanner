@@ -17,7 +17,7 @@ mod_data_ui <- function(id){
 #'
 #' @importFrom googlesheets4 read_sheet gs4_auth
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate select group_by summarize pull
+#' @importFrom dplyr filter mutate select group_by summarize pull left_join
 #'
 #' @noRd
 mod_data_server <- function(id){
@@ -35,7 +35,7 @@ mod_data_server <- function(id){
       LU_MEAL_TYPE = googlesheets4::read_sheet(url, sheet = "LU_MEAL_TYPE"),
       LU_MEAL = googlesheets4::read_sheet(url, sheet = 'LU_MEAL'),
       LU_INGREDIENTS = googlesheets4::read_sheet(url, sheet = "LU_INGREDIENTS"),
-      myMeals = list()
+      myMeals = data.frame()
     )
 
     return(LOCAL)
