@@ -2,28 +2,42 @@
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
 #' @import shiny bslib bsplus shinyBS
+#' @importFrom shinyFeedback feedback feedbackWarning feedbackDanger feedbackSuccess useShinyFeedback
 #' @noRd
 app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
+
+
+    ## ui.R ##
+    # htmlTemplate("./inst/app/www/index.html",
+    #              menu = mod_menu_ui('menu')
+    #
+    # )
+
+
     # Your application UI logic
     navbarPage('River Planner',
+
                header = tags$head(
-                  tags$link(rel = 'stylesheet',
-                           href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css'),
-                   tags$link(rel="stylesheet",
-                           href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
-                           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u",
-                           crossorigin="anonymous"),
-                 tags$link(rel="stylesheet", type = "text/css", href="www/style.css"),
+                 shinyFeedback::useShinyFeedback(),
+                  # tags$link(rel = 'stylesheet',
+                  #          href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css'),
+                  #  tags$link(rel="stylesheet",
+                  #          href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
+                  #          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u",
+                  #          crossorigin="anonymous"),
+                 tags$link(rel="stylesheet", type = "text/css", href="www/style2.css")
                ),
       tabPanel('Home'),
       tabPanel('Menu',
         mod_menu_ui('menu')
       ),
       tabPanel('Crew'),
-      tabPanel('Gear')
+      tabPanel('Gear'),
+
+
     )
   )
 }

@@ -57,4 +57,12 @@ div#menu-meals-0.panel.panel-default {
     display: none;
 }
 
+div#menu-mealBoxes-0.panel.panel-default {
+    display: none;
+}
+
+div#menu-mealBoxes-0-heading.panel-heading {
+    display: none;
+}
+
 /* ---------------------------------------------------------------------------------*/
