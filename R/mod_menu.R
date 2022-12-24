@@ -42,9 +42,12 @@ mod_menu_server <- function(id, data = mdata){
     ns <- session$ns
     LOCAL <- data
 
-    #####REACTIVE OBSERVERS#####
+    #####REACTIVE BUTTON OBSERVERS#####
+
+    # Add meal button observe
 
     addButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_ADD_ID) %>% unique(.))
+
     map(isolate(addButtonIDs()), ~ observeEvent(input[[.x]],{
 
       # Validate user has selected a river day
@@ -74,6 +77,10 @@ mod_menu_server <- function(id, data = mdata){
 
         LOCAL$myMeals <- LOCAL$myMeals %>% bind_rows(newRecord)
 
+      # Notify meal added to myMenu
+
+        showNotification(paste(unique(newRecord$MEAL_NAME),'added to trip menu!'), type = 'default', duration = 5)
+
       # Reset input choices (maybe I will do this, maybe leave them)
       # ...
 
@@ -84,9 +91,66 @@ mod_menu_server <- function(id, data = mdata){
     # TODO THis needs to be on the myMeals menu item and delete just that specific meal
 
     delButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_DEL_ID) %>% unique(.))
+
     map(isolate(delButtonIDs()), ~ observeEvent(input[[.x]],{
       LOCAL$myMeals <- subset(LOCAL$myMeals, !MEAL_DEL_ID %in% .x)
     }))
+
+    # View meal button
+
+    viewButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_VIEW_ID) %>% unique(.))
+
+    map(isolate(viewButtonIDs()), ~ observeEvent(input[[.x]],{
+      # TODO make this modalDialog a function eventually
+      ns <- session$ns
+
+      viewMealDF <- LOCAL$ALL_DATA %>%
+        filter(MEAL_VIEW_ID == .x)
+
+      ttl <- unique(viewMealDF$MEAL_NAME)
+      desc <- unique(viewMealDF$MEAL_DESCRIPTION)
+      ings <- unique(viewMealDF$INGREDIENT)
+      tools <- viewMealDF$TOOLS %>% unique() %>% gsub('; ',';',.) %>%
+        strsplit(.,';') %>% unlist()
+      inst <- viewMealDF$INSTRUCTIONS %>% unique() %>% gsub('; ',';',.) %>%
+        strsplit(.,';') %>% unlist()
+
+      showModal(
+        modalDialog(
+          p(desc),
+          p(style = 'font-style: italic;', '--This meal can be edited once added to the trip menu--'),
+          fluidRow(
+            column(width = 3,
+              h5('Ingredients'),
+                tags$ul(
+                  map(ings, ~ tags$li(.x))
+                )
+            ),
+            column(width = 3,
+              h5('Tools'),
+              tags$ul(
+                map(tools, ~ tags$li(.x))
+              )
+            ),
+            column(width = 6,
+              h5('Instructions'),
+              tags$ol(
+                map(inst, ~ tags$li(.x))
+              )
+            )
+          ),
+          title = ttl,
+          size = 'xl',
+          easyClose = FALSE,
+          fade = TRUE,
+          footer = modalButton('Close')
+        )
+      )
+
+      })
+    )
+
+    # Edit meal button
 
     #####UI OUTPUTS#####
 
