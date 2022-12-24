@@ -66,3 +66,19 @@ div#menu-mealBoxes-0-heading.panel-heading {
 }
 
 /* ---------------------------------------------------------------------------------*/
+
+
+body {
+    padding-top: 2rem;
+}
+
+@media (min-width: 576px) {
+    .card-group.card-group-scroll {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+}
+
+.card-group.card-group-scroll > .card {
+    flex-basis: 35%;
+}

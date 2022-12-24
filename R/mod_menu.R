@@ -8,23 +8,25 @@ mod_menu_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(width = 4,
-        h1('Select Meals'),
-        bs_accordion(id = ns('meals')) %>%
-          bs_set_opts(panel_type = "default", use_heading_link = TRUE) %>%
-          bs_append(title = NULL, content = NULL) %>%
-          bs_append(title = "Breakfasts", content = uiOutput(ns('breakfast'))) %>%
-          bs_append(title = "Lunches", content = uiOutput(ns('lunch'))) %>%
-          bs_append(title = 'Dinners', content = uiOutput(ns('dinner'))) %>%
-          bs_append(title = 'Appetizers', content = uiOutput(ns('appetizer'))) %>%
-          bs_append(title = 'Desserts', content = uiOutput(ns('dessert')))
-      ),
-      column(width = 8,
-        h1('My Menu'),
-        uiOutput(ns('myMenu'))
-      ),
+      column(width = 12, style = 'text-align: center; margin: 5px;',
+         h1('Select Meals'),
+         bs_accordion(id = ns('meals')) %>%
+           bs_set_opts(panel_type = "default", use_heading_link = TRUE) %>%
+           #bs_append(title = NULL, content = NULL) %>%
+           bs_append(title = "Breakfasts", content = uiOutput(ns('breakfast'))) %>%
+           bs_append(title = "Lunches", content = uiOutput(ns('lunch'))) %>%
+           bs_append(title = 'Dinners', content = uiOutput(ns('dinner'))) %>%
+           bs_append(title = 'Appetizers', content = uiOutput(ns('appetizer'))) %>%
+           bs_append(title = 'Desserts', content = uiOutput(ns('dessert')))
+      )
+    ),
 
+    fluidRow(
+      column(width = 12, style = 'text-align: center; margin: 5px;',
+             h1('Trip Menu'),
+             uiOutput(ns('myMenu'))
 
+      )
     )
   )
 }
@@ -104,6 +106,8 @@ mod_menu_server <- function(id, data = mdata){
       mealBoxes()
 
     })
+
+
 
 
 
