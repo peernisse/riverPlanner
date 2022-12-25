@@ -17,7 +17,7 @@ mod_data_ui <- function(id){
 #'
 #' @importFrom googlesheets4 read_sheet gs4_auth
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate select group_by summarize pull left_join bind_rows bind_cols distinct
+#' @importFrom dplyr filter mutate select group_by summarize arrange pull left_join bind_rows bind_cols distinct
 #'
 #' @noRd
 mod_data_server <- function(id){
@@ -30,15 +30,20 @@ mod_data_server <- function(id){
 
     XREF_INGREDIENT <- googlesheets4::read_sheet(url, sheet = "XREF_INGREDIENT")
 
-    LU_MEAL_TYPE <- googlesheets4::read_sheet(url, sheet = "LU_MEAL_TYPE")
+    LU_MEAL_TYPE <- googlesheets4::read_sheet(url, sheet = "LU_MEAL_TYPE") %>%
+      mutate(
+        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail'))
+      )
 
     LU_MEAL <- googlesheets4::read_sheet(url, sheet = 'LU_MEAL') %>%
-      mutate(MEAL_ADD_ID = paste0('add-',MEAL_ID),
-             MEAL_DEL_ID = paste0('del-',MEAL_ID),
-             MEAL_VIEW_ID = paste0('view-',MEAL_ID),
-             MEAL_EDIT_ID = paste0('edit-',MEAL_ID),
-             MEAL_UNIQUE_ID = '',
-             RIVER_DAY = NA_real_)
+      mutate(
+        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail')),
+        MEAL_ADD_ID = paste0('add-',MEAL_ID),
+        MEAL_DEL_ID = paste0('del-',MEAL_ID),
+        MEAL_VIEW_ID = paste0('view-',MEAL_ID),
+        MEAL_EDIT_ID = paste0('edit-',MEAL_ID),
+        MEAL_UNIQUE_ID = '',
+        RIVER_DAY = NA_real_)
 
     LU_INGREDIENTS <- googlesheets4::read_sheet(url, sheet = "LU_INGREDIENTS")
 

@@ -24,7 +24,8 @@ mod_menu_ui <- function(id){
     fluidRow(
       column(width = 12, style = 'text-align: center; margin: 5px;',
              h1('Trip Menu'),
-             uiOutput(ns('myMenu'))
+             #uiOutput(ns('myMenu')),
+             uiOutput(ns('dayMenu'))
 
       )
     )
@@ -83,18 +84,24 @@ mod_menu_server <- function(id, data = mdata){
 
       # Reset input choices (maybe I will do this, maybe leave them)
       # ...
-
       })
     )
 
-    # Delete meal button
-    # TODO THis needs to be on the myMeals menu item and delete just that specific meal
+#--------------------------------------------------------
 
-    delButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_DEL_ID) %>% unique(.))
+    # Delete meal button observers
 
-    map(isolate(delButtonIDs()), ~ observeEvent(input[[.x]],{
-      LOCAL$myMeals <- subset(LOCAL$myMeals, !MEAL_DEL_ID %in% .x)
-    }))
+    observe({
+      req(nrow(LOCAL$myMeals) > 0)
+
+      delMealButtonIDs <- reactive(LOCAL$myMeals %>% pull(MEAL_UNIQUE_ID) %>% unique(.) %>% paste0('del-',.))
+
+      map(delMealButtonIDs(), ~ observeEvent(input[[.x]],{
+        # TODO Figure out why this loops for every menu card that exists in myMeals
+          LOCAL$myMeals <- subset(LOCAL$myMeals, !MEAL_UNIQUE_ID %in% gsub('del-','',.x))
+        }, ignoreInit = TRUE, once = TRUE)
+      )
+    })
 
     # View meal button
 
@@ -154,26 +161,18 @@ mod_menu_server <- function(id, data = mdata){
 
     #####UI OUTPUTS#####
 
+    # Make meal card rows by meal type
+
     output$breakfast <- makeMealCards(input, output, session, mtype = 'Breakfast', LOCAL)
     output$lunch <- makeMealCards(input, output, session, mtype = 'Lunch', LOCAL)
     output$dinner <- makeMealCards(input, output, session, mtype = 'Dinner', LOCAL)
     output$appetizer <- makeMealCards(input, output, session, mtype = 'Appetizer', LOCAL)
     output$dessert <- makeMealCards(input, output, session, mtype = 'Dessert', LOCAL)
 
-    # Make meal boxes
 
-    mealBoxes <- reactive(makeMealBoxes(session, outer = 'mealBoxes', data = LOCAL$myMeals))
+    # Make Menu card rows by day
 
-    output$myMenu <- renderUI({
-      #browser()
-      ns <- session$ns
-      mealBoxes()
-
-    })
-
-
-
-
+    output$dayMenu <- renderUI({makeDayBoxes(session, outer = 'dayBoxes', data = LOCAL$myMeals)})
 
   })
 }
