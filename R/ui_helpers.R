@@ -42,11 +42,11 @@ mealCard <- function(session,id,data = LOCAL, mtype, ttl, subttl, desc){
                             choices = c(unique(data$LU_MEAL_TYPE$MEAL_TYPE)),
                             selected = mtype),
                 actionButton(inputId = ns(paste0('view-',id)),label = NULL, icon = icon('eye'),
-                             #type = "button",class = "btn btn-sm btn-primary",
+                             type = "button",class = "btn btn-sm btn-primary",
                              style = 'margin-left: 3px;'
                 ),
                 actionButton(inputId = ns(paste0('add-',id)),label = NULL, icon = icon('plus'),
-                             #type = "button",class = "btn btn-sm btn-success",
+                             type = "button",class = "btn btn-sm btn-success",
                              style = 'margin-left: 3px;'),
                 # actionButton(inputId = ns(paste0('del-',id)),label = NULL, icon = icon('trash'),
                 #              type = "button",class = "btn btn-sm btn-danger")
@@ -84,12 +84,12 @@ menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
             p(class='card-text',style = 'text-align: left;', desc),
             div(style = 'display: inline-flex; justify-content: flex-end; flex-wrap: nowrap; flex-direction: row;',
 
-                actionButton(inputId = ns(paste0('edit-',id)),label = NULL, icon = icon('pencil'),
-                             #type = "button",class = "btn btn-sm btn-primary",
+                actionButton(inputId = ns(paste0('edit-',mealUniqueId)),label = NULL, icon = icon('pencil'),
+                             type = "button",class = "btn btn-md btn-primary",
                              style = 'margin-left: 3px;'
                 ),
                 actionButton(inputId = ns(paste0('del-',mealUniqueId)),label = NULL, icon = icon('trash'),
-                             #type = "button",class = "btn btn-sm btn-success",
+                             type = "button",class = "btn btn-md btn-danger",
                              style = 'margin-left: 3px;'),
             ),
         )
@@ -140,7 +140,12 @@ makeMealCards <- function(input, output, session, mtype, data = LOCAL){
         mapIndexRows <- which(filtDat$MEAL_TYPE == mtype)
 
         # Make cards
+
         div(class = "container-fluid py-2",
+            div(class = 'row', style = 'text-align: center; margin-bottom: 5px;',
+              h6(paste0('<- Explore ',mtype,' (',length(mapIndexRows),') Items ->'))
+            ),
+
             div(class = "d-flex flex-row flex-nowrap overflow-auto",
 
                 map(mapIndexRows, ~ mealCard(session,filtDat[.,'MEAL_ID'],data = LOCAL,
@@ -168,6 +173,7 @@ makeMenuCards <- function(input, output, session, day, data){
     renderUI({
 
         ns <- session$ns
+
         filtDat <- data %>% filter(RIVER_DAY %in% day) %>%
             select(RIVER_DAY, MEAL_ID, MEAL_UNIQUE_ID, MEAL_TYPE,MEAL_NAME,MEAL_DESCRIPTION) %>% unique(.)
 
@@ -175,6 +181,9 @@ makeMenuCards <- function(input, output, session, day, data){
 
         # Make cards
         div(class = "container-fluid py-2",
+            div(class = 'row', style = 'text-align: center; margin-bottom: 5px;',
+                h6(paste0('<- Explore Day ',day,' (',length(mapIndexRows),') Items ->'))
+            ),
             div(class = "d-flex flex-row flex-nowrap overflow-auto",
 
                 map(mapIndexRows, ~ menuCard(session,filtDat[.,'MEAL_ID'],data = filtDat[.,],
@@ -210,62 +219,58 @@ makeIngredientCards <- function(input, output, session, data, mealUniqueId){
 
 #####ACCORDION GENERATORS#####
 
+# TODO this function can be deleted 12/27/2022
 
-#' Accordion box generator
-#' @param session the shiny session object
-#' @param outer Single character string to be the ID of the accordion group
-#' @param data Dataframe of all meal information for selected meals
-#'
-#' @noRd
-makeMealBoxes <- function(session, outer,data){
-    #browser()
-    req(!is.null(data) == TRUE & (nrow(data) > 0) == TRUE)
-    ns <- session$ns
 
-    mealIDs <- data %>% pull(MEAL_UNIQUE_ID) %>% unique(.)
-
-    firstDiv <- paste0("bs_accordion(ns('",outer,"')) %>% ")
-    opts <- "bs_set_opts(panel_type = 'default', use_heading_link = TRUE) %>% "
-    dummy <- "bs_append(title = NULL, content = NULL) %>%"
-
-    secondDiv <- character()
-
-    for(i in 1:length(mealIDs)){
-        #browser()
-        headerInfo <- data %>%
-            filter(MEAL_UNIQUE_ID == mealIDs[i]) %>%
-            #mutate(MEAL_BOX_HEADER = paste(MEAL_NAME,'|',MEAL_TYPE,'| River Day ',RIVER_DAY)) %>%
-            mutate(MEAL_BOX_HEADER = paste('River Day ',RIVER_DAY,'|',MEAL_TYPE,'|',MEAL_NAME)) %>%
-            pull(MEAL_BOX_HEADER) %>% unique(.)
-
-        # This line should not have return characters
-        str <- paste0("bs_append(title = '",headerInfo, "', content = makeIngredientCards(input, output, session, data = data, mealUniqueId = '",mealIDs[i],"'))")
-
-        if(length(mealIDs) == 1){
-
-            secondDiv <- paste(firstDiv, opts, dummy, str)
-
-        } else
-
-        if(mealIDs[i] == (mealIDs)[1]){
-
-            secondDiv <- paste(firstDiv, opts, dummy, str," %>% ")
-
-        } else
-
-        if(mealIDs[i] == (mealIDs)[length(mealIDs)]){
-
-            secondDiv <- paste(secondDiv, str)
-
-        } else {
-
-            secondDiv <- paste(secondDiv,str, " %>% ")
-        }
-    }
-
-    return(eval(parse(text = secondDiv)))
-}
-
+# makeMealBoxes <- function(session, outer,data){
+#     #browser()
+#     req(!is.null(data) == TRUE & (nrow(data) > 0) == TRUE)
+#     ns <- session$ns
+#
+#     mealIDs <- data %>% pull(MEAL_UNIQUE_ID) %>% unique(.)
+#
+#     firstDiv <- paste0("bs_accordion(ns('",outer,"')) %>% ")
+#     opts <- "bs_set_opts(panel_type = 'default', use_heading_link = TRUE) %>% "
+#     dummy <- "bs_append(title = NULL, content = NULL) %>%"
+#
+#     secondDiv <- character()
+#
+#     for(i in 1:length(mealIDs)){
+#         #browser()
+#         headerInfo <- data %>%
+#             filter(MEAL_UNIQUE_ID == mealIDs[i]) %>%
+#             #mutate(MEAL_BOX_HEADER = paste(MEAL_NAME,'|',MEAL_TYPE,'| River Day ',RIVER_DAY)) %>%
+#             mutate(MEAL_BOX_HEADER = paste('River Day ',RIVER_DAY,'|',MEAL_TYPE,'|',MEAL_NAME)) %>%
+#             pull(MEAL_BOX_HEADER) %>% unique(.)
+#
+#         # This line should not have return characters
+#         str <- paste0("bs_append(title = '",headerInfo, "', content = makeIngredientCards(input, output, session, data = data, mealUniqueId = '",mealIDs[i],"'))")
+#
+#         if(length(mealIDs) == 1){
+#
+#             secondDiv <- paste(firstDiv, opts, dummy, str)
+#
+#         } else
+#
+#         if(mealIDs[i] == (mealIDs)[1]){
+#
+#             secondDiv <- paste(firstDiv, opts, dummy, str," %>% ")
+#
+#         } else
+#
+#         if(mealIDs[i] == (mealIDs)[length(mealIDs)]){
+#
+#             secondDiv <- paste(secondDiv, str)
+#
+#         } else {
+#
+#             secondDiv <- paste(secondDiv,str, " %>% ")
+#         }
+#     }
+#
+#     return(eval(parse(text = secondDiv)))
+# }
+#
 
 
 #' Accordion for each river day
@@ -331,4 +336,308 @@ makeDayBoxes <- function(session, outer, data = LOCAL$myMeals){
 
     return(eval(parse(text = secondDiv)))
 
+}
+
+
+
+#####MODAL DIALOGS#####
+
+#' This is just shiny modalDialog with one extra line to add a button in
+#' @description The shiny modalDialog function with added upper right close button for bootstrap 5
+#' @param ... UI elements for the body of the modal dialog box.
+#' @param title An optional title for the dialog.
+#' @param footer UI for footer. Use NULL for no footer.
+#' @param size One of "s" for small, "m" (the default) for medium, or "l" for large.
+#' @param easyClose If TRUE, the modal dialog can be dismissed by clicking outside the dialog box,
+#' or be pressing the Escape key. If FALSE (the default), the modal dialog can't be dismissed in those ways;
+#' instead it must be dismissed by clicking on a modalButton(), or from a call to removeModal() on the server.
+#' @param fade If FALSE, the modal dialog will have no fade-in animation (it will simply appear rather than fade in to view).
+#' @param label The contents of the button or link–usually a text label, but you could also use any other HTML, like an image.
+#' @param icon An optional icon() to appear on the button.
+#' @noRd
+
+customModalDialog <- function (..., session, title = NULL, footer = modalButton("Dismiss"),
+                               size = c("m", "s", "l", "xl"), easyClose = FALSE, fade = TRUE) {
+  ns <- session$ns
+  size <- match.arg(size)
+  backdrop <- if (!easyClose) "static"
+  keyboard <- if (!easyClose) "false"
+
+  div(id = "shiny-modal", class = "modal", class = if (fade)
+    "fade", tabindex = "-1", `data-backdrop` = backdrop,
+    `data-bs-backdrop` = backdrop, `data-keyboard` = keyboard,
+    `data-bs-keyboard` = keyboard,
+    div(class = "modal-dialog modal-dialog-scrollable", class = switch(size, s = "modal-sm", m = NULL, l = "modal-lg",
+                                                      xl = "modal-xl"),
+        div(class = "modal-content",
+            if (!is.null(title))
+              div(class = "modal-header",
+                  tags$h5(class = "modal-title", title),
+                  tags$button(type="button", id = ns('editMealModalClose_1'), label = NULL,
+                              class="btn-close shiny-bound-input", `data-dismiss`="modal",
+                              `data-bs-dismiss`="modal", `aria-label`="Close")
+              ),
+              div(class = "modal-body", ...),
+            if (!is.null(footer))
+              div(class = "modal-footer", footer))), tags$script(HTML("if (window.bootstrap && !window.bootstrap.Modal.VERSION.match(/^4\\./)) {\n         var modal = new bootstrap.Modal(document.getElementById('shiny-modal'));\n         modal.show();\n      } else {\n         $('#shiny-modal').modal().focus();\n      }")))
+}
+
+#' #' Trip info inputs for meal edit modal
+#'
+#' editMealTripInputs <- function(input, output, session,data){
+#'
+#'   mtype <- unique(data$MEAL_TYPE)
+#'   rd <- unique(data$RIVER_DAY)
+#'   adults <- unique(data$NO_ADULTS)
+#'   kids <- unique(data$NO_KIDS)
+#'   nums <- seq(1:30)
+#'   mls <- c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail')
+#'
+#'   renderUI({
+#'     ns <- session$ns
+#'     tagList(
+#'         div(class = "input-group mb-3",
+#'             tags$label(class = "input-group-text",
+#'                        style = 'background-color: #162118; border-color: #162118; color: white;',
+#'                        `for` = ns('editMealMealType'), 'Meal Type'),
+#'             tags$select(class = "form-select",
+#'                         id = ns('editMealMealType'),
+#'                         tags$option(selected = "selected", mtype),
+#'                         purrr::map(mls, ~ tags$option(value = .x,.x))
+#'             )
+#'         ),
+#'         div(class = "input-group mb-3",
+#'           tags$label(class = "input-group-text",
+#'             style = 'background-color: #162118; border-color: #162118; color: white;',
+#'             `for` = ns('editMealRiverDay'), 'River Day'),
+#'           tags$select(class = "form-select",
+#'             id = ns('editMealRiverDay'),
+#'             tags$option(selected = "selected", rd),
+#'             purrr::map(nums, ~ tags$option(value = .x,.x))
+#'           )
+#'         ),
+#'         div(class = "input-group mb-3",
+#'           tags$label(class = "input-group-text",
+#'             style = 'background-color: #162118; border-color: #162118; color: white;',
+#'             `for` = ns('editMealAdults'), 'Adults'),
+#'           tags$select(class = "form-select",
+#'             id = ns('editMealAdults'),
+#'             tags$option(selected = "selected", adults),
+#'             purrr::map(nums, ~ tags$option(value = .x,.x))
+#'           )
+#'         ),
+#'         div(class = "input-group mb-3",
+#'             tags$label(class = "input-group-text",
+#'                        style = 'background-color: #162118; border-color: #162118; color: white;',
+#'                        `for` = ns('editMealKids'), 'Kids'),
+#'             tags$select(class = "form-select",
+#'                         id = ns('editMealKids'),
+#'                         tags$option(selected = "selected", kids),
+#'                         purrr::map(nums, ~ tags$option(value = .x,.x))
+#'             )
+#'         )
+#'
+#'     )
+#'
+#'   })
+#' }
+
+
+#' Ingredient info inputs for meal edit modal
+#' @description Makes pre-filled input fields which serve to edit the data
+#' @param input,output,session The shiny app session objects
+#' @param data The meal dataframe being viewed/edited. Usually a subset of myMeals
+#' @noRd
+editMealIngredientInputs <- function(input, output, session,data){
+  ns <- session$ns
+
+  ingUniqueID <- unique(data$INGREDIENT_UNIQUE_ID)
+  ing <- unique(data$INGREDIENT)
+  desc <- unique(data$INGREDIENT_DESCRIPTION)
+  unit <- unique(data$SERVING_SIZE_DESCRIPTION)
+  ssf <- unique(data$SERVING_SIZE_FACTOR)
+  qty <- unique(data$QTY)
+
+  tagList(
+    div(class = "input-group", style ='margin-top:12px;',
+      tags$span(class = "input-group-text", ing,
+           style = 'background-color: #162118; border-color: #162118; color: white;'),
+      tags$input(id = ns(paste0('ing-ing-',ingUniqueID)), value = ing, type = "text",
+                 disabled = 'disabled', `aria-label` = "Ingredient", class = "form-control"),
+      tags$button(class = "btn btn-danger", type = "button", icon('trash'))
+      #TODO needs button ID
+    ),
+    div(class = "input-group",
+        tags$span(class = "input-group-text", 'Description'),
+        tags$input(id = ns(paste0('ing-desc-',ingUniqueID)), value = desc, type = "text",
+                   disabled = 'disabled', `aria-label` = "Description", class = "form-control")
+    ),
+    div(class = "input-group",
+        tags$span(class = "input-group-text", 'Units'),
+        tags$input(id = ns(paste0('ing-unit-',ingUniqueID)), value = unit, type = "text",
+                   disabled = 'disabled', `aria-label` = "Units", class = "form-control")
+    ),
+    div(class = "input-group",
+        tags$span(class = "input-group-text", 'Multiplier'),
+        tags$input(id = ns(paste0('ing-ssf-',ingUniqueID)), value = ssf, type = "text",
+                   disabled = 'disabled', `aria-label` = "Multiplier", class = "form-control")
+    ),
+    div(class = "input-group",
+        tags$span(class = "input-group-text", 'Quantity',
+             style = 'background-color: #5cb874; border-color: #5cb874; color: white;'),
+        tags$input(id = ns(paste0('ing-qty-',ingUniqueID)), value = qty, type = "text",
+                   `aria-label` = "Quantity", class = "form-control")
+    )
+  )
+}
+
+#' Ingredient picker in edit meal modal or wherever else
+#' @description creates searchable datalist select input of the ingredients in LU_INGREDIENTS
+#' @param data The LOCAL$LU_INGREDIENTS dataframe
+#'
+#' @noRd
+selectIngredients <- function(input, output, session,data){
+  ns <- session$ns
+#browser()
+  ingIDs <- data %>% select(INGREDIENT_ID,INGREDIENT) %>% arrange(INGREDIENT)
+  rows <- (seq(1:nrow(ingIDs)))
+
+  renderUI({
+    ns <- session$ns
+
+    tagList(
+      div(class = "input-group",
+        tags$span(class = "input-group-text", 'Add Ingredient',
+               style = 'background-color: #ed7000; border-color: #ed7000; color: white;'),
+        tags$input(class = "form-control",list = "datalistOptions", id = "exampleDataList",
+                   placeholder = "Select Ingredient or Type to Search..."
+        ),
+        tags$datalist(id = "datalistOptions",
+          map(rows, ~ tags$option(value = ingIDs[.x,2]))
+        ),
+        tags$button(id = ns('addIngredient'), class = "btn", type = "button", icon('plus'),
+                  style = 'background-color: #5cb874; border-color: #5cb874; color: white;'
+        )
+      )
+    )
+  })
+}
+
+#' Create new ingredient data entry fields
+#' @description Input fields UI to create a new ingredient from within editMeal modal
+#' @param session The session object
+#'
+#' @noRd
+createIngredients <- function(session){
+
+  renderUI({
+    ns <- session$ns
+
+    tagList(
+
+      div(class = "input-group", style ='margin-top:12px;',
+          tags$span(class = "input-group-text", 'New Ingredient',
+                    style = 'background-color: #ed7000; border-color: #ed7000; color: white;'),
+          tags$input(id = ns('ing-new-ing'),
+                     placeholder = 'Ingredient Name', type = "text",
+                     `aria-label` = "Ingredient", class = "form-control"),
+          tags$button(id = ns('newIngredient'), class = "btn", type = "button", icon('plus'),
+                      style = 'background-color: #5cb874; border-color: #5cb874; color: white;'
+          )
+      ),
+      div(class = "input-group",
+          tags$span(class = "input-group-text", 'Description'),
+          tags$input(id = ns('ing-new-desc'),
+                     placeholder = 'Ingredient Description', type = "text",
+                     `aria-label` = "Description", class = "form-control")
+      ),
+      div(class = "input-group",
+          tags$span(class = "input-group-text", 'Units'),
+          tags$input(id = ns('ing-new-unit'),
+                     placeholder = 'Units of measure (e.g., 12 0z can, 1 apple, etc.',
+                     type = "text", `aria-label` = "Units", class = "form-control")
+      ),
+      div(class = "input-group",
+          tags$span(class = "input-group-text", 'Multiplier'),
+          tags$input(id = ns('ing-new-ssf'),
+                     placeholder = 'Adj. No. People X <This Multiplier> = Qty', type = "text",
+                     `aria-label` = "Multiplier", class = "form-control")
+      ),
+      div(class = "input-group",
+          tags$span(class = "input-group-text", 'Quantity',
+                    style = 'background-color: #162118; border-color: #162118; color: white;'),
+          tags$input(id = ns('ing-new-qty'),
+                     placeholder = 'Adj. No. People X Multiplier = <This Qty>', type = "text",
+                     `aria-label` = "Quantity", class = "form-control")
+      )
+
+    ) # end tagList
+
+
+
+  })
+
+}
+
+#
+
+
+
+#####INPUT BOX GROUPS#####
+
+#' Trip info input group
+#'
+#' @description BS5 Select input with label as left side addon. Selected is first in
+#' list by default.
+#' @noRd
+customSelectInput <- function(inputId, label, labelColor, labelTextColor = 'white',
+                              choices, selected = choices[1], disabled = NULL){
+
+  if(selected == choices[1]) {choices <- choices[!choices %in% selected]} else {choices = choices}
+
+    div(class = "input-group mb-3",
+      tags$label(class = "input-group-text",
+        `for` = inputId,
+        style = paste("background-color: ",labelColor,"; border-color: ",
+        labelColor,"; color: ",labelTextColor,";"), label),
+      tags$select(class = "form-select", id = inputId, disabled = disabled,
+        tags$option(selected = "selected", selected),
+      map(
+          choices, ~ tags$option(value = .x,.x))
+      )
+    )
+}
+
+#' Custom text input
+#' @description BS5 Text input with label as left side addon.
+#'
+#' @noRd
+customTextInput <- function(inputId, label, value = "", labelColor, labelTextColor = 'white',
+                            placeholder = label, disabled = NULL){
+  div(class = "input-group mb-3",
+    span(class = "input-group-text", id = paste0('lab-',inputId),
+      style = paste("background-color: ",labelColor,"; border-color: ",
+      labelColor,"; color: ",labelTextColor,";"), label
+    ),
+    tags$input(id = inputId, type = "text", disabled = disabled, class = "form-control",
+      value = value, placeholder = placeholder, `aria-label` = placeholder,
+      `aria-describedby` = paste0('lab-',inputId)
+    )
+  )
+}
+
+
+#' Custom text Area input
+#'
+#'
+#'
+#' @noRd
+customTextAreaInput <- function(inputId, label, labelColor, labelTextColor = 'white', disabled = NULL){
+  div(class = "input-group mb-3",
+      span(class = "input-group-text",
+           style = paste("background-color: ",labelColor,"; border-color: ",
+                         labelColor,"; color: ",labelTextColor,";"),
+           label),
+      tags$textarea(id = inputId, class = "form-control", disabled = disabled, `aria-label` = label)
+  )
 }

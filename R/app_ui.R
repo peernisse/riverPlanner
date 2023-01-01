@@ -37,8 +37,8 @@ app_ui <- function(request) {
   golem_add_external_resources()
   htmlTemplate(filename = './inst/app/www/index.html',
 
-
-               menu = mod_menu_ui('menu')
+    trip = mod_trip_ui('trip'),
+    menu = mod_menu_ui('menu')
 
   )
 

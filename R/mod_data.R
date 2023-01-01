@@ -43,6 +43,7 @@ mod_data_server <- function(id){
         MEAL_VIEW_ID = paste0('view-',MEAL_ID),
         MEAL_EDIT_ID = paste0('edit-',MEAL_ID),
         MEAL_UNIQUE_ID = '',
+        INGREDIENT_UNIQUE_ID = '',
         RIVER_DAY = NA_real_)
 
     LU_INGREDIENTS <- googlesheets4::read_sheet(url, sheet = "LU_INGREDIENTS")
@@ -60,9 +61,20 @@ mod_data_server <- function(id){
       LU_MEAL = LU_MEAL,
       LU_INGREDIENTS = LU_INGREDIENTS,
       tripName = character(),
+      noAdults = 1,
+      noKids = 0,
       noPeople = 1,
-      noPeopleAlt = NA_real_,
+      noPeopleCalc = 1,
+      tripDesc = character(),
       myMeals = data.frame(),
+      editMealDF = data.frame(),
+      editMealModalSwitch = FALSE,
+      editMealMealUniqueID = NULL,
+      #editMealIngredientUniqueID = NULL,
+      #openModalssfIDs = NULL,
+      #openModalqtyIDs = NULL,
+      #openModalnoAdults = NULL,
+      #openModalnoKids = NULL,
       ALL_DATA = ALL_DATA
     )
 
