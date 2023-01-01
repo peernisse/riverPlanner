@@ -12,6 +12,6 @@ app_server <- function(input, output, session) {
 
     LOCAL <- mod_trip_server('trip', data = LOCAL)
 
-    mod_menu_server('menu',data = LOCAL)
+    mod_menu_server('menu', data = LOCAL)
 
 }

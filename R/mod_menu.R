@@ -37,7 +37,7 @@ mod_menu_ui <- function(id){
 #' @param data The global reactiveValues data object returned from mod_data_server
 #' @noRd
 mod_menu_server <- function(id, data){
-  moduleServer( id, function(input, output, session){
+  moduleServer(id, function(input, output, session){
 
     # Reactive Objects
     ns <- session$ns
@@ -60,7 +60,8 @@ mod_menu_server <- function(id, data){
 
     # Add meal button observers -----
 
-    addButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_ADD_ID) %>% unique(.))
+    #addButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_ADD_ID) %>% unique(.))
+    addButtonIDs <- reactive(LOCAL$ALL_DATA$MEAL_ADD_ID %>% unique(.))
 
     map(isolate(addButtonIDs()), ~ observeEvent(input[[.x]],{
 
@@ -137,7 +138,8 @@ mod_menu_server <- function(id, data){
 
   # Create View meal button observer -----
 
-  viewButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_VIEW_ID) %>% unique(.))
+  #viewButtonIDs <- reactive(LOCAL$ALL_DATA %>% pull(MEAL_VIEW_ID) %>% unique(.))
+  viewButtonIDs <- reactive(LOCAL$ALL_DATA$MEAL_VIEW_ID %>% unique(.))
   map(isolate(viewButtonIDs()), ~ observeEvent(input[[.x]],{viewMeal(session, id = .x, data = LOCAL)}))
 
   # Create menu card delete and edit button observers -----
