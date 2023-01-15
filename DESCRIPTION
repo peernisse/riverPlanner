@@ -8,17 +8,18 @@ License: Apache License (>= 2)
 URL: https://github.com/peernisse/riverPlanner
 BugReports: https://github.com/peernisse/riverPlanner/issues
 Imports: 
-    bslib,
     bsplus,
     config (>= 0.3.1),
     dplyr,
     golem (>= 0.3.3.9007),
     googlesheets4,
+    htmltools,
     magrittr,
     purrr,
     shiny (>= 1.6.0),
-    shinyBS,
-    shinyFeedback
+    shinyFeedback,
+    tictoc,
+    utils
 Suggests: 
     spelling,
     testthat (>= 3.0.0)

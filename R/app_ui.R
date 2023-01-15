@@ -1,8 +1,9 @@
 #' The application User-Interface
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
-#' @import shiny bslib bsplus shinyBS
+#' @import shiny
 #' @importFrom shinyFeedback feedback feedbackWarning feedbackDanger feedbackSuccess useShinyFeedback
+#' @importFrom htmltools css
 #' @noRd
 app_ui <- function(request) {
   suppressDependencies('bootstrap','javascript','jquery')

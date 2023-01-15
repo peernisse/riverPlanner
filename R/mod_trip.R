@@ -15,11 +15,11 @@ mod_trip_ui <- function(id){
         h3('New Trip'),
         customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#162118', placeholder = 'Enter Trip Name'),
 
-        customSelectInput(inputId = ns('noAdults'), label = 'Adults', labelColor = '#162118',
+        customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#162118',
                           choices = c('No. People Age 12+', '0', seq(1:30)),
                           selected = 'No. People Age 12+'
         ),
-        customSelectInput(inputId = ns('noKids'), label = 'Kids', labelColor = '#162118',
+        customSelectInput(inputId = ns('noKids'), label = 'Kids <12', labelColor = '#162118',
                           choices = c('No. People Age <12', '0', seq(1:30)),
                           selected = 'No. People Age <12'
         ),

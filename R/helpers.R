@@ -74,6 +74,7 @@ viewMeal <- function(session, id, data){
                        )
                 )
             ),
+            session = session,
             title = ttl,
             size = 'xl',
             easyClose = FALSE,
@@ -93,7 +94,7 @@ viewMeal <- function(session, id, data){
 editMealAdjPeople <- function(input, output, session, data){
     ns <- session$ns
     LOCAL<- data
-
+#browser()
     noAdultsID <- paste0('editMeal-noAdults-',LOCAL$editMealMealUniqueID)
     noKidsID <- paste0('editMeal-noKids-',LOCAL$editMealMealUniqueID)
     noPeopleCalcID <- paste0('editMeal-noPeopleCalc-',LOCAL$editMealMealUniqueID)
@@ -102,21 +103,7 @@ editMealAdjPeople <- function(input, output, session, data){
     LOCAL$editMealDF$NO_KIDS <- input[[noKidsID]]
     LOCAL$editMealDF$NO_PEOPLE_CALC <- ceiling(as.numeric(input[[noAdultsID]]) + (as.numeric(input[[noKidsID]]) * 0.65))
     LOCAL$editMealDF$QTY <- ceiling(LOCAL$editMealDF$NO_PEOPLE_CALC * LOCAL$editMealDF$SERVING_SIZE_FACTOR)
-    updateTextInput(session, noPeopleCalcID,  value = unique(LOCAL$editMealDF$NO_PEOPLE_CALC))
 
-    # Loop the ingredient qty IDs and update from the existing SSF val and the new people val
-    ingredientUniqueIDs <- unique(LOCAL$editMealDF$INGREDIENT_UNIQUE_ID)
-    qtyIDs <- paste0('ing-qty-',ingredientUniqueIDs)
-    ssfIDs <- paste0('ing-ssf-',ingredientUniqueIDs)
-
-    for(i in 1:length(qtyIDs)){
-        qtyID <- qtyIDs[i]
-        ingredientUniqueID <- gsub('ing-qty-','',qtyID)
-        qty <- LOCAL$editMealDF %>% filter(INGREDIENT_UNIQUE_ID == ingredientUniqueID) %>% pull(QTY)
-
-        updateTextInput(session, qtyID, value =  qty)
-
-    }
 }
 
 
@@ -125,36 +112,178 @@ editMealAdjPeople <- function(input, output, session, data){
 #' and update this in the editMeal dataframe and the UI
 #' @param input,output,session The shiny app session objects
 #' @param id The UI input ID of the edited ingredient quantity field
-#' @param data The LOCAL data object containing the editMealDF object for the currently being editied meal
+#' @param data The LOCAL data object containing the editMealDF object for the currently being edited meal
 #' @noRd
+
 editMealAdjQty <- function(input, output, session, id, data){
     ns <- session$ns
     LOCAL<- data
     .x <- id
 
-    noPeopleCalcID <- strsplit(.x,"_") %>% unlist() %>% .[1:3] %>% paste0(.,collapse = "_")
-    noPeopleCalcID <- gsub('ing-qty-','editMeal-noPeopleCalc-',noPeopleCalcID)
-    qtyID <- .x
-    ssfID <- gsub('ing-qty-','ing-ssf-',.x)
-    noPeopleCalc <- LOCAL$editMealDF$NO_PEOPLE_CALC %>% unique(.)
-    mult <- input[[ssfID]]
-    qty <- input[[qtyID]]
+    row <- which(LOCAL$editMealDF$INGREDIENT_UNIQUE_ID == gsub('ing-qty-','',.x))
 
-    if(ceiling(as.numeric(noPeopleCalc) * as.numeric(mult)) == as.numeric(qty)){
+    if(LOCAL$editMealDF$QTY[row] == as.numeric(input[[.x]]) | is.na(as.numeric(input[[.x]]))) {return(NULL)}
+
+    LOCAL$editMealDF$QTY[row] <- isolate(input[[.x]])
+
+    LOCAL$editMealDF$SERVING_SIZE_FACTOR[row] <- isolate({
+        round(
+            as.numeric(input[[.x]]) / as.numeric(LOCAL$editMealDF$NO_PEOPLE_CALC[row]), 3
+        )
+    })
+
+}
+
+#' Action to take when delete ingredient button is pressed on editMeal modal
+#' @description When delete ingredient is pressed remove item from LOCAL$editMealDF
+#' and rebuild the modal. If you delete all ingredients, the meal rebuilds from the database with all ingredients
+#' @param input,output,session The shiny app session objects
+#' @param id The UI input ID of the deleted ingredient delete button
+#' @param data The LOCAL data object containing the editMealDF object for the currently being edited meal
+#' @noRd
+editMealDelIng <- function(input, output, session, id, data){
+    ns <- session$ns
+    LOCAL<- data
+    .x <- id
+#browser()
+    # Check if ingredient is in the df else stop
+    if(!gsub('del-ing-','',.x) %in% LOCAL$editMealDF$INGREDIENT_UNIQUE_ID) {return(NULL)}
+
+    # Check if ingredient is the last one and warn
+    if(nrow(LOCAL$editMealDF) <= 1){
+        showNotification('Can\'t remove last ingredient.
+                         Select other ingredients before removing this one.',
+                         type = 'error', duration = 10)
         return(NULL)
-    } else
+    }
 
-    if(ceiling(as.numeric(noPeopleCalc) * as.numeric(mult)) != as.numeric(qty)){
-        #TODO figure out why this goes 3 times
-        ingredientUniqueID <- gsub('ing-qty-','',.x)
-
-        # Backcalculate SSF from qty input
-
-        newMult <- round(as.numeric(qty) / as.numeric(noPeopleCalc), 3)
-        row <- which(LOCAL$editMealDF$INGREDIENT_UNIQUE_ID == ingredientUniqueID)
-        isolate({
-            LOCAL$editMealDF$SERVING_SIZE_FACTOR[row] <- newMult
-        })
-        updateTextInput(session,ssfID, value = round(as.numeric(qty) / as.numeric(noPeopleCalc), 3))
+    # Subset out the deleted ingredient
+    if(nrow(LOCAL$editMealDF) > 1) {
+        killRow <- which(LOCAL$editMealDF$INGREDIENT_UNIQUE_ID == gsub('del-ing-','',.x))
+        LOCAL$editMealDF <- LOCAL$editMealDF[-killRow,]
     }
 }
+
+#' Action to take when the addIngredient button is pressed in editMeal modal
+#'
+#'
+#'
+#' @noRd
+editMealAddIng <- function(input, output, session, data){
+    #browser()
+    ns <- session$ns
+    LOCAL <- data
+
+    if(is.null(input[['selectIngredient']])) {return(NULL)}
+
+    if(input[['selectIngredient']] == 'Select ingredient or start typing to search...' | input[['selectIngredient']] %in% LOCAL$editMealDF$INGREDIENT) {
+
+        showNotification(paste(input[['selectIngredient']],'already exists in this meal'),
+                         type = 'error', duration = 5)
+        updateSelectInput(session,'selectIngredient', selected = 'Select ingredient or start typing to search...')
+        return(NULL)
+
+    }
+
+    ingName <- input[['selectIngredient']]
+    ingID <- LOCAL$LU_INGREDIENTS[which(LOCAL$LU_INGREDIENTS$INGREDIENT ==
+                                            input[['selectIngredient']]),'INGREDIENT_ID'] %>%
+        pull()
+
+    LOCAL$editMealDF$QTY <- as.character(LOCAL$editMealDF$QTY)
+
+
+    newRecord <- LOCAL$LU_INGREDIENTS %>% filter(INGREDIENT_ID == ingID) %>%
+        select(-c(UPTIME,UPUSER)) %>%
+        mutate(
+            MEAL_ID = LOCAL$editMealDF$MEAL_ID[1],
+            MEAL_NAME = LOCAL$editMealDF$MEAL_NAME[1],
+            MEAL_TYPE = LOCAL$editMealDF$MEAL_TYPE[1],
+            MEAL_DESCRIPTION = LOCAL$editMealDF$MEAL_DESCRIPTION[1],
+            TOOLS = LOCAL$editMealDF$TOOLS[1],
+            INSTRUCTIONS = LOCAL$editMealDF$INSTRUCTIONS[1],
+            MEAL_ADD_ID = LOCAL$editMealDF$MEAL_ADD_ID[1],
+            MEAL_DEL_ID = LOCAL$editMealDF$MEAL_DEL_ID[1],
+            MEAL_VIEW_ID = LOCAL$editMealDF$MEAL_VIEW_ID[1],
+            MEAL_EDIT_ID = LOCAL$editMealDF$MEAL_EDIT_ID[1],
+            MEAL_UNIQUE_ID = LOCAL$editMealDF$MEAL_UNIQUE_ID[1],
+            INGREDIENT_UNIQUE_ID = paste0(MEAL_UNIQUE_ID,'_',INGREDIENT_ID),
+            RIVER_DAY = LOCAL$editMealDF$RIVER_DAY[1],
+            NO_ADULTS = LOCAL$editMealDF$NO_ADULTS[1],
+            NO_KIDS = LOCAL$editMealDF$NO_KIDS[1],
+            NO_PEOPLE_CALC = LOCAL$editMealDF$NO_PEOPLE_CALC[1],
+            QTY = as.character(ceiling(as.numeric(NO_PEOPLE_CALC) * SERVING_SIZE_FACTOR)),
+            MEAL_NOTES = LOCAL$editMealDF$MEAL_NOTES[1]
+        )
+
+    LOCAL$editMealDF <- bind_rows(LOCAL$editMealDF, newRecord)
+
+    updateSelectInput(session,'selectIngredient', selected = 'Select ingredient or start typing to search...')
+
+}
+
+
+#' Action to take when the addIngredient button is pressed in createMeal modal
+#'
+#'
+#'
+#' @noRd
+createMealAddIng <- function(input, output, session, data){
+    browser()
+    ns <- session$ns
+    LOCAL <- data
+
+    if(is.null(input[['selectIngredient']])) {return(NULL)}
+
+    if(input[['selectIngredient']] == 'Select ingredient or start typing to search...' | input[['selectIngredient']] %in% LOCAL$editMealDF$INGREDIENT) {
+
+        showNotification(paste(input[['selectIngredient']],'already exists in this meal'),
+                         type = 'error', duration = 5)
+        updateSelectInput(session,'selectIngredient', selected = 'Select ingredient or start typing to search...')
+        return(NULL)
+
+    }
+
+    ingName <- input[['selectIngredient']]
+    ingID <- LOCAL$LU_INGREDIENTS[which(LOCAL$LU_INGREDIENTS$INGREDIENT ==
+                                            input[['selectIngredient']]),'INGREDIENT_ID'] %>%
+        pull()
+
+    LOCAL$editMealDF$QTY <- as.character(LOCAL$editMealDF$QTY)
+
+
+    newRecord <- LOCAL$LU_INGREDIENTS %>% filter(INGREDIENT_ID == ingID) %>%
+        select(-c(UPTIME,UPUSER)) %>%
+        mutate(
+            MEAL_ID = LOCAL$editMealDF$MEAL_ID[1],
+            MEAL_NAME = LOCAL$editMealDF$MEAL_NAME[1],
+            MEAL_TYPE = LOCAL$editMealDF$MEAL_TYPE[1],
+            MEAL_DESCRIPTION = LOCAL$editMealDF$MEAL_DESCRIPTION[1],
+            TOOLS = LOCAL$editMealDF$TOOLS[1],
+            INSTRUCTIONS = LOCAL$editMealDF$INSTRUCTIONS[1],
+            MEAL_ADD_ID = LOCAL$editMealDF$MEAL_ADD_ID[1],
+            MEAL_DEL_ID = LOCAL$editMealDF$MEAL_DEL_ID[1],
+            MEAL_VIEW_ID = LOCAL$editMealDF$MEAL_VIEW_ID[1],
+            MEAL_EDIT_ID = LOCAL$editMealDF$MEAL_EDIT_ID[1],
+            MEAL_UNIQUE_ID = LOCAL$editMealDF$MEAL_UNIQUE_ID[1],
+            INGREDIENT_UNIQUE_ID = paste0(MEAL_UNIQUE_ID,'_',INGREDIENT_ID),
+            RIVER_DAY = LOCAL$editMealDF$RIVER_DAY[1],
+            NO_ADULTS = LOCAL$editMealDF$NO_ADULTS[1],
+            NO_KIDS = LOCAL$editMealDF$NO_KIDS[1],
+            NO_PEOPLE_CALC = LOCAL$editMealDF$NO_PEOPLE_CALC[1],
+            QTY = as.character(ceiling(as.numeric(NO_PEOPLE_CALC) * SERVING_SIZE_FACTOR)),
+            MEAL_NOTES = LOCAL$editMealDF$MEAL_NOTES[1]
+        )
+
+    LOCAL$editMealDF <- bind_rows(LOCAL$editMealDF, newRecord)
+
+    updateSelectInput(session,'selectIngredient', selected = 'Select ingredient or start typing to search...')
+
+}
+
+
+
+
+
+
+#

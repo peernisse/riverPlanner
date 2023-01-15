@@ -32,12 +32,12 @@ mod_data_server <- function(id){
 
     LU_MEAL_TYPE <- googlesheets4::read_sheet(url, sheet = "LU_MEAL_TYPE") %>%
       mutate(
-        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail'))
+        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack'))
       )
 
     LU_MEAL <- googlesheets4::read_sheet(url, sheet = 'LU_MEAL') %>%
       mutate(
-        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail')),
+        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack')),
         MEAL_ADD_ID = paste0('add-',MEAL_ID),
         MEAL_DEL_ID = paste0('del-',MEAL_ID),
         MEAL_VIEW_ID = paste0('view-',MEAL_ID),
@@ -70,11 +70,7 @@ mod_data_server <- function(id){
       editMealDF = data.frame(),
       editMealModalSwitch = FALSE,
       editMealMealUniqueID = NULL,
-      #editMealIngredientUniqueID = NULL,
-      #openModalssfIDs = NULL,
-      #openModalqtyIDs = NULL,
-      #openModalnoAdults = NULL,
-      #openModalnoKids = NULL,
+      createMealDF = data.frame(),
       ALL_DATA = ALL_DATA
     )
 
