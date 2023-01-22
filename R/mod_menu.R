@@ -90,6 +90,14 @@ mod_menu_server <- function(id, data){
           return(NULL)
         }
 
+      # Validate user has created a trip
+
+        if(length(LOCAL$tripName) == 0 & LOCAL$noAdults == 1){
+          showNotification('Please create a Trip before adding meals.', type = 'error', duration = 10)
+          return(NULL)
+        }
+
+
       # Gather user inputs, calculate mealId and mealUniqueId and make new record to append to myMeals
 
       riverDay <- input[[paste0('rd-',gsub('add-','',.x))]] %>% as.numeric()
@@ -234,6 +242,7 @@ mod_menu_server <- function(id, data){
       })
 
       # Modal Meal Trip Info -----
+      #TODO these all run twice
 
       output$mealTripInfo <- renderUI({
         if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
@@ -243,7 +252,7 @@ mod_menu_server <- function(id, data){
       # Modal Ingredient list -----
 
       output$modalIngs <- renderUI({
-      #  if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
+        if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
           rows <- c(1:nrow(LOCAL$editMealDF))
           map(rows, ~ editMealIngredientInputs(input, output, session,data = isolate(LOCAL$editMealDF[.x,])))
       })
@@ -251,6 +260,7 @@ mod_menu_server <- function(id, data){
       # Modal editMeal select ingredients dropdown -----
 
       output$modalSelIng <- renderUI({
+
       #  if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
         selectIngredients(input, output, session,data = LOCAL$LU_INGREDIENTS)
       })
@@ -263,6 +273,8 @@ mod_menu_server <- function(id, data){
       })
 
       #####OBSERVE MODAL INPUTS#####
+
+
       # Observe change in NoAdults -----
 
       observeEvent(input[[noAdultsID]],{
@@ -432,7 +444,7 @@ mod_menu_server <- function(id, data){
   observeEvent(input$updateMeal,{
 # TODO finish this and make all this editMealModal stuff a new module
 
-    # Validate -----
+    # Validate
     req(nrow(LOCAL$editMealDF) > 0)
     mealUniqueID <- LOCAL$editMealDF$MEAL_UNIQUE_ID %>% unique()
     req(mealUniqueID %in% LOCAL$myMeals$MEAL_UNIQUE_ID)
@@ -449,15 +461,39 @@ mod_menu_server <- function(id, data){
     rows <- which(LOCAL$myMeals$MEAL_UNIQUE_ID == mealUniqueID)
     LOCAL$myMeals <- LOCAL$myMeals[-rows,] %>% bind_rows(LOCAL$editMealDF)
 
-    # Notify -----
+    # Get Trip Info
+
+    trip <- LOCAL$myMeals %>%
+      mutate(
+        TRIP_ID = LOCAL$tripID,
+        TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
+        TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
+        USERNAME = LOCAL$userName,
+        UPTIME = Sys.Date(),
+        UPUSER = LOCAL$userName
+      ) %>%
+      select(., names(LOCAL$LU_TRIPS))
+
+    # Save to databse
+    withProgress(message = 'Trip Info', detail = 'saving to database...', {
+
+      map(1:5, ~ incProgress(.x/10))
+      dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
+      map(6:10, ~ incProgress(.x/10))
+
+    })
+
+    # Notify
     showNotification(paste(LOCAL$editMealDF[1,'MEAL_NAME'], 'saved to menu!'),type = 'message')
 
-    # Clean up and close modal -----
+    # Clean up and close modal
     LOCAL$editMealModalSwitch <- FALSE
     LOCAL$editMealDF <- data.frame()
     removeModal()
 
   })
+
+
 
   # Cancel edit meal modal button upper right corner -----
 

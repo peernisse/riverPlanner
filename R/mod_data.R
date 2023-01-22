@@ -26,16 +26,21 @@ mod_data_server <- function(id){
 
     ####GOOGLE SHEETS URL AND GET BASE DATA####
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
-    googlesheets4::gs4_auth(path = './inst/app/www/.token/rivermenu-96e6b5c5652d.json')
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
 
-    XREF_INGREDIENT <- googlesheets4::read_sheet(url, sheet = "XREF_INGREDIENT")
+    LU_USERS <- read_sheet(url, sheet = "LU_USERS")
 
-    LU_MEAL_TYPE <- googlesheets4::read_sheet(url, sheet = "LU_MEAL_TYPE") %>%
+    LU_TRIPS <- read_sheet(url, sheet = "LU_TRIPS")
+
+    XREF_INGREDIENT <- read_sheet(url, sheet = "XREF_INGREDIENT")
+
+    LU_MEAL_TYPE <- read_sheet(url, sheet = "LU_MEAL_TYPE") %>%
       mutate(
         MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack'))
       )
 
-    LU_MEAL <- googlesheets4::read_sheet(url, sheet = 'LU_MEAL') %>%
+    LU_MEAL <- read_sheet(url, sheet = 'LU_MEAL') %>%
       mutate(
         MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack')),
         MEAL_ADD_ID = paste0('add-',MEAL_ID),
@@ -46,7 +51,7 @@ mod_data_server <- function(id){
         INGREDIENT_UNIQUE_ID = '',
         RIVER_DAY = NA_real_)
 
-    LU_INGREDIENTS <- googlesheets4::read_sheet(url, sheet = "LU_INGREDIENTS")
+    LU_INGREDIENTS <- read_sheet(url, sheet = "LU_INGREDIENTS")
 
     ALL_DATA <- LU_MEAL %>%
       select(-c(UPTIME,UPUSER)) %>%
@@ -56,16 +61,20 @@ mod_data_server <- function(id){
     ####INSTANTIATE REACTIVE VALUES DATA OBJECT#####
 
     LOCAL <- reactiveValues(
+      userName = as.character('dev_01'),
+      LU_USERS = LU_USERS,
+      LU_TRIPS = LU_TRIPS,
       XREF_INGREDIENT = XREF_INGREDIENT,
       LU_MEAL_TYPE = LU_MEAL_TYPE,
       LU_MEAL = LU_MEAL,
       LU_INGREDIENTS = LU_INGREDIENTS,
+      tripID = ifelse(length(LU_TRIPS$TRIP_ID) == 0, 1, max(LU_TRIPS$TRIP_ID) + 1),
       tripName = character(),
+      tripDesc = character(),
       noAdults = 1,
       noKids = 0,
       noPeople = 1,
       noPeopleCalc = 1,
-      tripDesc = character(),
       myMeals = data.frame(),
       editMealDF = data.frame(),
       editMealModalSwitch = FALSE,
@@ -74,7 +83,7 @@ mod_data_server <- function(id){
       ALL_DATA = ALL_DATA
     )
 
-    rm(XREF_INGREDIENT,LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,ALL_DATA)
+    rm(XREF_INGREDIENT,LU_USERS, LU_TRIPS, LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,ALL_DATA)
     gc()
 
     return(LOCAL)

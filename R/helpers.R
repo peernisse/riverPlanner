@@ -25,8 +25,23 @@ meals <- data.frame(
 #' @param data The LOCAL data object#'
 #' @noRd
 delMealResponse <- function(id, data){
+
     LOCAL <- data
+    mealName <- LOCAL$myMeals %>%
+        filter(MEAL_UNIQUE_ID %in% gsub('del-','',id)) %>%
+        select(MEAL_NAME) %>%
+        unique()
+
+    # Remove the meal from myMeals
     LOCAL$myMeals <- subset(LOCAL$myMeals, !MEAL_UNIQUE_ID %in% gsub('del-','',id))
+
+    # Remove the meal from LU_TRIPS if it is there
+
+    withProgress(message = 'Deleting', detail = paste0('Deleting ', mealName, ' from trip...'), {
+        map(1:5, ~ incProgress(.x/10))
+            dbDelete(id = gsub('del-','',id), to = 'LU_TRIPS', data = LOCAL)
+        map(6:10, ~ incProgress(.x/10))
+    })
 }
 
 #' The action to take when the preview meal button is pressed
@@ -218,7 +233,12 @@ editMealAddIng <- function(input, output, session, data){
 
     LOCAL$editMealDF <- bind_rows(LOCAL$editMealDF, newRecord)
 
+    showNotification(paste(input[['selectIngredient']],'added to this meal.'),
+                     type = 'message', duration = 5)
+
     updateSelectInput(session,'selectIngredient', selected = 'Select ingredient or start typing to search...')
+
+
 
 }
 
@@ -229,7 +249,7 @@ editMealAddIng <- function(input, output, session, data){
 #'
 #' @noRd
 createMealAddIng <- function(input, output, session, data){
-    browser()
+    #browser()
     ns <- session$ns
     LOCAL <- data
 
@@ -283,7 +303,84 @@ createMealAddIng <- function(input, output, session, data){
 
 
 
+# DATABASE CRUD -----
 
+#' dbUpdate
+#' @description Replaces or appends records in a database table
+#' @param from The updated dataframe with the new/revised records
+#' @param to The name of the database table to update
+#' @param data The session reactive data object LOCAL
+#' @importFrom googlesheets4 read_sheet range_delete sheet_append gs4_auth gs4_deauth
+#' @noRd
+dbUpdate <- function(from, to, data = LOCAL){
+    LOCAL <- data
+
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+
+    #TODO add if statements to use this function for other tables
+    #TODO make the pulling ID check a range_read so not reading entire table
+
+    check <- read_sheet(url, sheet = to) %>%
+
+        mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
+        select(check)
+
+    try <- from %>%
+        mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
+        select(check)
+
+    if(unique(try$check) %in% unique(check$check) == TRUE) {
+
+
+        rows<- which(check$check %in% unique(try$check))
+        range_delete(url, to, range = paste0(min(rows)+1,':',max(rows) +1))
+        sheet_append(url, from, sheet = to)
+        LOCAL[[to]] <- read_sheet(url, sheet = to)
+
+    } else
+
+    if(unique(try$check) %in% unique(check$check) == FALSE) {
+        sheet_append(url, from, sheet = to)
+        LOCAL[[to]] <- read_sheet(url, sheet = to)
+    }
+
+    gs4_deauth()
+
+}
+
+#' dbDelete
+#' @description Deletes records in a database table based on ID
+#' @param id The ID to find records to delete
+#' @param to The name of the database table to update
+#' @param data The session reactive data object LOCAL
+#' @noRd
+dbDelete <- function(id, to, data = LOCAL){
+    LOCAL <- data
+
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+
+    # Check if requested records exist in the db table
+    #TODO add if statements to use this function for other tables
+    #TODO make the pulling ID check a range_read so not reading entire table
+    check <- read_sheet(url, sheet = to) %>%
+        mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
+        select(check)
+
+    try <- paste0(LOCAL$userName,'_',LOCAL$tripID,'_',id)
+
+    if(!try %in% check$check){return(NULL)}
+
+    if(try %in% check$check){
+        rows <- which(check$check %in% try)
+        range_delete(url, to, range = paste0(min(rows)+1,':',max(rows) +1))
+    }
+
+    gs4_deauth()
+}
 
 
 #

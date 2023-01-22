@@ -58,27 +58,28 @@ mod_trip_server <- function(id, data){
         return(NULL)
       }
 
-      if(is.null(input$noAdults) | input$noAdults == '') {
+      if(is.null(input$noAdults) | input$noAdults == 'No. People Age 12+') {
         showNotification('Please enter number of adults', type = 'error', duration = 5)
         return(NULL)
       }
 
-      if(input$noAdults != 'No. People Age 12+' & is.na(as.numeric(input$noAdults)) == TRUE) {
-        showNotification('Number of adults must be just a number', type = 'error', duration = 5)
-        return(NULL)
-      }
+      # if(input$noAdults != 'No. People Age 12+' & is.na(as.numeric(input$noAdults)) == TRUE) {
+      #   showNotification('Number of adults must be just a number', type = 'error', duration = 5)
+      #   return(NULL)
+      # }
 
-      if(is.null(input$noKids) | input$noKids == '') {
-        showNotification('Please enter number of kids', type = 'error', duration = 5)
-        return(NULL)
-      }
+      # if(is.null(input$noKids) | input$noKids == 'No. People Age <12') {
+      #   showNotification('Please enter number of kids', type = 'error', duration = 5)
+      #   return(NULL)
+      # }
 
-      if(input$noKids != 'No. People Age <12' & is.na(as.numeric(input$noKids)) == TRUE) {
-        showNotification('Number of kids must be just a number', type = 'error', duration = 5)
-        return(NULL)
-      }
+      # if(input$noKids != 'No. People Age <12' & is.na(as.numeric(input$noKids)) == TRUE) {
+      #   showNotification('Number of kids must be just a number', type = 'error', duration = 5)
+      #   return(NULL)
+      # }
 
       LOCAL$tripName <- input$tripName
+      LOCAL$tripDesc <- input$tripDesc
       LOCAL$noAdults <- as.numeric(input$noAdults)
       LOCAL$noKids <- ifelse(input$noKids == '' | input$noKids == 'No. People Age <12',0,as.numeric(input$noKids))
       LOCAL$noPeople <- as.numeric(LOCAL$noAdults) + as.numeric(LOCAL$noKids)

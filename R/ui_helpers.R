@@ -358,8 +358,8 @@ editMealTripInfoInputs <- function(input, output, session, data){
 #' @param data The meal dataframe being viewed/edited. Usually a subset of myMeals
 #' @noRd
 editMealIngredientInputs <- function(input, output, session,data){
+  #TODO this runs multiple times once for every ingredient
   ns <- session$ns
-
   ingUniqueID <- unique(data$INGREDIENT_UNIQUE_ID)
   ing <- unique(data$INGREDIENT)
   desc <- unique(data$INGREDIENT_DESCRIPTION)
@@ -413,21 +413,6 @@ selectIngredients <- function(input, output, session, data){
 
   div(
 #TODO Seeing if this selectInput works on iPhone to type
-
-    tags$input(ns('test2'), class = "form-control",
-
-               tags$select(class = "form-select", id = ns('selectIngredient'),
-                 tags$option(selected = "selected", choices[1]),
-                 map(
-                   choices[-1], ~ tags$option(value = .x,.x)
-                 )
-               )
-
-    ),
-
-
-
-    selectInput(ns('test1'),'selectInput_selectizeFalse',choices = c('Choose' = '', ings), selectize = FALSE),
 
     div(class = "input-group mb-3",
       tags$label(class = "input-group-text",

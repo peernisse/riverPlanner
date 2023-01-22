@@ -5,7 +5,7 @@ account: peernisse
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 7938293
-bundleId: 6709009
+bundleId: 6736345
 url: https://peernisse.shinyapps.io/riverplanner/
-when: 1673144314.9074
-lastSyncTime: 1673144314.9074
+when: 1673806292.45966
+lastSyncTime: 1673806292.45966
