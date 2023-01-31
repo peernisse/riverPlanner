@@ -71,6 +71,7 @@ mod_data_server <- function(id){
       tripID = ifelse(length(LU_TRIPS$TRIP_ID) == 0, 1, max(LU_TRIPS$TRIP_ID) + 1),
       tripName = character(),
       tripDesc = character(),
+      loadTripMode = FALSE,
       noAdults = 1,
       noKids = 0,
       noPeople = 1,

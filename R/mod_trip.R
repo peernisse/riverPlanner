@@ -12,6 +12,7 @@ mod_trip_ui <- function(id){
   tagList(
     fluidRow(
       column(width = 12, style = 'display: grid; text-align: center; justify-content: space-around; margin: 5px;',
+        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
         h3('New Trip'),
         customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#162118', placeholder = 'Enter Trip Name'),
 
@@ -30,11 +31,11 @@ mod_trip_ui <- function(id){
     ),
     br(),
     fluidRow(
-      column(width = 12, style = 'text-align: center; margin: 5px;',
-        h3('My Trips')#,
-        # editMealModal(),
-        # a(class = "btn btn-primary", `data-bs-toggle` = "modal", href = "#exampleModalToggle",
-        #   role = "button", "Open first modal")
+      column(width = 12, style = 'display: grid; text-align: center; justify-content: space-around; margin: 5px;',
+        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+        h3('My Trips'),
+        uiOutput(ns('test'))
+
       )
     )
   )
@@ -50,7 +51,13 @@ mod_trip_server <- function(id, data){
     ns <- session$ns
     LOCAL <- data
 
-    #####REACTIVE BUTTON OBSERVERS#####
+    #####VECTOR OF CREATED OBSERVERS FOR EDIT MEAL MODAL#####
+    createdObservers <- c()
+    tripDelete <- c()
+    tripLoad <- c()
+
+    #####OBSERVERS#####
+
     observeEvent(input$createTrip,{
 
       if(is.null(input$tripName) | input$tripName == '') {
@@ -91,11 +98,109 @@ mod_trip_server <- function(id, data){
 
     })
 
-    #####OBSERVERS#####
+    # Observe Load or Delete Trip -----
 
+    observe({
+      tripIDs <- LOCAL$LU_TRIPS %>%
+                     filter(USERNAME == LOCAL$userName) %>%
+                     pull(TRIP_ID) %>% unique()
+
+      # Observe load trip buttons
+      loadTripIDs <- paste0('load-tripID-',tripIDs)
+      loadTripIDs <- loadTripIDs[!loadTripIDs %in% createdObservers]
+      if(length(loadTripIDs) > 0){
+        map(loadTripIDs, ~ observeEvent(input[[.x]], {
+            tripLoad <<- gsub('load-tripID-','',.x)
+            tripName <- LOCAL$LU_TRIPS %>%
+              filter(TRIP_ID == gsub('load-tripID-','',.x)) %>%
+              pull(TRIPNAME) %>%
+              unique(.)
+
+            showModal(
+              customModalDialog(
+                p("This will clear any unsaved work and load trip ",strong(tripName)," Are you sure?"),
+                title = 'Warning!',
+                session = session,
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+                  actionButton(ns('confirmModalLoadTrip'), label = 'Confirm', class = 'btn btn-success'),
+                  actionButton(ns('cancelModalLoadTrip'), label = 'Cancel', class = 'btn btn-default',
+                               class = 'riv', class = 'getstarted')
+                )
+              )
+            )
+          }, ignoreInit = TRUE) # end observeEvent
+        )
+        createdObservers <<- c(createdObservers,loadTripIDs)
+      } # end if
+
+      # Observe delete trip buttons
+
+      delTripIDs <- paste0('kill-tripID-',tripIDs)
+      delTripIDs <- delTripIDs[!delTripIDs %in% createdObservers]
+      if(length(delTripIDs) > 0){
+        map(delTripIDs, ~ observeEvent(input[[.x]], {
+            tripDelete <<- gsub('kill-tripID-','',.x)
+            showModal(
+              customModalDialog(
+                p('This will permanently delete this trip. Are you sure?'),
+                title = 'Warning!',
+                session = session,
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+                  actionButton(ns('confirmModalDelTrip'), label = 'Confirm', class = 'btn btn-success'),
+                  actionButton(ns('cancelModalDelTrip'), label = 'Cancel', class = 'btn btn-default',
+                               class = 'riv', class = 'getstarted')
+                )
+              )
+            )
+          }, ignoreInit = TRUE) # end observeEvent
+        )
+        createdObservers <<- c(createdObservers,delTripIDs)
+      } # end if
+    }) # end observe
+
+    # Observe trip load or delete modal confirm buttons -----
+
+    # observe cancel trip load
+    observeEvent(input$cancelModalLoadTrip, {removeModal()})
+
+    # Observe cancel trip delete
+    observeEvent(input$cancelModalDelTrip, {removeModal()})
+
+    # Observe confirm trip load
+    observeEvent(input$confirmModalLoadTrip,{
+      req(length(tripLoad) >0)
+
+      withProgress(message = 'Loading', detail = 'Loading trip...', {
+        map(1:5, ~ incProgress(.x/10))
+
+        loadTrip(session = session, id = tripLoad, data = LOCAL)
+
+        tripLoad <<-c()
+        removeModal()
+        map(6:10, ~ incProgress(.x/10))
+      })
+
+    })
+
+    # Observe confirm trip delete
+    observeEvent(input$confirmModalDelTrip, {
+      req(length(tripDelete) >0)
+
+      withProgress(message = 'Deleting', detail = 'Deleting trip...', {
+        map(1:5, ~ incProgress(.x/10))
+        dbDelete(id = tripDelete, to = 'LU_TRIPS', data = LOCAL, level = 'trip')
+        LOCAL$LU_TRIPS <- LOCAL$LU_TRIPS %>% filter(!TRIP_ID %in% tripDelete)
+        tripDelete <<-c()
+        removeModal()
+        map(6:10, ~ incProgress(.x/10))
+      })
+    })
 
 
     #####UI OUTPUTS#####
+
+    # Trip cards
+    output$test <- makeTripCards(input, output, session, data = LOCAL)
 
 
     #####RETURN LOCAL DATA OBJECT#####

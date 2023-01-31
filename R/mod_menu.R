@@ -10,7 +10,7 @@ mod_menu_ui <- function(id){
     fluidRow(
       column(width = 12, style = 'text-align: center; margin: 5px;',
         hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
-        h3('Select Meals'),
+        h3(uiOutput(ns('sectionTitleSelectMeals'))),
 
         div(id = ns("menuSelect"), class = "accordion",
           accInner(ns, parentId = "menuSelect", buttonId = 'breakfasts', buttonTitle = 'Breakfasts',
@@ -36,10 +36,10 @@ mod_menu_ui <- function(id){
     fluidRow(
       column(width = 12, style = 'text-align: center; margin: 5px;',
              hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
-             h3('Trip Menu'),
+             h3(uiOutput(ns('sectionTitleTripMenu'))),
              #uiOutput(ns('myMenu')),
              #uiOutput(ns('dayMenu')),
-             uiOutput(ns('test'))
+             uiOutput(ns('tripMenu'))
 
       )
     )
@@ -139,7 +139,7 @@ mod_menu_server <- function(id, data){
       # Add a delete button listener for this menu card
         delMealButtonIDs <<- c(delMealButtonIDs,paste0('del-',mealUniqueId))
 
-        #Increment the delete button counter
+        # Increment the delete button counter
         isolate({
           val <- new_del_button()
           val <- val + 1
@@ -182,22 +182,81 @@ mod_menu_server <- function(id, data){
 
   observe({
     req(nrow(LOCAL$myMeals) > 0)
+#browser()
+    # Trip loading conditions
+    if(LOCAL$loadTripMode == TRUE){
+      # Clear edit and delete button listener lists
+      # Delete button IDs
+      new_del_button <<- reactiveVal(0)
+      delMealButtonIDs <<- c()
 
-    # Delete button observers -----
-    del_id <- delMealButtonIDs[new_del_button()]
-    map(del_id, ~ observeEvent(input[[.x]],{delMealResponse(id = .x, data = LOCAL)},
-                           ignoreInit = TRUE, once = TRUE)
-    )
+      # Edit button IDs
+      new_edit_button <<- reactiveVal(0)
+      editMealButtonIDs <<- c()
 
-    # Edit button observers -----
-    edit_id <- editMealButtonIDs[new_edit_button()]
-    map(edit_id, ~
-          observeEvent(input[[.x]],{
-            showModal(
-              editMealModal(input, output, session, mealUniqueID = gsub('edit-','',.x), data = LOCAL)
-            )
-          }, ignoreInit = TRUE)
-    )
+      # Get meal Unique IDs from loaded trip DF
+      mealUniqueIDs <- unique(LOCAL$myMeals$MEAL_UNIQUE_ID)
+
+      # Make edit and delete button listeners
+      for(i in 1:length(mealUniqueIDs)){
+        mealUniqueId <- mealUniqueIDs[i]
+        # Add a delete button listener
+        delMealButtonIDs <<- c(delMealButtonIDs,paste0('del-',mealUniqueId))
+
+        # Increment the delete button counter
+        isolate({
+          val <- new_del_button()
+          val <- val + 1
+          new_del_button(val)
+        })
+
+        # Delete button observers -----
+        del_id <- delMealButtonIDs[new_del_button()]
+        map(del_id, ~ observeEvent(input[[.x]],{delMealResponse(id = .x, data = LOCAL)},
+                                   ignoreInit = TRUE, once = TRUE)
+        )
+
+        # Add an edit button listener for this menu card
+        editMealButtonIDs <<- c(editMealButtonIDs,paste0('edit-',mealUniqueId))
+
+        #Increment the edit button counter
+        isolate({
+          val <- new_edit_button()
+          val <- val + 1
+          new_edit_button(val)
+        })
+
+        # Edit button observers -----
+        edit_id <- editMealButtonIDs[new_edit_button()]
+        map(edit_id, ~
+              observeEvent(input[[.x]],{
+                showModal(
+                  editMealModal(input, output, session, mealUniqueID = gsub('edit-','',.x), data = LOCAL)
+                )
+              }, ignoreInit = TRUE)
+        )
+      }
+
+      LOCAL$loadTripMode <- FALSE
+
+    } else {
+
+      # Delete button observers -----
+      del_id <- delMealButtonIDs[new_del_button()]
+      map(del_id, ~ observeEvent(input[[.x]],{delMealResponse(id = .x, data = LOCAL)},
+                                 ignoreInit = TRUE, once = TRUE)
+      )
+
+      # Edit button observers -----
+      edit_id <- editMealButtonIDs[new_edit_button()]
+      map(edit_id, ~
+            observeEvent(input[[.x]],{
+              showModal(
+                editMealModal(input, output, session, mealUniqueID = gsub('edit-','',.x), data = LOCAL)
+              )
+            }, ignoreInit = TRUE)
+      )
+    }
   })
 
   # Reactive updates in edit meal modal -----
@@ -512,6 +571,14 @@ mod_menu_server <- function(id, data){
   })
 
   #####UI OUTPUTS#####
+  # Section titles
+  output$sectionTitleSelectMeals <- renderUI({
+    if(length(LOCAL$tripName) > 0){paste('Select Meals for',LOCAL$tripName)} else{'Select Meals'}
+  })
+
+  output$sectionTitleTripMenu <- renderUI({
+    if(length(LOCAL$tripName) > 0){paste('Trip Menu for',LOCAL$tripName)} else{'Trip Menu'}
+  })
 
   # Make meal card rows by meal type
 
@@ -526,10 +593,11 @@ mod_menu_server <- function(id, data){
 
 
   # Make Menu card rows by day
-  #TODO make this open the div for the menu day just updated
+  #TODO make this open the div for the menu day just updated and change the name from test
 
-  output$test <- renderUI({
+  output$tripMenu <- renderUI({
     if(nrow(LOCAL$myMeals) == 0){return(NULL)}
+
     days <- unique(LOCAL$myMeals$RIVER_DAY) %>% sort(.)
     div(id = ns('rdSelect'), class = "accordion",
       map(days, ~ makeDayBoxes(input, output, session,

@@ -67,7 +67,7 @@ mealCard <- function(session,id,data = LOCAL, mtype, ttl, subttl, desc){
 menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
     ns <- session$ns
     mealUniqueId <- data$MEAL_UNIQUE_ID %>% unique(.)
-#browser()
+
     if(file.exists(paste0('./inst/app/www/assets/img/menu/',mtype,'-',id,'.jpg')) == TRUE){
         imgsrc <- paste0('www/assets/img/menu/',mtype,'-',id,'.jpg')
     } else {
@@ -96,7 +96,66 @@ menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
     )
 }
 
+#' Trip card
+#'
+#'
+#'
+#' @noRd
+tripCard <- function(session, tripID, tripName, tripDesc, upTime){
+  ns <- session$ns
+  LOCAL <- data
+  loadButtonID <- paste0('load-tripID-',tripID)
+  killButtonID <- paste0('kill-tripID-', tripID)
+  #date <- as.character(upTime$UPTIME)
+
+  div(class = "input-group", class = 'my-trips',
+      tags$span(class = "input-group-text", tripName,
+                style = 'background-color: #162118; border-color: #162118; color: #fff;'
+      ),
+      tags$input(id = ns('test-trip'),
+                 value = tripDesc,
+                 type = "text", `aria-label` = tripName, class = "form-control"
+      ),
+      tags$button(id = ns(killButtonID),
+                  class = "btn btn-danger action-button shiny-bound-input",
+                  type = "button", icon('trash')
+      ),
+      tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
+                  style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                  type = "button",
+                  'Load Trip'
+      )
+  )
+}
+
 #####CARDS GENERATORS#####
+
+#' Trip card generator
+#'
+#'
+#' @noRd
+makeTripCards <- function(input, output, session, data = LOCAL){
+  LOCAL <- data
+  ns <- session$ns
+
+  renderUI({
+    #browser()
+    if(length(LOCAL$userName) == 0 | is.null(LOCAL$userName) | LOCAL$userName == ''){return(NULL)}
+
+    tripMap <- LOCAL$LU_TRIPS %>%
+      filter(USERNAME %in% LOCAL$userName) %>%
+      select(TRIP_ID,TRIPNAME,TRIP_DESC,UPTIME) %>%
+      unique() %>%
+      arrange(desc(UPTIME))
+
+    map(tripMap$TRIP_ID, ~ tripCard(session = session,
+      tripID = .x,
+      tripName = tripMap[which(tripMap$TRIP_ID == .x),2],
+      tripDesc = tripMap[which(tripMap$TRIP_ID == .x),3],
+      upTime = tripMap[which(tripMap$TRIP_ID == .x),4])
+    )
+  })
+}
 
 #' Meal card generator function
 #' @description The functional programming logic to generate cards, input objects,
@@ -146,7 +205,7 @@ makeMealCards <- function(input, output, session, mtype, data = LOCAL){
 makeMenuCards <- function(input, output, session, day, data){
     # The data should be the LOCAL$myMeals DF
     ns <- session$ns
-  #browser()
+
     renderUI({
 
         ns <- session$ns

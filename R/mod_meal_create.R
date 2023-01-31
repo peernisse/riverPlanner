@@ -125,7 +125,7 @@ mod_meal_create_server <- function(id, data = LOCAL){
     # Observe add ingredient button -----
 
     observeEvent(input[['addIngredient']], {
-browser()
+
       if(input[['selectIngredient']] %in% LOCAL$createMealDF$INGREDIENT){
         showNotification('This ingredient already exists for this meal!', type = 'error', duration = 10)
         return(NULL)

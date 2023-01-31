@@ -39,7 +39,7 @@ delMealResponse <- function(id, data){
 
     withProgress(message = 'Deleting', detail = paste0('Deleting ', mealName, ' from trip...'), {
         map(1:5, ~ incProgress(.x/10))
-            dbDelete(id = gsub('del-','',id), to = 'LU_TRIPS', data = LOCAL)
+            dbDelete(id = gsub('del-','',id), to = 'LU_TRIPS', data = LOCAL, level = 'meal')
         map(6:10, ~ incProgress(.x/10))
     })
 }
@@ -301,7 +301,44 @@ createMealAddIng <- function(input, output, session, data){
 
 }
 
+# TRIP FUNCTIONS -----
 
+#' Load Trip
+#' @description Loads trip meal info from LU_TRIPS to LOCAL$myMeals, updates trip info in LOCAL
+#' @param id The trip ID
+#' @noRd
+loadTrip <- function(session, id, data){
+    ns <- session$ns
+    LOCAL <- data
+    # DEV ---
+    #id <- 11
+    # ---
+
+    # Validate User ID exists and id is not blank
+    req(!is.null(LOCAL$userName) & LOCAL$userName != '' & length(LOCAL$userName) > 0)
+    req(!is.null(id) & id != '' & length(id) > 0)
+
+    # Load trip info-----
+    LOCAL$loadTripMode <- TRUE
+
+    trip <- LOCAL$LU_TRIPS %>%
+        filter(TRIP_ID == id)
+
+    LOCAL$tripName <- unique(trip$TRIPNAME)
+    LOCAL$tripID <- unique(trip$TRIP_ID)
+    LOCAL$tripDesc <- unique(trip$TRIP_DESC)
+    LOCAL$noAdults <- trip$NO_ADULTS[which.max(trip$NO_ADULTS)]
+    LOCAL$noKids <- trip$NO_KIDS[which.max(trip$NO_ADULTS)]
+    LOCAL$noPeople <- LOCAL$noAdults + LOCAL$noKids
+    LOCAL$noPeopleCalc <- trip$NO_PEOPLE_CALC[which.max(trip$NO_ADULTS)]
+    LOCAL$myMeals <- as.data.frame(trip)
+
+    # Update trip input fields
+    updateTextInput(session = session, 'tripName', value = LOCAL$tripName)
+    updateTextInput(session = session, 'noAdults', value = LOCAL$noAdults)
+    updateTextInput(session = session, 'noKids', value = LOCAL$noKids)
+    updateTextInput(session = session, 'tripDesc', value = LOCAL$tripDesc)
+}
 
 # DATABASE CRUD -----
 
@@ -356,21 +393,31 @@ dbUpdate <- function(from, to, data = LOCAL){
 #' @param to The name of the database table to update
 #' @param data The session reactive data object LOCAL
 #' @noRd
-dbDelete <- function(id, to, data = LOCAL){
+dbDelete <- function(id, to, data = LOCAL, level){
     LOCAL <- data
-
+#browser()
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
     authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
     gs4_auth(path = authPath)
 
     # Check if requested records exist in the db table
     #TODO add if statements to use this function for other tables
-    #TODO make the pulling ID check a range_read so not reading entire table
-    check <- read_sheet(url, sheet = to) %>%
-        mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
-        select(check)
 
-    try <- paste0(LOCAL$userName,'_',LOCAL$tripID,'_',id)
+    if(level == 'meal'){
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
+            select(check)
+        try <- paste0(LOCAL$userName,'_',LOCAL$tripID,'_',id)
+    }
+
+    if(level == 'trip'){
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = paste0(USERNAME,'_',TRIP_ID)) %>%
+            select(check)
+        try <- paste0(LOCAL$userName,'_',id)
+    }
+
+    #TODO make the pulling ID check a range_read so not reading entire table
 
     if(!try %in% check$check){return(NULL)}
 
