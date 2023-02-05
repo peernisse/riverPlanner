@@ -1,0 +1,23 @@
+---
+title: "`r params$title`"
+output: html_document
+params:
+  data: NA
+  title: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = F,error = F,message = F)
+
+```
+
+
+```{r}
+
+dat<-params$data
+
+knitr::kable(dat,format="markdown")
+
+
+```
+

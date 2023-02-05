@@ -35,11 +35,15 @@ mod_menu_ui <- function(id){
 
     fluidRow(
       column(width = 12, style = 'text-align: center; margin: 5px;',
-             hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
-             h3(uiOutput(ns('sectionTitleTripMenu'))),
-             #uiOutput(ns('myMenu')),
-             #uiOutput(ns('dayMenu')),
-             uiOutput(ns('tripMenu'))
+        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+        h3(uiOutput(ns('sectionTitleTripMenu'))),
+        uiOutput(ns('tripMenu')),
+        br(),
+        #TODO make this button disabled when no menu is loaded
+        actionButton(ns('menuExport'), label = 'View and Download',
+                      class = 'btn btn-success',
+                      #disabled = 'disabled',
+                      style = 'margin:5px;' )
 
       )
     )
@@ -106,6 +110,8 @@ mod_menu_server <- function(id, data){
       mealUniqueId <- paste0(mealId,'_',mealType,'_',riverDay)
 
       # TODO this assignment of people will need to be flexible for changing group size during the trip
+
+
       newRecord <- LOCAL$ALL_DATA %>% filter(MEAL_ADD_ID == .x) %>%
           mutate(RIVER_DAY = riverDay,
                  NO_ADULTS = LOCAL$noAdults,
@@ -126,7 +132,7 @@ mod_menu_server <- function(id, data){
         }
 
       # Append new record to myMeals
-#browser()
+
         LOCAL$myMeals <- LOCAL$myMeals %>% bind_rows(newRecord)
 
       # Notify meal added to myMenu
@@ -171,6 +177,14 @@ mod_menu_server <- function(id, data){
     )
   })
 
+  # Create Menu Export button observer -----
+
+  observeEvent(input$menuExport, {
+    # Launch modal module create meal -----
+    showModal(
+      mod_menu_export_ui('menuExport', session)
+    )
+  })
 
 
   # View meal button observer -----
@@ -182,7 +196,7 @@ mod_menu_server <- function(id, data){
 
   observe({
     req(nrow(LOCAL$myMeals) > 0)
-#browser()
+
     # Trip loading conditions
     if(LOCAL$loadTripMode == TRUE){
       # Clear edit and delete button listener lists
@@ -419,12 +433,10 @@ mod_menu_server <- function(id, data){
   }, ignoreInit = TRUE)
 
 
-
-
   # Observe new ingredient button -----
 
   observeEvent(input[['newIngredient']], {
-
+#TODO this needs to become a function it is used in edit meal and create meal processes
     req(LOCAL$editMealModalSwitch == TRUE)
     req(nrow(LOCAL$editMealDF) > 0)
 
@@ -514,6 +526,7 @@ mod_menu_server <- function(id, data){
     #TODO figure this data types discrepancy out better
     LOCAL$editMealDF$NO_ADULTS <- as.numeric(LOCAL$editMealDF$NO_ADULTS)
     LOCAL$editMealDF$NO_KIDS <- as.numeric(LOCAL$editMealDF$NO_KIDS)
+    LOCAL$editMealDF$NO_PEOPLE_CALC <- as.numeric(LOCAL$editMealDF$NO_PEOPLE_CALC)
     LOCAL$editMealDF$QTY <- as.numeric(LOCAL$editMealDF$QTY)
     LOCAL$editMealDF$MEAL_NOTES <- input[[paste0('notes-',mealUniqueID)]]
 
@@ -551,8 +564,6 @@ mod_menu_server <- function(id, data){
     removeModal()
 
   })
-
-
 
   # Cancel edit meal modal button upper right corner -----
 

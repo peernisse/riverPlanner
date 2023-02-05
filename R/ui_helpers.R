@@ -97,25 +97,32 @@ menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
 }
 
 #' Trip card
-#'
-#'
-#'
+#' @description The UI card displays saved trip info
+#' @param session The Shiny session object
+#' @param tripID The Unique saved trip ID
+#' @param tripName The saved trip name
+#' @param days The max number of days in the saved trip
+#' @param noAdults The max number of adults in the saved trip
+#' @param noKids The max number of kids in the saved trip
+#' @param tripDesc The saved trip description
+#' @param upTime The last modified date of the saved trip
 #' @noRd
-tripCard <- function(session, tripID, tripName, tripDesc, upTime){
+tripCard <- function(session, tripID, tripName, days, noAdults, noKids, tripDesc, upTime){
   ns <- session$ns
   LOCAL <- data
   loadButtonID <- paste0('load-tripID-',tripID)
   killButtonID <- paste0('kill-tripID-', tripID)
+  copyButtonID <- paste0('copy-tripID-', tripID)
+
   #date <- as.character(upTime$UPTIME)
 
-  div(class = "input-group", class = 'my-trips',
-      tags$span(class = "input-group-text", tripName,
-                style = 'background-color: #162118; border-color: #162118; color: #fff;'
+  div(class = "card card-block mx-2", style="text-align: left; min-width:300px; margin-bottom:10px;",
+    div(class = "card-body", style="max-width:350px;",
+      h5(class = "card-title", tripName),
+      h6(class = "card-subtitle mb-2 text-muted",
+        paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
       ),
-      tags$input(id = ns('test-trip'),
-                 value = tripDesc,
-                 type = "text", `aria-label` = tripName, class = "form-control"
-      ),
+      p(class = "card-text", tripDesc),
       tags$button(id = ns(killButtonID),
                   class = "btn btn-danger action-button shiny-bound-input",
                   type = "button", icon('trash')
@@ -124,35 +131,59 @@ tripCard <- function(session, tripID, tripName, tripDesc, upTime){
                   style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
                   type = "button",
                   'Load Trip'
+      ),
+      tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
+                  #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                  type = "button",
+                  'Copy Trip'
       )
+    )
   )
 }
 
 #####CARDS GENERATORS#####
 
 #' Trip card generator
-#'
-#'
+#' @param input,output,session The Shiny app objects for the session
+#' @param data Passing in the 'LOCAL' reactiveValues data object
 #' @noRd
 makeTripCards <- function(input, output, session, data = LOCAL){
   LOCAL <- data
   ns <- session$ns
 
   renderUI({
-    #browser()
+
     if(length(LOCAL$userName) == 0 | is.null(LOCAL$userName) | LOCAL$userName == ''){return(NULL)}
 
     tripMap <- LOCAL$LU_TRIPS %>%
       filter(USERNAME %in% LOCAL$userName) %>%
-      select(TRIP_ID,TRIPNAME,TRIP_DESC,UPTIME) %>%
+      group_by(TRIP_ID, TRIPNAME) %>%
+      summarize(
+        RIVER_DAY = max(as.numeric(RIVER_DAY)),
+        NO_ADULTS = max(as.numeric(NO_ADULTS)),
+        NO_KIDS = max(as.numeric(NO_KIDS)),
+        TRIP_DESC = TRIP_DESC,
+        UPTIME = UPTIME
+      ) %>%
       unique() %>%
       arrange(desc(UPTIME))
 
-    map(tripMap$TRIP_ID, ~ tripCard(session = session,
-      tripID = .x,
-      tripName = tripMap[which(tripMap$TRIP_ID == .x),2],
-      tripDesc = tripMap[which(tripMap$TRIP_ID == .x),3],
-      upTime = tripMap[which(tripMap$TRIP_ID == .x),4])
+    div(class = "container-fluid py-2", style = 'padding-left: inherit; padding-right: inherit;',
+      div(class = 'row', style = 'text-align: center; margin-bottom: 5px;',
+          h6(paste0('<- Explore My Trips',' (',nrow(tripMap),') Items ->'))
+      ),
+
+      div(class = "d-flex flex-row flex-nowrap overflow-auto",
+        map(tripMap$TRIP_ID, ~ tripCard(session = session,
+          tripID = .x,
+          tripName = tripMap[which(tripMap$TRIP_ID == .x), 'TRIPNAME'],
+          days = tripMap[which(tripMap$TRIP_ID == .x), 3],
+          noAdults = tripMap[which(tripMap$TRIP_ID == .x), 4],
+          noKids = tripMap[which(tripMap$TRIP_ID == .x), 5],
+          tripDesc = tripMap[which(tripMap$TRIP_ID == .x),6],
+          upTime = tripMap[which(tripMap$TRIP_ID == .x),7])
+        )
+      )
     )
   })
 }
@@ -232,76 +263,7 @@ makeMenuCards <- function(input, output, session, day, data){
     })
 }
 
-#TODO this can probably go away
-#' Make row of menu cards for each river day. This displays the menu as it is being built.
-# @description Creates a collapsible horizontal row of menu cards. Uses the BS5 accordion CSS
-# @param session The shiny session object
-# @param outer the ID to use for the accordion group
-# @param data The reactive myMeals dataframe. The growing DF of selected meals to be displayed as cards.
-# @noRd
-# makeDayBoxes <- function(session, outer, data = LOCAL$myMeals){
-#     req(!is.null(data) == TRUE & (nrow(data) > 0) == TRUE)
-#     ns <- session$ns
-#
-#     data <- data %>%
-#         mutate(
-#             MEAL_TYPE = factor(MEAL_TYPE,
-#                 levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail'))
-#         ) %>%
-#         arrange(RIVER_DAY,MEAL_TYPE)
-#
-#
-#     days <- data %>% pull(RIVER_DAY) %>% unique(.) %>% sort(.)
-#
-#     firstDiv <- paste0("bs_accordion(ns('",outer,"')) %>% ")
-#     opts <- "bs_set_opts(panel_type = 'default', use_heading_link = TRUE) %>% "
-#     dummy <- "bs_append(title = NULL, content = NULL) %>%"
-#
-#
-#     secondDiv <- character()
-#
-#     for(i in 1:length(days)){
-#
-#         #####DEV#####
-#         #i <- 1
-#         #browser()
-#         #############
-#
-#         headerInfo <- paste('River Day', days[i])
-#
-#         # This line should not have return characters
-#         str <- paste0("bs_append(title = '",headerInfo, "', content = makeMenuCards(input, output, session, day = days[",i ,"], data = data))")
-#
-#         if(length(days) == 1){
-#
-#             secondDiv <- paste(firstDiv, opts, dummy, str)
-#
-#         } else
-#
-#         if(days[i] == (days)[1]){
-#
-#             secondDiv <- paste(firstDiv, opts, dummy, str," %>% ")
-#
-#         } else
-#
-#         if(days[i] == (days)[length(days)]){
-#
-#             secondDiv <- paste(secondDiv, str)
-#
-#         } else {
-#
-#             secondDiv <- paste(secondDiv,str, " %>% ")
-#         }
-#
-#
-#     }
-#
-#     return(eval(parse(text = secondDiv)))
-#
-# }
-
-
-#' Make row of menu cards for each river day. This displays the menu as it is being built.
+#' makeDayBoxes
 #' @description Creates a collapsible horizontal row of menu cards. Uses the BS5 accordion CSS
 #' @param input,output,session The shiny session objects
 #' @param rd The river day to focus on. Must be a single river day numeric
@@ -382,7 +344,7 @@ customModalDialog <- function (..., session, title = NULL, footer = modalButton(
 editMealTripInfoInputs <- function(input, output, session, data){
   ns <- session$ns
   LOCAL <- data
-  #browser()
+
 
   mealUniqueID <- LOCAL$editMealMealUniqueID
 

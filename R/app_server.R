@@ -16,6 +16,6 @@ app_server <- function(input, output, session) {
 
     LOCAL <- mod_meal_create_server('createMeal', data = LOCAL)
 
-
+    mod_menu_export_server('menuExport', data = LOCAL)
 
 }

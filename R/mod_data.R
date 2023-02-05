@@ -17,7 +17,7 @@ mod_data_ui <- function(id){
 #'
 #' @importFrom googlesheets4 read_sheet gs4_auth
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate select group_by summarize arrange pull left_join bind_rows bind_cols distinct
+#' @importFrom dplyr filter mutate case_when select group_by summarize arrange pull left_join bind_rows bind_cols distinct
 #'
 #' @noRd
 mod_data_server <- function(id){
@@ -31,7 +31,8 @@ mod_data_server <- function(id){
 
     LU_USERS <- read_sheet(url, sheet = "LU_USERS")
 
-    LU_TRIPS <- read_sheet(url, sheet = "LU_TRIPS")
+    LU_TRIPS <- read_sheet(url, sheet = "LU_TRIPS") %>%
+      replace(is.na(.),'')
 
     XREF_INGREDIENT <- read_sheet(url, sheet = "XREF_INGREDIENT")
 

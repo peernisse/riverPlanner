@@ -11,7 +11,7 @@ editMealModal <- function(input, output, session, mealUniqueID, data){
     ns <- session$ns
     LOCAL <- data
 
-   # browser()
+
 
 #TODO figure out why this goes twice and blinks
 
@@ -194,9 +194,10 @@ editMealModal <- function(input, output, session, mealUniqueID, data){
             column(width = 12,
                 h5('Meal Notes'),
                 customTextAreaInput(inputId = ns(paste0('notes-',mealUniqueID)),
-                    label = 'Meal Notes', value = notes, labelColor = '#162118', width = '100%',
-                    height = NULL, cols = NULL, rows = NULL, placeholder = NULL,
-                    resize = 'vertical', labelTextColor = '#fff', disabled = NULL)
+                    label = 'Meal Notes', value = ifelse(is.na(notes), NA_character_, notes),
+                    labelColor = '#162118', width = '100%', height = NULL, cols = NULL,
+                    rows = NULL, placeholder = NULL, resize = 'vertical',
+                    labelTextColor = '#fff', disabled = NULL)
             )
         ),
         fluidRow(style = 'margin-top:20px;',

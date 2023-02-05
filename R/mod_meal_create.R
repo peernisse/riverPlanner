@@ -46,8 +46,8 @@ mod_meal_create_ui <- function(id,session){
         fluidRow(style = 'margin-top:20px;',
                  column(width = 12,
                         h5('Ingredients/Quantities'),
-                        p('Building ingredient list here')
-                        #uiOutput(ns('modalIngs'))
+                        p('Building ingredient list here'),
+                        uiOutput(ns('modalIngs'))
                  )
         ),
         fluidRow(style = 'margin-top:20px;',
@@ -116,6 +116,12 @@ mod_meal_create_server <- function(id, data = LOCAL){
     ns <- session$ns
     LOCAL <- data
 
+    # Observer list
+
+    createdObservers <- c()
+
+    # Dynamic Title
+
     observe({
       ttl <<- paste('Creating New Meal',input[['meal-new-name']])
       luMtypes <<- c('Choose meal type...',LOCAL$LU_MEAL_TYPE$MEAL_TYPE %>% as.character())
@@ -163,6 +169,10 @@ mod_meal_create_server <- function(id, data = LOCAL){
         STORAGE_DESCRIPTION = LOCAL$LU_INGREDIENTS$STORAGE_DESCRIPTION[ingRow],
         UPTIME = isolate(Sys.Date()),
         UPUSER = 'dev'
+      ) %>%
+      mutate(
+        MEAL_UNIQUE_ID = paste0(MEAL_ID,'_',MEAL_TYPE,'_','0'),
+        INGREDIENT_UNIQUE_ID = paste0(MEAL_UNIQUE_ID,'_',INGREDIENT_ID)
       )
 
       # Add ingredient to createMealDF
@@ -174,15 +184,35 @@ mod_meal_create_server <- function(id, data = LOCAL){
           bind_rows(newRecord)
       }
 
+      # Reset select ingredient picker
+      showNotification(paste(input[['selectIngredient']],'added to this meal.'),
+                       type = 'message', duration = 5)
 
-
-
-
+      updateSelectInput(session,'selectIngredient', selected = 'Start typing to search...')
 
 
     }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
-    # Cancel edit meal modal button upper right corner -----
+
+    # Observe delete ingredient buttons -----
+
+    observe({
+      ingredientUniqueIDs <- unique(LOCAL$createMealDF$INGREDIENT_UNIQUE_ID)
+      delIngIDs <- paste0('del-ing-',ingredientUniqueIDs)
+      delIngIDs <- delIngIDs[!delIngIDs %in% createdObservers]
+      if(length(delIngIDs) > 0){
+
+        map(delIngIDs, ~ observeEvent(input[[.x]], {
+          createMealDelIng(input, output, session, id = .x, data = LOCAL)
+        }, ignoreInit = TRUE, ignoreNULL = TRUE, autoDestroy = TRUE)
+        )
+        createdObservers <<- c(createdObservers,delIngIDs)
+      }
+    })
+
+
+
+    # Cancel create meal modal button upper right corner -----
 
     observeEvent(input$editMealModalClose_1,{
       LOCAL$editMealModalSwitch <- FALSE
@@ -190,7 +220,7 @@ mod_meal_create_server <- function(id, data = LOCAL){
       removeModal()
     })
 
-    # Cancel edit meal modal button footer -----
+    # Cancel create meal modal button footer -----
 
     observeEvent(input$editMealModalClose_2,{
       LOCAL$editMealModalSwitch <- FALSE
@@ -199,6 +229,14 @@ mod_meal_create_server <- function(id, data = LOCAL){
     })
 
     # UI Outputs -----
+
+    # Modal Ingredient list -----
+
+    output$modalIngs <- renderUI({
+      if(nrow(LOCAL$createMealDF) == 0){return(NULL)}
+      rows <- c(1:nrow(LOCAL$createMealDF))
+      map(rows, ~ editMealIngredientInputs(input, output, session,data = isolate(LOCAL$createMealDF[.x,])))
+    })
 
     output$modalSelIng <- renderUI({
       #  if(nrow(LOCAL$editMealDF) == 0){return(NULL)}

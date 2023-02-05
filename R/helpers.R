@@ -109,7 +109,7 @@ viewMeal <- function(session, id, data){
 editMealAdjPeople <- function(input, output, session, data){
     ns <- session$ns
     LOCAL<- data
-#browser()
+
     noAdultsID <- paste0('editMeal-noAdults-',LOCAL$editMealMealUniqueID)
     noKidsID <- paste0('editMeal-noKids-',LOCAL$editMealMealUniqueID)
     noPeopleCalcID <- paste0('editMeal-noPeopleCalc-',LOCAL$editMealMealUniqueID)
@@ -160,7 +160,7 @@ editMealDelIng <- function(input, output, session, id, data){
     ns <- session$ns
     LOCAL<- data
     .x <- id
-#browser()
+
     # Check if ingredient is in the df else stop
     if(!gsub('del-ing-','',.x) %in% LOCAL$editMealDF$INGREDIENT_UNIQUE_ID) {return(NULL)}
 
@@ -179,13 +179,43 @@ editMealDelIng <- function(input, output, session, id, data){
     }
 }
 
+#' Action to take when delete ingredient button is pressed on createMeal modal
+#' @description When delete ingredient is pressed remove item from LOCAL$createMealDF
+#' and rebuild the modal. If you delete all ingredients, the meal rebuilds from the database with all ingredients
+#' @param input,output,session The shiny app session objects
+#' @param id The UI input ID of the deleted ingredient delete button
+#' @param data The LOCAL data object containing the createMealDF object for the currently being edited meal
+#' @noRd
+createMealDelIng <- function(input, output, session, id, data){
+    ns <- session$ns
+    LOCAL<- data
+    .x <- id
+
+    # Check if ingredient is in the df else stop
+    if(!gsub('del-ing-','',.x) %in% LOCAL$createMealDF$INGREDIENT_UNIQUE_ID) {return(NULL)}
+
+    # Check if ingredient is the last one and warn
+    if(nrow(LOCAL$createMealDF) <= 1){
+        showNotification('Can\'t remove last ingredient.
+                         Select other ingredients before removing this one.',
+                         type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    # Subset out the deleted ingredient
+    if(nrow(LOCAL$createMealDF) > 1) {
+        killRow <- which(LOCAL$createMealDF$INGREDIENT_UNIQUE_ID == gsub('del-ing-','',.x))
+        LOCAL$createMealDF <- LOCAL$createMealDF[-killRow,]
+    }
+}
+
 #' Action to take when the addIngredient button is pressed in editMeal modal
 #'
 #'
 #'
 #' @noRd
 editMealAddIng <- function(input, output, session, data){
-    #browser()
+
     ns <- session$ns
     LOCAL <- data
 
@@ -202,7 +232,7 @@ editMealAddIng <- function(input, output, session, data){
 
     ingName <- input[['selectIngredient']]
     ingID <- LOCAL$LU_INGREDIENTS[which(LOCAL$LU_INGREDIENTS$INGREDIENT ==
-                                            input[['selectIngredient']]),'INGREDIENT_ID'] %>%
+        input[['selectIngredient']]),'INGREDIENT_ID'] %>%
         pull()
 
     LOCAL$editMealDF$QTY <- as.character(LOCAL$editMealDF$QTY)
@@ -236,7 +266,7 @@ editMealAddIng <- function(input, output, session, data){
     showNotification(paste(input[['selectIngredient']],'added to this meal.'),
                      type = 'message', duration = 5)
 
-    updateSelectInput(session,'selectIngredient', selected = 'Select ingredient or start typing to search...')
+    updateSelectInput(session,'selectIngredient', selected = 'Start typing to search...')
 
 
 
@@ -249,7 +279,7 @@ editMealAddIng <- function(input, output, session, data){
 #'
 #' @noRd
 createMealAddIng <- function(input, output, session, data){
-    #browser()
+
     ns <- session$ns
     LOCAL <- data
 
@@ -303,9 +333,133 @@ createMealAddIng <- function(input, output, session, data){
 
 # TRIP FUNCTIONS -----
 
+#' Save Trip
+#'
+#'
+#' @noRd
+saveTrip <- function(input, output, session, data){
+    ns <- session$ns
+    LOCAL <- data
+
+    # Validate User ID exists and there are data to save
+    req(!is.null(LOCAL$userName) & LOCAL$userName != '' & length(LOCAL$userName) > 0)
+    req(nrow(LOCAL$myMeals) > 0)
+    #req(!is.null(id) & id != '' & length(id) > 0)
+
+    # Determine if ingredient re-calculation needs to be done
+    if(input$noAdults != LOCAL$noAdults | input$noKids != LOCAL$noKids){
+
+        # Update calculations in LOCAL$myMeals
+        LOCAL$myMeals$NO_ADULTS <- as.numeric(input$noAdults)
+        LOCAL$myMeals$NO_KIDS <- as.numeric(input$noKids)
+        LOCAL$myMeals$NO_PEOPLE_CALC <- ceiling(as.numeric(LOCAL$myMeals$NO_ADULTS) + (as.numeric(LOCAL$myMeals$NO_KIDS) * .65))
+        LOCAL$myMeals$QTY <- ceiling(LOCAL$myMeals$NO_PEOPLE_CALC * LOCAL$myMeals$SERVING_SIZE_FACTOR)
+
+        # Update calculations in LOCAL$LU_TRIPS placeholder
+        # TODO this might not be needed so I did not code it. LU_TRIPS already gets replaced in dbUpdate()
+
+    }
+
+    # Update LOCAL reactive session trip values
+
+    LOCAL$tripName <- input$tripName
+    LOCAL$tripDesc <- input$tripDesc
+    LOCAL$noAdults <- as.numeric(input$noAdults)
+    LOCAL$noKids <- ifelse(input$noKids == '' | input$noKids == 'No. People Age <12',0,as.numeric(input$noKids))
+    LOCAL$noPeople <- as.numeric(LOCAL$noAdults) + as.numeric(LOCAL$noKids)
+    LOCAL$noPeopleCalc <- ceiling(as.numeric(LOCAL$noAdults) + (as.numeric(LOCAL$noKids) * .65))
+
+    # Update LOCAL$myMeals trip info
+
+    LOCAL$myMeals$TRIP_ID <- LOCAL$tripID
+    LOCAL$myMeals$TRIPNAME <- LOCAL$tripName
+    LOCAL$myMeals$UPTIME <- Sys.Date()
+    LOCAL$myMeals$UPUSER <- LOCAL$userName
+    LOCAL$myMeals$TRIP_DESC <- LOCAL$tripDesc
+
+    # Update DB
+    # Save trip to database
+    dbUpdate(LOCAL$myMeals, 'LU_TRIPS', data = LOCAL)
+
+    # Notify save
+    showNotification(paste0('Trip ', LOCAL$tripName,' saved!'),
+                     type = 'message', duration = 10)
+
+
+}
+
+#' Copy Trip
+#' @description Copies trip meal info from LU_TRIPS to LOCAL$myMeals, creates new trip ID, updates trip info in LOCAL
+#' @param session The shiny session object
+#' @param id The trip ID of the trip to copy
+#' @param data The LOCAL reactive data object
+#' @noRd
+copyTrip <- function(session, id, data){
+    ns <- session$ns
+    LOCAL <- data
+    # DEV ---
+    #id <- 11
+    # ---
+
+    # Validate User ID exists and id is not blank
+    req(!is.null(LOCAL$userName) & LOCAL$userName != '' & length(LOCAL$userName) > 0)
+    req(!is.null(id) & id != '' & length(id) > 0)
+
+    # Get new trip ID
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+#TODO make this a range read of just the ID column
+    newID <- read_sheet(url, sheet = 'LU_TRIPS') %>%
+        pull(TRIP_ID) %>%
+        max() + 1
+
+    # Modify the trip dataframe with new ID and name change
+    trip <- LOCAL$LU_TRIPS %>%
+        filter(TRIP_ID == id)
+
+    # Load trip info
+    LOCAL$loadTripMode <- TRUE
+
+    LOCAL$tripName <- paste0('Copy Of ',unique(trip$TRIPNAME))
+    LOCAL$tripID <- newID
+    LOCAL$tripDesc <- unique(trip$TRIP_DESC)
+    LOCAL$noAdults <- trip$NO_ADULTS[which.max(trip$NO_ADULTS)]
+    LOCAL$noKids <- trip$NO_KIDS[which.max(trip$NO_ADULTS)]
+    LOCAL$noPeople <- LOCAL$noAdults + LOCAL$noKids
+    LOCAL$noPeopleCalc <- trip$NO_PEOPLE_CALC[which.max(trip$NO_ADULTS)]
+
+    # Modify
+    trip <- trip %>%
+        mutate(
+            TRIP_ID = LOCAL$tripID,
+            TRIPNAME = LOCAL$tripName,
+            NO_ADULTS = LOCAL$noAdults,
+            NO_KIDS = LOCAL$noKids,
+            TRIP_DESC = LOCAL$tripDesc,
+            UPTIME = Sys.Date()
+
+        )
+
+    LOCAL$myMeals <- as.data.frame(trip)
+
+    LOCAL$LU_TRIPS <- bind_rows(LOCAL$LU_TRIPS, trip)
+
+    # Update trip input fields
+    updateTextInput(session = session, 'tripName', value = LOCAL$tripName)
+    updateTextInput(session = session, 'noAdults', value = LOCAL$noAdults)
+    updateTextInput(session = session, 'noKids', value = LOCAL$noKids)
+    updateTextInput(session = session, 'tripDesc', value = LOCAL$tripDesc)
+
+    # Save trip to database
+    dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
+}
+
 #' Load Trip
 #' @description Loads trip meal info from LU_TRIPS to LOCAL$myMeals, updates trip info in LOCAL
+#' @param session The shiny session object
 #' @param id The trip ID
+#' @param data The LOCAL reactive data object
 #' @noRd
 loadTrip <- function(session, id, data){
     ns <- session$ns
@@ -359,6 +513,7 @@ dbUpdate <- function(from, to, data = LOCAL){
     #TODO add if statements to use this function for other tables
     #TODO make the pulling ID check a range_read so not reading entire table
 
+
     check <- read_sheet(url, sheet = to) %>%
 
         mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
@@ -372,7 +527,7 @@ dbUpdate <- function(from, to, data = LOCAL){
 
 
         rows<- which(check$check %in% unique(try$check))
-        range_delete(url, to, range = paste0(min(rows)+1,':',max(rows) +1))
+        range_delete(url, to, range = paste0(min(rows) + 1,':',max(rows) +1))
         sheet_append(url, from, sheet = to)
         LOCAL[[to]] <- read_sheet(url, sheet = to)
 
@@ -395,7 +550,7 @@ dbUpdate <- function(from, to, data = LOCAL){
 #' @noRd
 dbDelete <- function(id, to, data = LOCAL, level){
     LOCAL <- data
-#browser()
+
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
     authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
     gs4_auth(path = authPath)
@@ -424,6 +579,8 @@ dbDelete <- function(id, to, data = LOCAL, level){
     if(try %in% check$check){
         rows <- which(check$check %in% try)
         range_delete(url, to, range = paste0(min(rows)+1,':',max(rows) +1))
+        LOCAL[[to]] <- read_sheet(url, sheet = to)
+
     }
 
     gs4_deauth()
