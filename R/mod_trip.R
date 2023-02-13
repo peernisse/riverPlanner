@@ -10,21 +10,22 @@
 mod_trip_ui <- function(id){
   ns <- NS(id)
   tagList(
+
     fluidRow(
       column(width = 12, style = 'display: grid; text-align: center; justify-content: space-around; margin: 5px;',
         hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
         h3('New Trip'),
-        customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#162118', placeholder = 'Enter Trip Name'),
+        customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#232b2b', placeholder = 'Enter Trip Name'),
 
-        customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#162118',
+        customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#232b2b',
                           choices = c('No. People Age 12+', '0', seq(1:30)),
                           selected = 'No. People Age 12+'
         ),
-        customSelectInput(inputId = ns('noKids'), label = 'Kids <12', labelColor = '#162118',
+        customSelectInput(inputId = ns('noKids'), label = 'Kids <12', labelColor = '#232b2b',
                           choices = c('No. People Age <12', '0', seq(1:30)),
                           selected = 'No. People Age <12'
         ),
-        customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description', labelColor = '#162118'),
+        customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description', labelColor = '#232b2b'),
 
         actionButton(ns('saveTrip'), class = 'btn btn-success', label = 'Save Trip')
       )
@@ -36,9 +37,10 @@ mod_trip_ui <- function(id){
         h3('My Trips'),
         #uiOutput(ns('test')),
         div(id = ns("tripSelect"), class = "accordion",
-            accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips', buttonTitle = 'Manage My Trips',
+            accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips', buttonTitle = 'View My Trips',
               collapseId = 'collapseTrips', body = uiOutput(ns('trips')))
-        )
+        ),
+        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
       )
     )
   )
@@ -67,7 +69,7 @@ mod_trip_server <- function(id, data){
     observeEvent(input$saveTrip,{
 #TODO Make this 'Save Trip' and add checks to warn for if a trip is currently loaded
 
-
+#browser()
       if(is.null(input$tripName) | input$tripName == '') {
         showNotification('Please enter trip name', type = 'error', duration = 5)
         return(NULL)
@@ -75,6 +77,11 @@ mod_trip_server <- function(id, data){
 
       if(is.null(input$noAdults) | input$noAdults == 'No. People Age 12+') {
         showNotification('Please enter number of adults', type = 'error', duration = 5)
+        return(NULL)
+      }
+
+      if(is.null(input$noKids) | input$noKids == 'No. People Age <12') {
+        showNotification('Please enter number of kids', type = 'error', duration = 5)
         return(NULL)
       }
 
@@ -98,6 +105,35 @@ mod_trip_server <- function(id, data){
         return(NULL)
       }
 
+      # If save is clicked on a new trip with a meals but have not
+      # saved from the edit meal modal yet there is no 'TRIPNAME' column in myMeals yet
+
+      if(nrow(LOCAL$myMeals) > 0 & is.null(LOCAL$myMeals$TRIPNAME)){
+
+        # Get Trip Info
+
+        trip <- LOCAL$myMeals %>%
+          mutate(
+            TRIP_ID = LOCAL$tripID,
+            TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
+            TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
+            USERNAME = LOCAL$userName,
+            UPTIME = Sys.Date(),
+            UPUSER = LOCAL$userName
+          ) %>%
+          select(., names(LOCAL$LU_TRIPS))
+
+        # Save to database
+
+        withProgress(message = 'Trip Info', detail = 'saving to database...', {
+          map(1:5, ~ incProgress(.x/10))
+            dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
+          map(6:10, ~ incProgress(.x/10))
+        })
+        showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
+                         type = 'message', duration = 10)
+        return(NULL)
+      }
 
       # For copying a trip or changing name - Check if input name matches myMeals
       if(nrow(LOCAL$myMeals) > 0 & input$tripName != LOCAL$myMeals$TRIPNAME[1]){
@@ -108,7 +144,7 @@ mod_trip_server <- function(id, data){
             title = 'Warning!',
             session = session,
             size = 'l',
-            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: center;',
                               actionButton(ns('confirmModalSaveTrip'), label = 'Confirm', class = 'btn btn-success'),
                               actionButton(ns('cancelModalSaveTrip'), label = 'Cancel', class = 'btn btn-default',
                                            class = 'riv', class = 'getstarted')
@@ -135,7 +171,7 @@ mod_trip_server <- function(id, data){
             title = 'Warning!',
             session = session,
             size = 'l',
-            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: center;',
                               actionButton(ns('confirmModalSaveTrip'), label = 'Confirm', class = 'btn btn-success'),
                               actionButton(ns('cancelModalSaveTrip'), label = 'Cancel', class = 'btn btn-default',
                                            class = 'riv', class = 'getstarted')
@@ -165,10 +201,7 @@ mod_trip_server <- function(id, data){
       #   return(NULL)
       # }
 
-      # if(is.null(input$noKids) | input$noKids == 'No. People Age <12') {
-      #   showNotification('Please enter number of kids', type = 'error', duration = 5)
-      #   return(NULL)
-      # }
+
 
       # if(input$noKids != 'No. People Age <12' & is.na(as.numeric(input$noKids)) == TRUE) {
       #   showNotification('Number of kids must be just a number', type = 'error', duration = 5)
@@ -209,7 +242,7 @@ mod_trip_server <- function(id, data){
                 title = 'Warning!',
                 session = session,
                 size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: center;',
                                   actionButton(ns('confirmModalCopyTrip'), label = 'Confirm', class = 'btn btn-success'),
                                   actionButton(ns('cancelModalCopyTrip'), label = 'Cancel', class = 'btn btn-default',
                                                class = 'riv', class = 'getstarted')
@@ -240,7 +273,7 @@ mod_trip_server <- function(id, data){
                 title = 'Warning!',
                 session = session,
                 size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: center;',
                   actionButton(ns('confirmModalLoadTrip'), label = 'Confirm', class = 'btn btn-success'),
                   actionButton(ns('cancelModalLoadTrip'), label = 'Cancel', class = 'btn btn-default',
                                class = 'riv', class = 'getstarted')
@@ -265,7 +298,7 @@ mod_trip_server <- function(id, data){
                 title = 'Warning!',
                 session = session,
                 size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: center;',
                   actionButton(ns('confirmModalDelTrip'), label = 'Confirm', class = 'btn btn-success'),
                   actionButton(ns('cancelModalDelTrip'), label = 'Cancel', class = 'btn btn-default',
                                class = 'riv', class = 'getstarted')
@@ -280,19 +313,20 @@ mod_trip_server <- function(id, data){
 
     # Observe trip load or delete modal confirm buttons -----
 
-    #Observe cancel trip save
+    #Observe cancel trip save -----
     observeEvent(input$cancelModalSaveTrip, {removeModal()})
 
-    # Observe cancel trip copy
+    # Observe cancel trip copy -----
     observeEvent(input$cancelModalCopyTrip, {removeModal()})
 
-    # observe cancel trip load
+    # observe cancel trip load -----
     observeEvent(input$cancelModalLoadTrip, {removeModal()})
 
-    # Observe cancel trip delete
+    # Observe cancel trip delete -----
     observeEvent(input$cancelModalDelTrip, {removeModal()})
 
-    # Observe confirm trip save
+    # Observe confirm trip save -----
+
     observeEvent(input$confirmModalSaveTrip,{
       #req(length(tripSave) > 0)
 
@@ -309,7 +343,7 @@ mod_trip_server <- function(id, data){
     })
 
 
-    # Observe confirm trip copy
+    # Observe confirm trip copy -----
     observeEvent(input$confirmModalCopyTrip,{
       req(length(tripCopy) > 0)
 
@@ -328,7 +362,7 @@ mod_trip_server <- function(id, data){
     })
 
 
-    # Observe confirm trip load
+    # Observe confirm trip load -----
     observeEvent(input$confirmModalLoadTrip,{
       req(length(tripLoad) > 0)
 
@@ -346,13 +380,14 @@ mod_trip_server <- function(id, data){
 
     })
 
-    # Observe confirm trip delete
+    # Observe confirm trip delete -----
     observeEvent(input$confirmModalDelTrip, {
       req(length(tripDelete) > 0)
-
       withProgress(message = 'Deleting', detail = 'Deleting trip...', {
         map(1:5, ~ incProgress(.x/10))
-        dbDelete(id = tripDelete, to = 'LU_TRIPS', data = LOCAL, level = 'trip')
+          dbDelete(session = session, input = input, output = output, id = tripDelete,
+            to = 'LU_TRIPS', data = LOCAL, level = 'trip')
+
         LOCAL$LU_TRIPS <- LOCAL$LU_TRIPS %>% filter(!TRIP_ID %in% tripDelete)
         tripDelete <<-c()
         removeModal()

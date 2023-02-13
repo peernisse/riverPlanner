@@ -16,6 +16,7 @@ Imports:
     htmltools,
     magrittr,
     purrr,
+    rmarkdown,
     shiny (>= 1.6.0),
     shinyFeedback,
     tictoc,

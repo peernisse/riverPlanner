@@ -14,7 +14,7 @@ mod_meal_create_ui <- function(id,session){
 
       customModalDialog(
         # Instructions -----
-        p('Here will be the create new meal modal'),
+        p('This module is under construction and cannot be saved...'),
 
        # Create Meal Data Entry -----
 
@@ -35,14 +35,15 @@ mod_meal_create_ui <- function(id,session){
                        'Meal Type'
             ),
             tags$select(id = ns('meal-new-type'), class = "form-select", class = 'create-meal',
-                        tags$option(selected = "selected", luMtypes[1]),
-                        map(
-                          luMtypes[-1], ~ tags$option(value = .x,.x)
-                        )
+              tags$option(selected = "selected", 'Choose meal type...'),
+                map(c('Breakfast','Lunch','Dinner', 'Dessert','Appetizer','Cocktail'),
+                  ~ tags$option(value = .x,.x))
             )
         ),
         customTextAreaInput(inputId = ns('meal-new-desc'), label = 'Meal Description',
-                            labelColor = '#ed7000', width = '100%'),
+          labelColor = '#5cb874', width = '100%'
+        ),
+
         fluidRow(style = 'margin-top:20px;',
                  column(width = 12,
                         h5('Ingredients/Quantities'),
@@ -52,48 +53,49 @@ mod_meal_create_ui <- function(id,session){
         ),
         fluidRow(style = 'margin-top:20px;',
                  column(width = 12,
-                        h5(ttl),
+                        uiOutput(ns('ttl2')),
                         p('--Start typing a word to filter the dropdown. Click + to add ingredient to this meal.--',
                           style = 'font-style: italic;'),
                         uiOutput(ns('modalSelIng'))
                  )
         ),
-        # fluidRow(style = 'margin-top:20px;',
-        #          column(width = 12,
-        #                 h5('Create New Ingredient'), #TODO make an i icon with info popover
-        #                 icon(name = 'info'),
-        #                 p('--Your new ingredient will appear in the Add Ingredient dropdown above.--',
-        #                   style = 'font-style: italic;'),
-        #                 uiOutput(ns('modalNewIng'))
-        #          )
-        # ),
-        #
-        # fluidRow(
-        #   column(width = 12,
-        #          h5('Tools Needed'),
-        #          p("Enter the general cooking tools needed, separated by semi-colons ';'",
-        #            style = 'font-style: italic;'),
-        #          customTextAreaInput(inputId = ns('meal-new-tools'), label = 'Tools',
-        #                              labelColor = '#ed7000', width = '100%',
-        #                              placeholder = "Separate tools with ';'"),
-        #   )
-        # ),
-        #
-        # fluidRow(
-        #   column(width = 12,
-        #          h5('Instructions'),
-        #          p("Enter the general cooking steps needed, separated by semi-colons ';'",
-        #            style = 'font-style: italic;'),
-        #          customTextAreaInput(inputId = ns('meal-new-inst'), label = 'Instructions',
-        #                              labelColor = '#ed7000', width = '100%',
-        #                              placeholder = "Separate steps with ';'"),
-        #   )
-        # ),
+        fluidRow(style = 'margin-top:20px;',
+                 column(width = 12,
+                        h5('Create New Ingredient'), #TODO make an i icon with info popover
+                        icon(name = 'info'),
+                        p('--Your new ingredient will appear in the Add Ingredient dropdown above.--',
+                          style = 'font-style: italic;'),
+                        uiOutput(ns('modalNewIng')),
+                        br()
+                 )
+        ),
+
+        fluidRow(
+          column(width = 12,
+                 h5('Tools Needed'),
+                 p("Enter the general cooking tools needed, separated by semi-colons ';'",
+                   style = 'font-style: italic;'),
+                 customTextAreaInput(inputId = ns('meal-new-tools'), label = 'Tools',
+                                     labelColor = '#5cb874', width = '100%',
+                                     placeholder = "Separate tools with ';'"),
+          )
+        ),
+
+        fluidRow(
+          column(width = 12,
+                 h5('Instructions'),
+                 p("Enter the general cooking steps needed, separated by semi-colons ';'",
+                   style = 'font-style: italic;'),
+                 customTextAreaInput(inputId = ns('meal-new-inst'), label = 'Instructions',
+                                     labelColor = '#5cb874', width = '100%',
+                                     placeholder = "Separate steps with ';'"),
+          )
+        ),
 
         # customModalDialog arguments -----
 
         session = session,
-        title = h4(ttl, style = 'color: #5cb874'),
+        title = uiOutput(ns('ttl')),
         size = 'xl',
         easyClose = FALSE,
         fade = FALSE,
@@ -115,18 +117,11 @@ mod_meal_create_server <- function(id, data = LOCAL){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     LOCAL <- data
-
+    luMtypes <- c('Choose meal type...','Breakfast','Lunch','Dinner',
+                  'Dessert','Appetizer','Cocktail')
     # Observer list
 
     createdObservers <- c()
-
-    # Dynamic Title
-
-    observe({
-      ttl <<- paste('Creating New Meal',input[['meal-new-name']])
-      luMtypes <<- c('Choose meal type...',LOCAL$LU_MEAL_TYPE$MEAL_TYPE %>% as.character())
-      LOCAL$editMealModalSwitch <- TRUE
-    })
 
     # Observe add ingredient button -----
 
@@ -168,7 +163,8 @@ mod_meal_create_server <- function(id, data = LOCAL){
         SERVING_SIZE_FACTOR = LOCAL$LU_INGREDIENTS$SERVING_SIZE_FACTOR[ingRow],
         STORAGE_DESCRIPTION = LOCAL$LU_INGREDIENTS$STORAGE_DESCRIPTION[ingRow],
         UPTIME = isolate(Sys.Date()),
-        UPUSER = 'dev'
+        UPUSER = LOCAL$userName,
+        USER_ID = LOCAL$userID
       ) %>%
       mutate(
         MEAL_UNIQUE_ID = paste0(MEAL_ID,'_',MEAL_TYPE,'_','0'),
@@ -194,6 +190,42 @@ mod_meal_create_server <- function(id, data = LOCAL){
     }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
 
+    # Observe new ingredient button -----
+
+    observeEvent(input[['newIngredient']], {
+      newIngredientResponse(input, output, session, data = LOCAL)
+    })
+
+    # Observe new ingredient quantity input and update multiplier -----
+
+    observeEvent(input[['ing-new-qty']],{
+      #req(LOCAL$editMealModalSwitch == TRUE)
+      #req(nrow(LOCAL$editMealDF) > 0)
+      noPeopleCalc <- as.numeric(input[['ing-new-hypPeople']])
+
+      updateTextInput(session, inputId = 'ing-new-ssf',
+                      value = round(as.numeric(input[['ing-new-qty']]) / noPeopleCalc,3)
+      )
+    }, ignoreInit = TRUE)
+
+    # Observe new hypothetical NoPeople input and update multiplier -----
+
+    observeEvent(input[['ing-new-hypPeople']],{
+
+      #req(LOCAL$editMealModalSwitch == TRUE)
+      #req(nrow(LOCAL$editMealDF) > 0)
+      noPeopleCalc <- as.numeric(input[['ing-new-hypPeople']])
+      ingQty <- if(is.na(as.numeric(input[['ing-new-qty']]))) {1} else {as.numeric(input[['ing-new-qty']])}
+
+      updateTextInput(session, inputId = 'ing-new-ssf',
+                      value = round(ingQty / noPeopleCalc,3)
+      )
+
+      updateTextInput(session, inputId = 'ing-new-qty',
+                      value = ingQty
+      )
+    }, ignoreInit = TRUE)
+
     # Observe delete ingredient buttons -----
 
     observe({
@@ -211,6 +243,16 @@ mod_meal_create_server <- function(id, data = LOCAL){
     })
 
 
+    # Observe SAVE createMeal button -----
+
+    observeEvent(input$createMeal, {
+#browser()
+      withProgress(message = 'New Meal Creation', detail = 'saving to database...', {
+        map(1:5, ~ incProgress(.x/10))
+          createMealModalSave(input, output, session, data = LOCAL)
+        map(6:10, ~ incProgress(.x/10))
+      })
+    })
 
     # Cancel create meal modal button upper right corner -----
 
@@ -228,14 +270,18 @@ mod_meal_create_server <- function(id, data = LOCAL){
       removeModal()
     })
 
-    # UI Outputs -----
 
-    # Modal Ingredient list -----
+    # UI OUTPUTS -----
+
+    # Create meal modal dynamic Ingredient list -----
 
     output$modalIngs <- renderUI({
       if(nrow(LOCAL$createMealDF) == 0){return(NULL)}
       rows <- c(1:nrow(LOCAL$createMealDF))
-      map(rows, ~ editMealIngredientInputs(input, output, session,data = isolate(LOCAL$createMealDF[.x,])))
+      map(rows, ~ editMealIngredientInputs(input, output, session,
+          data = isolate(LOCAL$createMealDF[.x,]), displayQty = FALSE
+        )
+      )
     })
 
     output$modalSelIng <- renderUI({
@@ -247,6 +293,16 @@ mod_meal_create_server <- function(id, data = LOCAL){
       #  if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
       createIngredients(input, output, session, data = isolate(LOCAL))
     })
+
+
+    # Dynamic Title -----
+
+    observe({
+      output$ttl <- renderUI(h4(paste('Creating New Meal |', input[['meal-new-name']]), style = 'color: #5cb874;'))
+      output$ttl2 <- renderUI(h5(paste('Add Ingredients |', input[['meal-new-name']])))
+      output$mealTypes <- renderText(luMtypes)
+    })
+
 
     #####RETURN LOCAL DATA OBJECT#####
     return(LOCAL)

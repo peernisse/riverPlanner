@@ -4,6 +4,7 @@
 #' @param mdata The global reactiveValues object shared between modules
 #' @import shiny tictoc
 #' @importFrom purrr map map_chr
+#' @importFrom utils data
 #' @noRd
 app_server <- function(input, output, session) {
 

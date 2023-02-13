@@ -1,0 +1,49 @@
+---
+title: "`r params$title`"
+output: html_document
+params:
+  data: NA
+  title: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = F,error = F,message = F)
+
+```
+
+
+```{r results="asis", echo = FALSE}
+#library(dplyr)
+#library(purrr)
+
+myMeals<-params$data %>% as.data.frame()
+
+mealIDs <- myMeals %>%
+        mutate(
+          MEAL_TYPE = factor(MEAL_TYPE, levels =  c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack'))
+        ) %>%
+        arrange(RIVER_DAY,MEAL_TYPE) %>%
+        pull(MEAL_UNIQUE_ID) %>%
+        unique(.)
+        map(mealIDs, ~ dailyMenu(session = session, id = .x, data = LOCAL))
+ 
+```
+
+```{css, echo = FALSE}
+
+    thead {
+      text-align: left;
+    }
+
+    .title.toc-ignore {
+        color: #5cb874; 
+    }
+
+```
+
+
+
+
+
+
+

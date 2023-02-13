@@ -7,6 +7,8 @@
 #' @noRd
 app_ui <- function(request) {
   suppressDependencies('bootstrap','javascript','jquery')
+  #suppressDependencies('bootstrap','javascript')
+
 
   golem_add_external_resources()
   htmlTemplate(filename = './inst/app/www/index.html',

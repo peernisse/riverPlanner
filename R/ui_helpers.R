@@ -116,7 +116,9 @@ tripCard <- function(session, tripID, tripName, days, noAdults, noKids, tripDesc
 
   #date <- as.character(upTime$UPTIME)
 
-  div(class = "card card-block mx-2", style="text-align: left; min-width:300px; margin-bottom:10px;",
+  div(class = "card card-block mx-2", style="text-align: left; min-width:300px;
+      margin-bottom:10px; border-left-color: #5cb874; border-left-width: .25rem;
+      border-radius: .25rem;",
     div(class = "card-body", style="max-width:350px;",
       h5(class = "card-title", tripName),
       h6(class = "card-subtitle mb-2 text-muted",
@@ -151,8 +153,9 @@ makeTripCards <- function(input, output, session, data = LOCAL){
   LOCAL <- data
   ns <- session$ns
 
-  renderUI({
 
+
+  renderUI({
     if(length(LOCAL$userName) == 0 | is.null(LOCAL$userName) | LOCAL$userName == ''){return(NULL)}
 
     tripMap <- LOCAL$LU_TRIPS %>%
@@ -378,7 +381,7 @@ editMealTripInfoInputs <- function(input, output, session, data){
 #' @param input,output,session The shiny app session objects
 #' @param data The meal dataframe being viewed/edited. Usually a subset of myMeals
 #' @noRd
-editMealIngredientInputs <- function(input, output, session,data){
+editMealIngredientInputs <- function(input, output, session,data, displayQty = TRUE){
   #TODO this runs multiple times once for every ingredient
   ns <- session$ns
   ingUniqueID <- unique(data$INGREDIENT_UNIQUE_ID)
@@ -386,12 +389,12 @@ editMealIngredientInputs <- function(input, output, session,data){
   desc <- unique(data$INGREDIENT_DESCRIPTION)
   unit <- unique(data$SERVING_SIZE_DESCRIPTION)
   ssf <- unique(data$SERVING_SIZE_FACTOR)
-  qty <- unique(data$QTY)
+  qty <- ifelse(displayQty == FALSE, '', unique(data$QTY))
 
   tagList(
     div(class = "input-group", style ='margin-top:12px;',
       tags$span(class = "input-group-text", ing,
-           style = 'background-color: #162118; border-color: #162118; color: #fff;'),
+           style = 'background-color: #232b2b; border-color: #232b2b; color: #fff;'),
       tags$input(id = ns(paste0('ing-ing-',ingUniqueID)), value = ing, type = "text",
                  disabled = 'disabled', `aria-label` = "Ingredient", class = "form-control"),
       tags$button(id = ns(paste0('del-ing-',ingUniqueID)), class = "btn btn-danger action-button shiny-bound-input", type = "button", icon('trash'))
@@ -412,7 +415,7 @@ editMealIngredientInputs <- function(input, output, session,data){
         tags$input(id = ns(paste0('ing-ssf-',ingUniqueID)), value = ssf, type = "text",
                    disabled = 'disabled', `aria-label` = "Multiplier", class = "form-control")
     ),
-    div(class = "input-group",
+    div(class = "input-group", style = if(displayQty == FALSE){"display: none;"},
         tags$span(class = "input-group-text", 'Quantity',
              style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;'),
         tags$input(id = ns(paste0('ing-qty-',ingUniqueID)), value = qty, type = "text",
@@ -436,9 +439,10 @@ selectIngredients <- function(input, output, session, data){
 #TODO Seeing if this selectInput works on iPhone to type
 
     div(class = "input-group mb-3",
-      tags$label(class = "input-group-text",
+      tags$label(class = "input-group-text", class = 'create-meal',
         `for` = ns('selectIngredient'),
-        style = "background-color: #ed7000; border-color: #ed7000; color: #fff;", 'Add Ingredient'),
+        #style = "background-color: #ed7000; border-color: #ed7000; color: #fff;",
+        'Add Ingredient'),
       tags$select(class = "form-select", id = ns('selectIngredient'),
         tags$option(selected = "selected", choices[1]),
           map(

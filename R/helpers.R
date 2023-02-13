@@ -24,7 +24,7 @@ meals <- data.frame(
 #' @param id The delete button ID for that menu card
 #' @param data The LOCAL data object#'
 #' @noRd
-delMealResponse <- function(id, data){
+delMealResponse <- function(session, input, output, id, data){
 
     LOCAL <- data
     mealName <- LOCAL$myMeals %>%
@@ -39,7 +39,8 @@ delMealResponse <- function(id, data){
 
     withProgress(message = 'Deleting', detail = paste0('Deleting ', mealName, ' from trip...'), {
         map(1:5, ~ incProgress(.x/10))
-            dbDelete(id = gsub('del-','',id), to = 'LU_TRIPS', data = LOCAL, level = 'meal')
+            dbDelete(session = session, input = input, output = output,
+                id = gsub('del-','',id), to = 'LU_TRIPS', data = LOCAL, level = 'meal')
         map(6:10, ~ incProgress(.x/10))
     })
 }
@@ -215,7 +216,7 @@ createMealDelIng <- function(input, output, session, id, data){
 #'
 #' @noRd
 editMealAddIng <- function(input, output, session, data){
-
+#browser()
     ns <- session$ns
     LOCAL <- data
 
@@ -234,6 +235,8 @@ editMealAddIng <- function(input, output, session, data){
     ingID <- LOCAL$LU_INGREDIENTS[which(LOCAL$LU_INGREDIENTS$INGREDIENT ==
         input[['selectIngredient']]),'INGREDIENT_ID'] %>%
         pull()
+
+    req(length(ingID) == 1)
 
     LOCAL$editMealDF$QTY <- as.character(LOCAL$editMealDF$QTY)
 
@@ -331,10 +334,255 @@ createMealAddIng <- function(input, output, session, data){
 
 }
 
+
+#' Action to take when new ingredient button is clicked
+#'
+#'
+#' @noRd
+newIngredientResponse <- function(input, output, session, data){
+    ns <- session$ns
+    LOCAL <- data
+
+    if(input[['ing-new-ing']] == '') {
+        showNotification('Ingredient name cannot be blank!', type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(input[['ing-new-ing']] %in% LOCAL$LU_INGREDIENTS$INGREDIENT){
+        showNotification('An ingredient with this name already exists!',
+                         type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(input[['ing-new-cat']] == 'Select category' | input[['ing-new-cat']] == '') {
+        showNotification('Ingredient category cannot be blank!',
+                         type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(input[['ing-new-desc']] == '') {
+        showNotification('Ingredient description cannot be blank!',
+                         type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(input[['ing-new-unit']] == '') {
+        showNotification('Ingredient units cannot be blank!',
+                         type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(input[['ing-new-ssf']] == '') {
+        showNotification('Ingredient multiplier cannot be blank!
+    Enter a quantity for this number of people to produce a multiplier.',
+                         type = 'error', duration = 10)
+        return(NULL)
+    }
+
+
+    ingName <- input[['ing-new-ing']]
+    ingCat <- input[['ing-new-cat']]
+    ingDesc <- input[['ing-new-desc']]
+    ingUnit <- input[['ing-new-unit']]
+    ingSSF <- as.numeric(input[['ing-new-ssf']])
+    ingStorage <- input[['ing-new-storage']]
+    ingQty <- input[['ing-new-qty']]
+
+    # Get latest DB ing ID
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+
+    newIngId <- max(gs4ColIndex(url,'INGREDIENT_ID','LU_INGREDIENTS')) + 1
+
+    gs4_deauth()
+
+    newRecord <- data.frame(
+        INGREDIENT_ID = newIngId,
+        INGREDIENT_CATEGORY = ingCat,
+        INGREDIENT = ingName,
+        INGREDIENT_DESCRIPTION = ingDesc,
+        SERVING_SIZE_DESCRIPTION = ingUnit,
+        SERVING_SIZE_FACTOR = ingSSF,
+        STORAGE_DESCRIPTION = ingStorage,
+        UPTIME = Sys.Date(),
+        UPUSER = LOCAL$userName,
+        USER_ID = LOCAL$userID
+    )
+
+    # Append to LU_INGREDIENTS
+
+    LOCAL$LU_INGREDIENTS <- bind_rows(LOCAL$LU_INGREDIENTS, newRecord) %>%
+        arrange(INGREDIENT)
+
+    # Append to database LU_INGREDIENTS
+    dbUpdate(LOCAL$LU_INGREDIENTS,'LU_INGREDIENTS', data = LOCAL)
+
+
+    # Notify ingredient added
+
+    showNotification(
+        paste(ingName, "was added to the 'Add Ingredient' dropdown list above.
+        You can use the dropdown to add",ingName,"to this meal."),
+        type = 'message', duration = 10
+    )
+}
+
+
+#' createMealModalSave
+#'
+#'
+#' @noRd
+createMealModalSave <- function(input, output, session, data){
+    ns <- session$ns
+    LOCAL <- data
+
+    # Validate a new ingredient is not sitting in input
+    if(input[['ing-new-ing']] != ''){
+        showNotification('New Ingredient form has data!
+            Do you need to finish creating a new ingredient?',
+            type = 'error', duration = 10
+        )
+        return(NULL)
+    }
+
+    # Validate inputs are not blank
+    if(input[['meal-new-name']] == ''){
+        showNotification('Meal name cannot be blank!', type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(input[['meal-new-type']] == 'Choose meal type...' | input[['meal-new-type']] == ''){
+        showNotification('Meal type cannot be blank!', type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(is.null(input[['meal-new-desc']]) | input[['meal-new-desc']] == ''){
+        showNotification('Meal description cannot be blank!', type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(is.null(input[['meal-new-tools']]) | input[['meal-new-tools']] == ''){
+        showNotification('Meal tools cannot be blank!', type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    if(is.null(input[['meal-new-inst']]) | input[['meal-new-inst']] == ''){
+        showNotification('Meal instructions cannot be blank!', type = 'error', duration = 10)
+        return(NULL)
+    }
+
+    # Get max meal_ids from database LU_MEALS, LU_INGREDIENT, XREF_INGREDIENT
+
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+
+        # Get new meal ID again just in case. It gets done when ings are added also
+        maxDbMealID <- googlesheets4::read_sheet(url, 'LU_MEAL', range = 'A:A') %>% max()
+        maxDbXrefMealID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'B:B') %>% max()
+        maxDbMealID <- max(c(maxDbMealID,maxDbXrefMealID))
+
+        # maxDbIngID <- googlesheets4::read_sheet(url, 'LU_INGREDIENTS', range = 'A:A') %>% max()
+        # maxDbXrefIngID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'A:A') %>% max()
+        # maxDbIngID <- max(c(maxDbIngID,maxDbXrefIngID))
+
+    gs4_deauth()
+
+    # Update LOCAL$LU_MEAL
+
+
+    newRecord <- data.frame(MEAL_ID = maxDbMealID + 1) %>%
+        mutate(
+            MEAL_NAME = LOCAL$createMealDF$MEAL_NAME[1],
+            MEAL_TYPE = LOCAL$createMealDF$MEAL_TYPE[1],
+            MEAL_DESCRIPTION = LOCAL$createMealDF$MEAL_DESCRIPTION[1],
+            TOOLS = input[['meal-new-tools']],
+            INSTRUCTIONS = input[['meal-new-inst']],
+            UPTIME = Sys.Date(),
+            UPUSER = LOCAL$userName,
+            USER_ID = LOCAL$userID
+        )
+
+    LOCAL$LU_MEAL <- newRecord %>%
+        bind_rows(LOCAL$LU_MEAL) %>%
+        select(MEAL_ID, MEAL_NAME, MEAL_TYPE, MEAL_DESCRIPTION,
+               TOOLS, INSTRUCTIONS, UPTIME, UPUSER, USER_ID)
+
+
+    # Update LOCAL$LU_INGREDIENTS
+        # (LOCAL$LU_INGREDIENTS already updated when creating ingredients)
+
+
+    # Update XREF_INGREDIENT
+
+    if(LOCAL$createMealDF$MEAL_ID %in% LOCAL$XREF_INGREDIENT$MEAL_ID){
+        showNotification(paste('Something went wrong. Please refresh the app and try again.'),
+                         type = 'error', duration = 10
+        )
+        return(NULL)
+    }
+
+    # Update LOCAL$XREF_INGREDIENT
+
+    LOCAL$XREF_INGREDIENT <- LOCAL$createMealDF %>%
+        select(INGREDIENT_ID, MEAL_ID, INGREDIENT, MEAL_NAME, UPTIME, UPUSER, USER_ID) %>%
+        bind_rows(LOCAL$XREF_INGREDIENT)
+
+    # Update LOCAL$ALL_DATA
+    names <- names(LOCAL$ALL_DATA)
+
+    LOCAL$ALL_DATA <- LOCAL$LU_MEAL %>%
+        select(-c(UPTIME,UPUSER)) %>%
+        left_join(LOCAL$XREF_INGREDIENT %>% select(MEAL_ID,INGREDIENT_ID), by = 'MEAL_ID') %>%
+        left_join(LOCAL$LU_INGREDIENTS %>% select(-c(UPTIME,UPUSER)), by = 'INGREDIENT_ID') %>%
+        mutate(
+            MEAL_ADD_ID = paste0('add-',MEAL_ID),
+            MEAL_DEL_ID = paste0('del-',MEAL_ID),
+            MEAL_VIEW_ID = paste0('view-',MEAL_ID),
+            MEAL_EDIT_ID = paste0('edit-',MEAL_ID),
+            MEAL_UNIQUE_ID = '',
+            INGREDIENT_UNIQUE_ID = '',
+            RIVER_DAY = NA_real_,
+            USERNAME = LOCAL$userName,
+            USER_ID = LOCAL$userID
+        ) %>%
+        select(names)
+
+
+
+    # Save the trip with all tables getting updated
+
+    # Update DB LU_MEAL
+
+    dbUpdate(LOCAL$LU_MEAL,'LU_MEAL', data = LOCAL)
+
+    # Update DB LU_XREF_INGREDIENT
+    #browser()
+    dbUpdate(LOCAL$XREF_INGREDIENT,'XREF_INGREDIENT', data = LOCAL)
+
+    # Clear createMealDF
+
+    LOCAL$createMealDF <- data.frame()
+
+    # Notify success
+
+    showNotification(paste('Meal', input[['meal-new-name']],
+        'created! You can find it in the Select Meals carousel!'),
+        type = 'message', duration = 10
+    )
+
+    # Close modal
+    removeModal()
+
+}
+
+
 # TRIP FUNCTIONS -----
 
 #' Save Trip
-#'
+#' @param input,output,session The shiny session objects
+#' @param data List. The LOCAL reactiveValues object is intended to be passed to saveTrip
 #'
 #' @noRd
 saveTrip <- function(input, output, session, data){
@@ -376,16 +624,14 @@ saveTrip <- function(input, output, session, data){
     LOCAL$myMeals$UPTIME <- Sys.Date()
     LOCAL$myMeals$UPUSER <- LOCAL$userName
     LOCAL$myMeals$TRIP_DESC <- LOCAL$tripDesc
+    LOCAL$myMeals$USERNAME <- LOCAL$userName
 
-    # Update DB
     # Save trip to database
     dbUpdate(LOCAL$myMeals, 'LU_TRIPS', data = LOCAL)
 
     # Notify save
     showNotification(paste0('Trip ', LOCAL$tripName,' saved!'),
                      type = 'message', duration = 10)
-
-
 }
 
 #' Copy Trip
@@ -496,6 +742,51 @@ loadTrip <- function(session, id, data){
 
 # DATABASE CRUD -----
 
+#' gs4ColIndex
+#' @description Return googlesheets column by name. Used to get row numbers
+#' by condition to do a range read so not reading entire sheets
+#' @param url String of connection to sheets URL being used
+#' @param colNum The name of the column you want
+#' @param sheetName The name of the sheet you want to get the column of
+#' @returns One column dataframe from teh sheet
+#' so we can specify to read just one GS column by name
+#' @noRd
+gs4ColIndex <- function(url, colName, sheetName){
+    #colName <- 'QTY'
+    #sheetName <- 'LU_TRIPS'
+
+    names <- read_sheet(url, sheet = sheetName, range = '1:1') %>% names()
+    colNum <- which(names == colName)
+
+    if(length(colNum) == 0){
+        showNotification(
+            paste('No column of name',colName,'found in table',sheetName),
+            duration = 10, type = 'error')
+        return(NULL)
+    }
+
+    l1 <- LETTERS
+    l2 <- paste0('A',LETTERS)
+    l3 <- paste0('B',LETTERS)
+    l4 <- paste0('C',LETTERS)
+
+    gsIndex <- c(l1, l2, l3, l4)
+
+    LU_GS_COLS <<- data.frame(
+        COL_INDEX = seq(1:length(gsIndex)),
+        GS_INDEX = gsIndex
+    ) %>%
+    mutate(
+        GS_INDEX = paste0(GS_INDEX,':',GS_INDEX)
+    )
+
+    gsIndex <- LU_GS_COLS %>% filter(COL_INDEX == colNum) %>% pull(GS_INDEX)
+
+    # Get the colun
+    return(read_sheet(url, sheet = sheetName, range = gsIndex))
+
+}
+
 #' dbUpdate
 #' @description Replaces or appends records in a database table
 #' @param from The updated dataframe with the new/revised records
@@ -505,35 +796,104 @@ loadTrip <- function(session, id, data){
 #' @noRd
 dbUpdate <- function(from, to, data = LOCAL){
     LOCAL <- data
-
+#browser()
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
     authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
     gs4_auth(path = authPath)
-
-    #TODO add if statements to use this function for other tables
     #TODO make the pulling ID check a range_read so not reading entire table
+    #TODO add if statements to use this function for other tables
+
+    # Case LU_INGREDIENTS
+
+    if(to == 'LU_INGREDIENTS'){
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = paste0(USER_ID,'_',INGREDIENT_ID)) %>%
+            select(check)
+
+        try <- from %>%
+            mutate(check = paste0(USER_ID,'_',INGREDIENT_ID)) %>%
+            select(check) %>%
+            anti_join(check)
+
+        from <- from %>%
+            mutate(check = paste0(USER_ID,'_',INGREDIENT_ID)) %>%
+            filter(check %in% try$check)
+    }
 
 
-    check <- read_sheet(url, sheet = to) %>%
+    # Case LU_TRIPS
 
-        mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
-        select(check)
+    if(to == 'LU_TRIPS'){
 
-    try <- from %>%
-        mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
-        select(check)
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
+            select(check)
+
+        try <- from %>%
+            mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
+            select(check)
+
+
+    }
+
+    # Case LU_MEAL
+
+    if(to == 'LU_MEAL'){
+
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = paste0(USER_ID,'_',MEAL_ID)) %>%
+            select(check)
+
+        try <- from %>%
+            mutate(check = paste0(USER_ID,'_',MEAL_ID)) %>%
+            select(check) %>%
+            anti_join(check)
+
+        from <- from %>%
+            mutate(check = paste0(USER_ID,'_',MEAL_ID)) %>%
+            filter(check %in% try$check)
+
+    }
+
+    # Case XREF_INGREDIENT
+
+    if(to == 'XREF_INGREDIENT'){
+
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = paste0(USER_ID,'_',MEAL_ID, '_', INGREDIENT_ID)) %>%
+            select(check)
+
+        try <- from %>%
+            mutate(check = paste0(USER_ID,'_',MEAL_ID, '_', INGREDIENT_ID)) %>%
+            select(check) %>%
+            anti_join(check)
+
+        from <- from %>%
+            mutate(check = paste0(USER_ID,'_',MEAL_ID, '_', INGREDIENT_ID)) %>%
+            filter(check %in% try$check)
+
+    }
+
+
+
+    # Process to DB
 
     if(unique(try$check) %in% unique(check$check) == TRUE) {
 
-
         rows<- which(check$check %in% unique(try$check))
+        #TODO this is really sketchy if rows are not all together it will delete wrong info
         range_delete(url, to, range = paste0(min(rows) + 1,':',max(rows) +1))
+        localSheetNames <- names(eval(parse(text = paste0('LOCAL$',to))))
+        from <- from %>% select(localSheetNames)
         sheet_append(url, from, sheet = to)
         LOCAL[[to]] <- read_sheet(url, sheet = to)
 
     } else
 
     if(unique(try$check) %in% unique(check$check) == FALSE) {
+        localSheetNames <- names(eval(parse(text = paste0('LOCAL$',to))))
+        from <- from %>% select(localSheetNames)
+
         sheet_append(url, from, sheet = to)
         LOCAL[[to]] <- read_sheet(url, sheet = to)
     }
@@ -548,8 +908,11 @@ dbUpdate <- function(from, to, data = LOCAL){
 #' @param to The name of the database table to update
 #' @param data The session reactive data object LOCAL
 #' @noRd
-dbDelete <- function(id, to, data = LOCAL, level){
+dbDelete <- function(session, input, output, id, to, data = LOCAL, level){
+    ns <- session$ns
     LOCAL <- data
+
+    # Remove trip from database
 
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
     authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
@@ -557,8 +920,10 @@ dbDelete <- function(id, to, data = LOCAL, level){
 
     # Check if requested records exist in the db table
     #TODO add if statements to use this function for other tables
+    #TODO why does this run twice?
 
     if(level == 'meal'){
+
         check <- read_sheet(url, sheet = to) %>%
             mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
             select(check)
@@ -566,6 +931,31 @@ dbDelete <- function(id, to, data = LOCAL, level){
     }
 
     if(level == 'trip'){
+
+        # Remove trip info and inputs if the trip is currently loaded
+
+        if(id == LOCAL$tripID){
+
+            # Clear trip info from LOCAL
+
+            LOCAL$tripID <- 0
+            LOCAL$tripName <- character()
+            LOCAL$tripDesc <- character()
+            LOCAL$noAdults <- 1
+            LOCAL$noKids <- 0
+            LOCAL$noPeople <- 1
+            LOCAL$noPeopleCalc <- 1
+            LOCAL$myMeals <- data.frame()
+
+            # Clear user inputs
+
+            updateTextInput(session = session, 'tripName', value = '')
+            updateTextInput(session = session, 'noAdults', value = 'No. People Age 12+')
+            updateTextInput(session = session, 'noKids', value = 'No. People Age <12')
+            updateTextInput(session = session, 'tripDesc', value = '')
+        }
+
+        # Get the trip IDs from LU_TRIPS in database and check if it is already there
         check <- read_sheet(url, sheet = to) %>%
             mutate(check = paste0(USERNAME,'_',TRIP_ID)) %>%
             select(check)
@@ -578,6 +968,7 @@ dbDelete <- function(id, to, data = LOCAL, level){
 
     if(try %in% check$check){
         rows <- which(check$check %in% try)
+        #TODO This is sketchy need to address this if the rows are not together will delete other stuff
         range_delete(url, to, range = paste0(min(rows)+1,':',max(rows) +1))
         LOCAL[[to]] <- read_sheet(url, sheet = to)
 
@@ -585,6 +976,84 @@ dbDelete <- function(id, to, data = LOCAL, level){
 
     gs4_deauth()
 }
+
+# Export menu items -----
+
+#' shopList
+#' @description Makes the grouped ingredient shopping list for the trip
+#' @param data The LOCAL reactive values data object, specifically the myMeals dataframe
+#' @noRd
+shopList <- function(data){
+    LOCAL <- data
+    req(nrow(LOCAL$myMeals) > 0)
+    output <- LOCAL$myMeals %>%
+        group_by(INGREDIENT, SERVING_SIZE_DESCRIPTION) %>%
+        summarize(
+            TOTAL = sum(QTY, na.rm = TRUE) %>% as.character(),
+            MEAL_COUNT = length(INGREDIENT)
+        ) %>%
+        select(INGREDIENT, TOTAL, SERVING_SIZE_DESCRIPTION, MEAL_COUNT)
+    names(output) <- c('Ingredient', 'Quantity', 'Units', 'Meal Count')
+    return(output)
+}
+
+#' dailyMenu
+#' @noRd
+dailyMenu <- function(session, id, data){
+    ns <- session$ns
+    #browser()
+    LOCAL <- data
+    req(nrow(LOCAL$myMeals) > 0)
+
+    #DEV###
+    #id <- '158_Breakfast_1'
+    #######
+
+    meal <- LOCAL$myMeals %>%
+        filter(MEAL_UNIQUE_ID == id)
+
+    day <- unique(meal$RIVER_DAY)
+    mtype <- unique(meal$MEAL_TYPE)
+    ttl <- unique(meal$MEAL_NAME)
+    noAdults <- unique(meal$NO_ADULTS)
+    noKids <- unique(meal$NO_KIDS)
+
+    header <- paste('Day',day,'|',mtype,'|',ttl,'|',noAdults,'Adults |', noKids,'Kids')
+
+    ings <- meal %>%
+        select(INGREDIENT, QTY, SERVING_SIZE_DESCRIPTION, STORAGE_DESCRIPTION) %>%
+        arrange(INGREDIENT)
+
+    #renderUI({
+        div(
+            h4(header, style = 'color: black; text-align: left;'),
+            tags$table(class = "table table-striped",
+               tags$thead(
+                   tags$tr(
+                       tags$th(scope = 'col', 'Ingredient'),
+                       tags$th(scope = 'col', 'Quantity'),
+                       tags$th(scope = 'col', 'Units'),
+                       tags$th(scope = 'col', 'Storage'),
+                    )
+                ),
+                tags$tbody(
+                    map(1:nrow(ings), ~
+                        tags$tr(
+                            tags$td(ings[.x,1]),
+                            tags$td(ings[.x,2]),
+                            tags$td(ings[.x,3]),
+                            tags$td(ings[.x,4])
+                        )
+                    )
+                )
+            ),
+            br()
+        )
+
+    #})
+}
+
+
 
 
 #

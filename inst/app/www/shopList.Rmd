@@ -2,6 +2,7 @@
 title: "`r params$title`"
 output: html_document
 params:
+  storageTitle: NA
   data: NA
   title: NA
 ---
@@ -15,9 +16,111 @@ knitr::opts_chunk$set(echo = FALSE,warning = F,error = F,message = F)
 ```{r}
 
 dat<-params$data
+storageTitle <- params$storageTitle
 
-knitr::kable(dat,format="markdown")
+    div(
+            #h4(header, style = 'color: black; text-align: left;'),
+            tags$table(id = storageTitle,class = "table table-striped",
+               tags$thead(
+                   tags$tr(
+                       tags$th(scope = 'col', 'Ingredient'),
+                       tags$th(scope = 'col', 'Quantity'),
+                       tags$th(scope = 'col', 'Units'),
+                       tags$th(scope = 'col', 'Meal Count'),
+                    )
+                ),
+                tags$tbody(
+                    purrr::map(1:nrow(dat), ~
+                        tags$tr( onclick="toggleClass(this)",
+                            tags$td(dat[.x,1]),
+                            tags$td(dat[.x,2]),
+                            tags$td(dat[.x,3]),
+                            tags$td(dat[.x,4])
+                        )
+                    )
+                )
+            )
+        )
 
 
 ```
 
+```{css, echo = FALSE}
+
+    thead {
+      text-align: left;
+    }
+
+    .title.toc-ignore {
+        color: #5cb874; 
+    }
+        
+    tbody>tr.checked {
+        
+        color: red;
+        text-decoration: line-through;
+    }
+
+```
+
+```{js}
+
+  const table = document.querySelector("table");
+  var myArray = [];
+  const storageTitle = table.id;
+  var checkStorage = JSON.parse(localStorage.getItem(storageTitle));
+  
+  if(JSON.parse(localStorage.getItem(storageTitle)) == null){
+
+    myArray = [];
+
+    for(let i = 0; i < table.rows.length-1; i++) {
+      try{
+        myArray.push({'class': ''});
+      }
+      catch(e) {
+        alert(e.message);
+      }
+    }
+
+    localStorage.setItem(storageTitle, JSON.stringify(myArray));
+
+  } else if(JSON.parse(localStorage.getItem(storageTitle)) != null && JSON.parse(localStorage.getItem(storageTitle)).length > 0){
+  
+    var myArray =  JSON.parse(localStorage.getItem(storageTitle));
+    
+    for(let i = 1; i < table.rows.length; i++){ //this start at 1 skips the header row
+                    
+      try {
+          if(JSON.parse(localStorage.getItem(storageTitle))[i-1].class != ''){
+              table.rows[i].classList.toggle(JSON.parse(localStorage.getItem(storageTitle))[i-1].class); //This -1 deals skips the header row
+          }
+          
+      } 
+      catch(e){
+          alert(e.message);
+      }
+    }
+  }
+  
+  function toggleClass(x) {
+  
+    x.classList.toggle('checked');
+    
+      if(x.classList == 'checked'){
+        myArray[x.rowIndex - 1] = {'class': 'checked'};
+      }
+
+      if(x.classList == ''){
+        myArray[x.rowIndex - 1] = {'class': ''};
+      }
+            
+      try {
+        localStorage.setItem(storageTitle, JSON.stringify(myArray));
+      }
+      catch(e){
+        alert(e.message);
+      }
+  }
+
+```

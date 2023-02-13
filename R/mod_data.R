@@ -24,6 +24,12 @@ mod_data_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
+    ###DEV###
+    userName <- 'dev_01' # Will be coming in from Auth0
+    #userID <- 4
+    #TODO need to put a stop if incoming userID from AuthO is not in the database
+    #########
+
     ####GOOGLE SHEETS URL AND GET BASE DATA####
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
     authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
@@ -31,17 +37,32 @@ mod_data_server <- function(id){
 
     LU_USERS <- read_sheet(url, sheet = "LU_USERS")
 
+    # Establish UserID
+    if(!userName %in% LU_USERS$USERNAME){
+      showNotification('Username not found. Try a different username or contact us.',duration = 10, type = 'error')
+      return(NULL)
+    }
+
+    userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+
+    # Get remaining dataframes filtered by userID
+
     LU_TRIPS <- read_sheet(url, sheet = "LU_TRIPS") %>%
+      filter(USER_ID %in% c(0,userID)) %>%
       replace(is.na(.),'')
 
-    XREF_INGREDIENT <- read_sheet(url, sheet = "XREF_INGREDIENT")
+
+    XREF_INGREDIENT <- read_sheet(url, sheet = "XREF_INGREDIENT") %>%
+      filter(USER_ID %in% c(0,userID))
 
     LU_MEAL_TYPE <- read_sheet(url, sheet = "LU_MEAL_TYPE") %>%
+      filter(USER_ID %in% c(0,userID)) %>%
       mutate(
         MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack'))
       )
 
     LU_MEAL <- read_sheet(url, sheet = 'LU_MEAL') %>%
+      filter(USER_ID %in% c(0,userID)) %>%
       mutate(
         MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack')),
         MEAL_ADD_ID = paste0('add-',MEAL_ID),
@@ -52,17 +73,23 @@ mod_data_server <- function(id){
         INGREDIENT_UNIQUE_ID = '',
         RIVER_DAY = NA_real_)
 
-    LU_INGREDIENTS <- read_sheet(url, sheet = "LU_INGREDIENTS")
+    LU_INGREDIENTS <- read_sheet(url, sheet = "LU_INGREDIENTS") %>%
+      filter(USER_ID %in% c(0,userID))
 
     ALL_DATA <- LU_MEAL %>%
-      select(-c(UPTIME,UPUSER)) %>%
+      select(-c(UPTIME, UPUSER, USER_ID)) %>%
       left_join(XREF_INGREDIENT %>% select(MEAL_ID,INGREDIENT_ID), by = 'MEAL_ID') %>%
-      left_join(LU_INGREDIENTS %>% select(-c(UPTIME,UPUSER)), by = 'INGREDIENT_ID')
+      left_join(LU_INGREDIENTS %>% select(-c(UPTIME,UPUSER, USER_ID)), by = 'INGREDIENT_ID') %>%
+      mutate(
+        USERNAME = userName,
+        USER_ID = userID
+      )
 
     ####INSTANTIATE REACTIVE VALUES DATA OBJECT#####
 
     LOCAL <- reactiveValues(
-      userName = as.character('dev_01'),
+      userName = userName,
+      userID = userID,
       LU_USERS = LU_USERS,
       LU_TRIPS = LU_TRIPS,
       XREF_INGREDIENT = XREF_INGREDIENT,
@@ -82,6 +109,7 @@ mod_data_server <- function(id){
       editMealModalSwitch = FALSE,
       editMealMealUniqueID = NULL,
       createMealDF = data.frame(),
+      exportMenuModalSwitch = FALSE,
       ALL_DATA = ALL_DATA
     )
 
