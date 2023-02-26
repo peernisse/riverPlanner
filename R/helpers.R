@@ -725,7 +725,7 @@ loadTrip <- function(session, id, data){
     req(!is.null(LOCAL$userName) & LOCAL$userName != '' & length(LOCAL$userName) > 0)
     req(!is.null(id) & id != '' & length(id) > 0)
 
-    # Load trip info-----
+    # Load trip info
     LOCAL$loadTripMode <- TRUE
 
     trip <- LOCAL$LU_TRIPS %>%
