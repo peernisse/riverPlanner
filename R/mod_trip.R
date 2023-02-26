@@ -14,7 +14,8 @@ mod_trip_ui <- function(id){
     fluidRow(
       column(width = 12, style = 'display: grid; text-align: center; justify-content: space-around; margin: 5px;',
         hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
-        h3('New Trip'),
+        #h3('New Trip'),
+        h3(uiOutput(ns('sectionTitleTrip'))),
         customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#232b2b', placeholder = 'Enter Trip Name'),
 
         customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#232b2b',
@@ -42,7 +43,8 @@ mod_trip_ui <- function(id){
         ),
         hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
       )
-    )
+    ),
+    uiOutput(ns('js'))
   )
 }
 
@@ -376,7 +378,9 @@ mod_trip_server <- function(id, data){
         map(6:10, ~ incProgress(.x/10))
       })
 
-      showNotification('Trip Loaded', type = 'message', duration = 5)
+      showNotification(paste0('Your Trip \"',LOCAL$tripName,
+        '\" is now Loaded! Manage your trip components from the menus below.'),
+        type = 'message', duration = 10)
 
     })
 
@@ -393,17 +397,20 @@ mod_trip_server <- function(id, data){
         removeModal()
         map(6:10, ~ incProgress(.x/10))
       })
-
       showNotification('Trip Removed', type = 'message', duration = 5)
-
     })
-
 
     #####UI OUTPUTS#####
 
     # Trip cards
     output$trips <- makeTripCards(input, output, session, data = LOCAL)
 
+    # Trip details title
+    output$sectionTitleTrip <- renderUI({
+      if(length(LOCAL$tripName) > 0){
+        paste('Trip',LOCAL$tripName, 'Currently Loaded')
+      } else{'Create New Trip'}
+    })
 
     #####RETURN LOCAL DATA OBJECT#####
     return(LOCAL)

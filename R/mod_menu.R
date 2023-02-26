@@ -87,7 +87,7 @@ mod_menu_server <- function(id, data){
     addButtonIDs <- reactive(LOCAL$ALL_DATA$MEAL_ADD_ID %>% unique(.))
 
     observe({
-     # browser()
+
       #addButtonIDs <- reactive(LOCAL$ALL_DATA$MEAL_ADD_ID %>% unique(.))
 
       if(is.null(createdObservers)){

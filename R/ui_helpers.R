@@ -107,7 +107,7 @@ menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
 #' @param tripDesc The saved trip description
 #' @param upTime The last modified date of the saved trip
 #' @noRd
-tripCard <- function(session, tripID, tripName, days, noAdults, noKids, tripDesc, upTime){
+tripCard <- function(session, data, tripID, tripName, days, noAdults, noKids, tripDesc, upTime){
   ns <- session$ns
   LOCAL <- data
   loadButtonID <- paste0('load-tripID-',tripID)
@@ -116,31 +116,60 @@ tripCard <- function(session, tripID, tripName, days, noAdults, noKids, tripDesc
 
   #date <- as.character(upTime$UPTIME)
 
-  div(class = "card card-block mx-2", style="text-align: left; min-width:300px;
+  if(LOCAL$tripID == tripID){
+    div(class = "card card-block mx-2", style="text-align: left; min-width:300px;
       margin-bottom:10px; border-left-color: #5cb874; border-left-width: .25rem;
       border-radius: .25rem;",
-    div(class = "card-body", style="max-width:350px;",
-      h5(class = "card-title", tripName),
-      h6(class = "card-subtitle mb-2 text-muted",
-        paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
-      ),
-      p(class = "card-text", tripDesc),
-      tags$button(id = ns(killButtonID),
-                  class = "btn btn-danger action-button shiny-bound-input",
-                  type = "button", icon('trash')
-      ),
-      tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
-                  style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-                  type = "button",
-                  'Load Trip'
-      ),
-      tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
-                  #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-                  type = "button",
-                  'Copy Trip'
-      )
+        div(class = "card-body", style="max-width:350px;",
+            h5(class = "card-title", tripName),
+            h6(class = "card-subtitle mb-2 text-muted",
+               paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
+            ),
+            p(class = "card-text", tripDesc),
+            tags$button(id = ns(killButtonID),
+                        class = "btn btn-danger action-button shiny-bound-input",
+                        type = "button", icon('trash')
+            ),
+            tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
+                        style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                        type = "button",
+                        'Load Trip'
+            ),
+            tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
+                        #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                        type = "button",
+                        'Copy Trip'
+            )
+        )
     )
-  )
+  } else {
+
+    div(class = "card card-block mx-2", style="text-align: left; min-width:300px;
+      margin-bottom:10px; border-left-color: #232b2b; border-left-width: .25rem;
+      border-radius: .25rem;",
+        div(class = "card-body", style="max-width:350px;",
+          h5(class = "card-title", tripName),
+          h6(class = "card-subtitle mb-2 text-muted",
+             paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
+          ),
+          p(class = "card-text", tripDesc),
+          tags$button(id = ns(killButtonID),
+                      class = "btn btn-danger action-button shiny-bound-input",
+                      type = "button", icon('trash')
+          ),
+          tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
+                      style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                      type = "button",
+                      'Load Trip'
+          ),
+          tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
+                      #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                      type = "button",
+                      'Copy Trip'
+          )
+        )
+    )
+  }
 }
 
 #####CARDS GENERATORS#####
@@ -178,6 +207,7 @@ makeTripCards <- function(input, output, session, data = LOCAL){
 
       div(class = "d-flex flex-row flex-nowrap overflow-auto",
         map(tripMap$TRIP_ID, ~ tripCard(session = session,
+          data = LOCAL,
           tripID = .x,
           tripName = tripMap[which(tripMap$TRIP_ID == .x), 'TRIPNAME'],
           days = tripMap[which(tripMap$TRIP_ID == .x), 3],
@@ -659,7 +689,6 @@ customTextAreaInput <- function(inputId, label, value = '', labelColor,
 accInner <- function(ns, parentId, buttonId, buttonTitle, collapseId, body){
   ns <- ns
 
-
   div(class = "accordion-item", style = 'border: none;',
       h4(id = ns(buttonId), class = "accordion-header",
          tags$button(
@@ -678,10 +707,6 @@ accInner <- function(ns, parentId, buttonId, buttonTitle, collapseId, body){
           )#end accordion-body
       )#end accordion-collapse collapse
   )
-
-
-
-
 }
 
 

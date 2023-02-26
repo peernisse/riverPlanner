@@ -25,15 +25,18 @@ meals <- data.frame(
 #' @param data The LOCAL data object#'
 #' @noRd
 delMealResponse <- function(session, input, output, id, data){
-
     LOCAL <- data
     mealName <- LOCAL$myMeals %>%
         filter(MEAL_UNIQUE_ID %in% gsub('del-','',id)) %>%
         select(MEAL_NAME) %>%
         unique()
 
-    # Remove the meal from myMeals
-    LOCAL$myMeals <- subset(LOCAL$myMeals, !MEAL_UNIQUE_ID %in% gsub('del-','',id))
+    # Remove the meal from myMeals. This was running twice so if else stops the second run
+
+    if(nrow(mealName) > 0){
+        LOCAL$myMeals <- subset(LOCAL$myMeals, !MEAL_UNIQUE_ID %in% gsub('del-','',id))
+    } else {return(NULL)}
+
 
     # Remove the meal from LU_TRIPS if it is there
 
@@ -43,6 +46,10 @@ delMealResponse <- function(session, input, output, id, data){
                 id = gsub('del-','',id), to = 'LU_TRIPS', data = LOCAL, level = 'meal')
         map(6:10, ~ incProgress(.x/10))
     })
+
+    # Notify meal removed
+    showNotification(paste0(mealName, ' removed from menu!'),
+                     type = 'message', duration = 10)
 }
 
 #' The action to take when the preview meal button is pressed
