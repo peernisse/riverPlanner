@@ -146,7 +146,7 @@ mod_trip_server <- function(id, data){
             title = 'Warning!',
             session = session,
             size = 'l',
-            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: center;',
+            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: space-around;',
                               actionButton(ns('confirmModalSaveTrip'), label = 'Confirm', class = 'btn btn-success'),
                               actionButton(ns('cancelModalSaveTrip'), label = 'Cancel', class = 'btn btn-default',
                                            class = 'riv', class = 'getstarted')
@@ -173,7 +173,7 @@ mod_trip_server <- function(id, data){
             title = 'Warning!',
             session = session,
             size = 'l',
-            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: center;',
+            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: space-around;',
                               actionButton(ns('confirmModalSaveTrip'), label = 'Confirm', class = 'btn btn-success'),
                               actionButton(ns('cancelModalSaveTrip'), label = 'Cancel', class = 'btn btn-default',
                                            class = 'riv', class = 'getstarted')
@@ -244,7 +244,7 @@ mod_trip_server <- function(id, data){
                 title = 'Warning!',
                 session = session,
                 size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: center;',
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: space-around;',
                                   actionButton(ns('confirmModalCopyTrip'), label = 'Confirm', class = 'btn btn-success'),
                                   actionButton(ns('cancelModalCopyTrip'), label = 'Cancel', class = 'btn btn-default',
                                                class = 'riv', class = 'getstarted')
@@ -275,7 +275,7 @@ mod_trip_server <- function(id, data){
                 title = 'Warning!',
                 session = session,
                 size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: center;',
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: space-around;',
                   actionButton(ns('confirmModalLoadTrip'), label = 'Confirm', class = 'btn btn-success'),
                   actionButton(ns('cancelModalLoadTrip'), label = 'Cancel', class = 'btn btn-default',
                                class = 'riv', class = 'getstarted')
@@ -300,7 +300,7 @@ mod_trip_server <- function(id, data){
                 title = 'Warning!',
                 session = session,
                 size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: center;',
+                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: space-around;',
                   actionButton(ns('confirmModalDelTrip'), label = 'Confirm', class = 'btn btn-success'),
                   actionButton(ns('cancelModalDelTrip'), label = 'Cancel', class = 'btn btn-default',
                                class = 'riv', class = 'getstarted')

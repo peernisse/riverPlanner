@@ -110,7 +110,7 @@ mod_menu_server <- function(id, data){
               # Validate user has created a trip
 
                 if(length(LOCAL$tripName) == 0 & LOCAL$noAdults == 1){
-                  showNotification('Please create a Trip before adding meals.', type = 'error', duration = 10)
+                  showNotification('Please create a Trip (i.e., click "Save Trip") before adding meals.', type = 'error', duration = 10)
                   return(NULL)
                 }
 

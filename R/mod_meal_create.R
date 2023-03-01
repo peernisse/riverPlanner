@@ -99,7 +99,7 @@ mod_meal_create_ui <- function(id,session){
         size = 'xl',
         easyClose = FALSE,
         fade = FALSE,
-        footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: flex-end;',
+        footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; justify-content: space-around;',
                           actionButton(ns('createMeal'), label = 'Save', class = 'btn btn-success'),
                           actionButton(ns('editMealModalClose_2'), label = 'Cancel', class = 'btn btn-default',
                                        class = 'riv', class = 'getstarted')
@@ -126,7 +126,7 @@ mod_meal_create_server <- function(id, data = LOCAL){
     # Observe add ingredient button -----
 
     observeEvent(input[['addIngredient']], {
-
+browser()
       if(input[['selectIngredient']] %in% LOCAL$createMealDF$INGREDIENT){
         showNotification('This ingredient already exists for this meal!', type = 'error', duration = 10)
         return(NULL)
@@ -150,8 +150,11 @@ mod_meal_create_server <- function(id, data = LOCAL){
       # Create a record from LOCAL$ALL_DATA headers -----
       ingRow <- which(LOCAL$LU_INGREDIENTS$INGREDIENT == input[['selectIngredient']])
 
+      # Get DB max meal ID
+      maxDbMealID <- getMaxMealID()
+
       newRecord <- data.frame(
-        MEAL_ID = max(LOCAL$LU_MEAL$MEAL_ID) + 1,
+        MEAL_ID = maxDbMealID + 1,
         MEAL_NAME = input[['meal-new-name']],
         MEAL_TYPE = input[['meal-new-type']],
         MEAL_DESCRIPTION = input[['meal-new-desc']],
@@ -193,7 +196,12 @@ mod_meal_create_server <- function(id, data = LOCAL){
     # Observe new ingredient button -----
 
     observeEvent(input[['newIngredient']], {
-      newIngredientResponse(input, output, session, data = LOCAL)
+      withProgress(message = 'New Ingredient Creation',
+        detail = 'saving new ingredient to database...', {
+          map(1:5, ~ incProgress(.x/10))
+            newIngredientResponse(input, output, session, data = LOCAL)
+          map(6:10, ~ incProgress(.x/10))
+      })
     })
 
     # Observe new ingredient quantity input and update multiplier -----

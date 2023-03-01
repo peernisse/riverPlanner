@@ -349,7 +349,7 @@ createMealAddIng <- function(input, output, session, data){
 newIngredientResponse <- function(input, output, session, data){
     ns <- session$ns
     LOCAL <- data
-
+#browser()
     if(input[['ing-new-ing']] == '') {
         showNotification('Ingredient name cannot be blank!', type = 'error', duration = 10)
         return(NULL)
@@ -481,22 +481,24 @@ createMealModalSave <- function(input, output, session, data){
 
     # Get max meal_ids from database LU_MEALS, LU_INGREDIENT, XREF_INGREDIENT
 
-    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
-    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
-    gs4_auth(path = authPath)
-
-        # Get new meal ID again just in case. It gets done when ings are added also
-        maxDbMealID <- googlesheets4::read_sheet(url, 'LU_MEAL', range = 'A:A') %>% max()
-        maxDbXrefMealID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'B:B') %>% max()
-        maxDbMealID <- max(c(maxDbMealID,maxDbXrefMealID))
-
-        # maxDbIngID <- googlesheets4::read_sheet(url, 'LU_INGREDIENTS', range = 'A:A') %>% max()
-        # maxDbXrefIngID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'A:A') %>% max()
-        # maxDbIngID <- max(c(maxDbIngID,maxDbXrefIngID))
-
-    gs4_deauth()
+    # url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    # authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    # gs4_auth(path = authPath)
+    #
+    #     # Get new meal ID again just in case. It gets done when ings are added also
+    #     maxDbMealID <- googlesheets4::read_sheet(url, 'LU_MEAL', range = 'A:A') %>% max()
+    #     maxDbXrefMealID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'B:B') %>% max()
+    #     maxDbMealID <- max(c(maxDbMealID,maxDbXrefMealID))
+    #
+    #     # maxDbIngID <- googlesheets4::read_sheet(url, 'LU_INGREDIENTS', range = 'A:A') %>% max()
+    #     # maxDbXrefIngID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'A:A') %>% max()
+    #     # maxDbIngID <- max(c(maxDbIngID,maxDbXrefIngID))
+    #
+    # gs4_deauth()
 
     # Update LOCAL$LU_MEAL
+
+    maxDbMealID <- getMaxMealID()
 
 
     newRecord <- data.frame(MEAL_ID = maxDbMealID + 1) %>%
@@ -810,6 +812,25 @@ dbUpdate <- function(from, to, data = LOCAL){
     #TODO make the pulling ID check a range_read so not reading entire table
     #TODO add if statements to use this function for other tables
 
+    # case LU_USERS
+
+    if(to == 'LU_USERS'){
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = USERNAME) %>%
+            select(check)
+
+        try <- from %>%
+            mutate(check = USERNAME) %>%
+            select(check)
+
+        if(unique(try$check) %in% unique(check$check) == FALSE){
+            sheet_append(url, from, sheet = to)
+            return(NULL)
+        }
+
+    }
+
+
     # Case LU_INGREDIENTS
 
     if(to == 'LU_INGREDIENTS'){
@@ -839,9 +860,7 @@ dbUpdate <- function(from, to, data = LOCAL){
         try <- from %>%
             mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
             select(check)
-
-
-    }
+     }
 
     # Case LU_MEAL
 
@@ -880,8 +899,6 @@ dbUpdate <- function(from, to, data = LOCAL){
             filter(check %in% try$check)
 
     }
-
-
 
     # Process to DB
 
@@ -1060,7 +1077,33 @@ dailyMenu <- function(session, id, data){
     #})
 }
 
+#'getMaxMealID
+#'
+#'
+#'@noRd
+getMaxMealID <- function(){
 
+    # Get max meal_ids from database LU_MEALS, LU_INGREDIENT, XREF_INGREDIENT
+
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+
+    # Get new meal ID again just in case. It gets done when ings are added also
+    maxDbMealID <- googlesheets4::read_sheet(url, 'LU_MEAL', range = 'A:A') %>% max()
+    maxDbXrefMealID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'B:B') %>% max()
+    maxDbMealID <- max(c(maxDbMealID,maxDbXrefMealID))
+
+    # maxDbIngID <- googlesheets4::read_sheet(url, 'LU_INGREDIENTS', range = 'A:A') %>% max()
+    # maxDbXrefIngID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'A:A') %>% max()
+    # maxDbIngID <- max(c(maxDbIngID,maxDbXrefIngID))
+
+    gs4_deauth()
+
+    return(maxDbMealID)
+
+
+}
 
 
 #

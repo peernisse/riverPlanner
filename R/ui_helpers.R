@@ -691,14 +691,15 @@ accInner <- function(ns, parentId, buttonId, buttonTitle, collapseId, body){
 
   div(class = "accordion-item", style = 'border: none;',
       h4(id = ns(buttonId), class = "accordion-header",
-         tags$button(
-           #class = "accordion-button collapsed",
-           class = "btn btn-default menu getstarted", style = 'width: 300px;',
-           type = 'button', `data-toggle` = "collapse",
-           `data-target` = paste0("#",ns(collapseId)),
-           `aria-expanded` = "true",`aria-controls` = paste0("#",ns(collapseId)),
-           buttonTitle
-         ) #end button
+         style = "display: flex; justify-content: center; font-size: 16px;",
+           tags$button(
+             class = "accordion-button collapsed",
+             class = "btn btn-default menu getstarted", style = 'width: 300px; height: 40px;',
+             type = 'button', `data-toggle` = "collapse",
+             `data-target` = paste0("#",ns(collapseId)),
+             `aria-expanded` = "true",`aria-controls` = paste0("#",ns(collapseId)),
+             buttonTitle
+           ) #end button
       ), #end h4
       div(id = ns(collapseId), class = "accordion-collapse collapse",
           `aria-labelledby` = ns(buttonId), `data-parent` = paste0('#',ns(parentId)),

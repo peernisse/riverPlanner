@@ -15,7 +15,8 @@ app_ui <- function(request) {
   #htmlTemplate(filename = './inst/app/www/index.html',
 
     trip = mod_trip_ui('trip'),
-    menu = mod_menu_ui('menu')
+    menu = mod_menu_ui('menu'),
+    userName = mod_data_ui('data_gs')
 
   )
 

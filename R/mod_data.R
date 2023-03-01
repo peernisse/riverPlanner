@@ -8,7 +8,7 @@
 mod_data_ui <- function(id){
   ns <- NS(id)
   tagList(
-    #No UI for data module. Unused.
+    textOutput(ns('userName'))
   )
 }
 
@@ -24,11 +24,16 @@ mod_data_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
+    #browser()
     ###DEV###
-    userName <- 'dev_01' # Will be coming in from Auth0
+    #userName <- 'dev_01' # Will be coming in from Auth0
     #userID <- 4
-    #TODO need to put a stop if incoming userID from AuthO is not in the database
+    #TODO fix bug if you start new trip and first entry is a new meal with new ingredient
     #########
+
+    # Get Auth0 username
+    userName <- session$userData$auth0_info$name
+
 
     ####GOOGLE SHEETS URL AND GET BASE DATA####
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
@@ -37,13 +42,29 @@ mod_data_server <- function(id){
 
     LU_USERS <- read_sheet(url, sheet = "LU_USERS")
 
-    # Establish UserID
-    if(!userName %in% LU_USERS$USERNAME){
-      showNotification('Username not found. Try a different username or contact us.',duration = 10, type = 'error')
-      return(NULL)
-    }
+    # Establish UserID in DB if not there
 
-    userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+    if(!userName %in% LU_USERS$USERNAME){
+      newid <- max(LU_USERS$USER_ID) + 1
+      if(length(grep('@', userName)) != 0){email <- userName} else {email <- ''}
+      newrecord <- data.frame(
+        USER_ID = as.numeric(newid),
+        USERNAME = userName,
+        EMAIL = email,
+        UPTIME = Sys.time(),
+        UPUSER = userName
+      )
+
+      dbUpdate(newrecord, 'LU_USERS', data = NULL)
+
+      LU_USERS <- read_sheet(url, sheet = "LU_USERS")
+      userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+
+    } else {
+
+      userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+
+    }
 
     # Get remaining dataframes filtered by userID
 
@@ -75,6 +96,9 @@ mod_data_server <- function(id){
 
     LU_INGREDIENTS <- read_sheet(url, sheet = "LU_INGREDIENTS") %>%
       filter(USER_ID %in% c(0,userID))
+
+    gs4_deauth()
+
 
     ALL_DATA <- LU_MEAL %>%
       select(-c(UPTIME, UPUSER, USER_ID)) %>%
@@ -115,6 +139,9 @@ mod_data_server <- function(id){
 
     rm(XREF_INGREDIENT,LU_USERS, LU_TRIPS, LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,ALL_DATA)
     gc()
+
+    # UI Outputs -----
+    output$userName <- renderText({LOCAL$userName})
 
     return(LOCAL)
 
