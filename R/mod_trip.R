@@ -3,7 +3,8 @@
 #' @description A shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
-#'
+#' @importFrom shinycssloaders withSpinner
+#' @importFrom auth0 logoutButton logout
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
@@ -12,36 +13,42 @@ mod_trip_ui <- function(id){
   tagList(
 
     fluidRow(
-      column(width = 12, style = 'display: grid; text-align: center; justify-content: space-around; margin: 5px;',
-        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+      column(width = 12, style = 'display: grid; text-align: center;
+             justify-content: space-around; margin: 5px; padding: 20px;',
+       # hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+
+
         #h3('New Trip'),
-        h3(uiOutput(ns('sectionTitleTrip'))),
-        customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#232b2b', placeholder = 'Enter Trip Name'),
+          h3(withSpinner(type = 4, color = '#5cb874', uiOutput(ns('sectionTitleTrip')))),
+          customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#232b2b', placeholder = 'Enter Trip Name'),
 
-        customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#232b2b',
-                          choices = c('No. People Age 12+', '0', seq(1:30)),
-                          selected = 'No. People Age 12+'
-        ),
-        customSelectInput(inputId = ns('noKids'), label = 'Kids <12', labelColor = '#232b2b',
-                          choices = c('No. People Age <12', '0', seq(1:30)),
-                          selected = 'No. People Age <12'
-        ),
-        customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description', labelColor = '#232b2b'),
+          customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#232b2b',
+                            choices = c('No. People Age 12+', '0', seq(1:30)),
+                            selected = 'No. People Age 12+'
+          ),
+          customSelectInput(inputId = ns('noKids'), label = 'Kids <12', labelColor = '#232b2b',
+                            choices = c('No. People Age <12', '0', seq(1:30)),
+                            selected = 'No. People Age <12'
+          ),
+          customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description', labelColor = '#232b2b'),
 
-        actionButton(ns('saveTrip'), class = 'btn btn-success', label = 'Save Trip')
+          actionButton(ns('saveTrip'), class = 'btn btn-success', label = 'Save Trip'),
+         # hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
+
       )
     ),
     br(),
     fluidRow(
-      column(width = 12, style = '/*display: grid;*/ text-align: center; justify-content: space-around; margin: 5px;',
-        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+      column(width = 12, style = '/*display: grid;*/ text-align: center;
+             justify-content: space-around; margin: 5px; padding: 20px;',
+        #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
         h3('My Trips'),
         #uiOutput(ns('test')),
         div(id = ns("tripSelect"), class = "accordion",
             accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips', buttonTitle = 'View My Trips',
-              collapseId = 'collapseTrips', body = uiOutput(ns('trips')))
+              collapseId = 'collapseTrips', body = uiOutput(ns('trips')), bgColor = TRUE)
         ),
-        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
+        #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
       )
     ),
     uiOutput(ns('js'))
@@ -69,8 +76,6 @@ mod_trip_server <- function(id, data){
     #####OBSERVERS#####
 
     observeEvent(input$saveTrip,{
-#TODO Make this 'Save Trip' and add checks to warn for if a trip is currently loaded
-
 #browser()
       if(is.null(input$tripName) | input$tripName == '') {
         showNotification('Please enter trip name', type = 'error', duration = 5)
@@ -93,7 +98,11 @@ mod_trip_server <- function(id, data){
         return(NULL)
       }
 
-      if(nrow(LOCAL$myMeals) == 0 | is.null(LOCAL$myMeals)){
+      if(nrow(LOCAL$myMeals) == 0 | is.null(LOCAL$myMeals) | length(LOCAL$tripID) == 0){
+        LOCAL$tripID <- getMaxTripID() + 1
+
+        #TODO Need to save a trip record in the DB here to reserve the trip ID quickly
+
         LOCAL$tripName <- input$tripName
         LOCAL$tripDesc <- input$tripDesc
         LOCAL$noAdults <- as.numeric(input$noAdults)
@@ -142,14 +151,19 @@ mod_trip_server <- function(id, data){
 
         showModal(
           customModalDialog(
-            p(paste0("The Trip Name entered: '",input$tripName,"' does not match the loaded trip name '",LOCAL$myMeals$TRIPNAME[1],"'. Are you changing the name?")),
+            p(
+              paste0("The Trip Name entered: '",input$tripName,
+              "' does not match the loaded trip name '",LOCAL$myMeals$TRIPNAME[1],
+              "'. Are you changing the name?")
+            ),
             title = 'Warning!',
             session = session,
-            size = 'l',
-            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: space-around;',
-                              actionButton(ns('confirmModalSaveTrip'), label = 'Confirm', class = 'btn btn-success'),
-                              actionButton(ns('cancelModalSaveTrip'), label = 'Cancel', class = 'btn btn-default',
-                                           class = 'riv', class = 'getstarted')
+            size = 'xl',
+            footer = fluidRow(class = 'modal-footer-row',
+              actionButton(ns('confirmModalSaveTrip'), label = 'Confirm',
+                           class = 'btn btn-success'), class = 'riv',
+              actionButton(ns('cancelModalSaveTrip'), label = 'Cancel',
+                           class = 'btn btn-default', class = 'riv', class = 'getstarted')
             )
           )
         )
@@ -172,11 +186,12 @@ mod_trip_server <- function(id, data){
             ),
             title = 'Warning!',
             session = session,
-            size = 'l',
-            footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: space-around;',
-                              actionButton(ns('confirmModalSaveTrip'), label = 'Confirm', class = 'btn btn-success'),
-                              actionButton(ns('cancelModalSaveTrip'), label = 'Cancel', class = 'btn btn-default',
-                                           class = 'riv', class = 'getstarted')
+            size = 'xl',
+            footer = fluidRow(class = 'modal-footer-row',
+              actionButton(ns('confirmModalSaveTrip'), label = 'Confirm',
+                           class = 'btn btn-success', class = 'riv'),
+              actionButton(ns('cancelModalSaveTrip'), label = 'Cancel',
+                           class = 'btn btn-default', class = 'riv', class = 'getstarted')
             )
           )
         )
@@ -222,8 +237,8 @@ mod_trip_server <- function(id, data){
 
     observe({
       tripIDs <- LOCAL$LU_TRIPS %>%
-                     filter(USERNAME == LOCAL$userName) %>%
-                     pull(TRIP_ID) %>% unique()
+        filter(USERNAME == LOCAL$userName) %>%
+        pull(TRIP_ID) %>% unique()
 
       # Observe Copy Trip buttons
       copyTripIDs <- paste0('copy-tripID-',tripIDs)
@@ -241,13 +256,14 @@ mod_trip_server <- function(id, data){
               customModalDialog(
                 p("This will clear any unsaved work and create trip ",strong(paste0('Copy Of ',tripName)),
                   ". You can then rename and modify the trip. Are you sure?"),
-                title = 'Warning!',
+                title = 'Heads Up!',
                 session = session,
-                size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: space-around;',
-                                  actionButton(ns('confirmModalCopyTrip'), label = 'Confirm', class = 'btn btn-success'),
-                                  actionButton(ns('cancelModalCopyTrip'), label = 'Cancel', class = 'btn btn-default',
-                                               class = 'riv', class = 'getstarted')
+                size = 'xl',
+                footer = fluidRow(class = 'modal-footer-row',
+                  actionButton(ns('confirmModalCopyTrip'), label = 'Confirm',
+                               class = 'btn btn-success', class = 'riv'),
+                  actionButton(ns('cancelModalCopyTrip'), label = 'Cancel',
+                               class = 'btn btn-default', class = 'riv', class = 'getstarted')
                 )
               )
             )
@@ -271,14 +287,16 @@ mod_trip_server <- function(id, data){
 
             showModal(
               customModalDialog(
-                p("This will clear any unsaved work and load trip ",strong(tripName)," Are you sure?"),
-                title = 'Warning!',
+                p("This will clear any unsaved work and load trip ",strong(tripName),
+                  " Are you sure?"),
+                title = 'Heads Up!',
                 session = session,
-                size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: space-around;',
-                  actionButton(ns('confirmModalLoadTrip'), label = 'Confirm', class = 'btn btn-success'),
-                  actionButton(ns('cancelModalLoadTrip'), label = 'Cancel', class = 'btn btn-default',
-                               class = 'riv', class = 'getstarted')
+                size = 'xl',
+                footer = fluidRow(class = 'modal-footer-row',
+                  actionButton(ns('confirmModalLoadTrip'), label = 'Confirm',
+                               class = 'btn btn-success', class = 'riv'),
+                  actionButton(ns('cancelModalLoadTrip'), label = 'Cancel',
+                               class = 'btn btn-default', class = 'riv', class = 'getstarted')
                 )
               )
             )
@@ -299,9 +317,10 @@ mod_trip_server <- function(id, data){
                 p('This will permanently delete this trip. Are you sure?'),
                 title = 'Warning!',
                 session = session,
-                size = 'l',
-                footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row;  justify-content: space-around;',
-                  actionButton(ns('confirmModalDelTrip'), label = 'Confirm', class = 'btn btn-success'),
+                size = 'xl',
+                footer = fluidRow(class = 'modal-footer-row',
+                  actionButton(ns('confirmModalDelTrip'), label = 'Confirm',
+                               class = 'btn btn-success', class = 'riv'),
                   actionButton(ns('cancelModalDelTrip'), label = 'Cancel', class = 'btn btn-default',
                                class = 'riv', class = 'getstarted')
                 )

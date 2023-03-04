@@ -19,7 +19,7 @@ dat<-params$data
 storageTitle <- params$storageTitle
 
     div(
-            #h4(header, style = 'color: black; text-align: left;'),
+            p('--If viewing this file in a browser, click items to cross them out. Your crossouts will be saved in local browser storage until you clear your browser history. If not viewing in a browser, crossout is not supported.--', style = 'font-style: italic; text-align: left; padding: 5 px;'),
             tags$table(id = storageTitle,class = "table table-striped",
                tags$thead(
                    tags$tr(
@@ -49,6 +49,17 @@ storageTitle <- params$storageTitle
 
     thead {
       text-align: left;
+    }
+
+    table {
+      text-align: left;
+      position: relative;
+    }
+
+    th {
+      background: white;
+      position: sticky;
+      top: 0;
     }
 
     .title.toc-ignore {

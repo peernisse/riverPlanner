@@ -1,5 +1,10 @@
 
-#Define globa variables or get warned during package check
+
+# Options
+
+options(auth0_config_file = "inst/app/_auth0.yml")
+
+# Define globa variables or get warned during package check
 
 utils::globalVariables(
     c("<<-",".","pageNav", "INGREDIENT_ID", "INGREDIENT_CATEGORY" ,

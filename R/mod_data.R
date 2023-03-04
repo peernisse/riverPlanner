@@ -8,7 +8,32 @@
 mod_data_ui <- function(id){
   ns <- NS(id)
   tagList(
-    textOutput(ns('userName'))
+    tags$li(
+      uiOutput(ns('userName'))
+      # tags$button(class = "getstarted",
+      #   style = "background-color: #FFFFFF;",
+      #   disabled = "disabled",
+      #   textOutput(ns('userName'))
+      # )
+    ),
+    tags$li(
+      tags$button(id = ns('logOut'),
+        class = 'shiny-bound-input action-button btn btn-success',
+        style = "margin:15px;",
+        "Log Out"
+      )
+    )
+    # fluidRow(
+    #   column(width = 12,
+    #     tags$button(class = "btn btn-default getstarted",
+    #       style = "padding: unset; border-radius: unset;",
+    #         textOutput(ns('userName'))
+    #     ),
+    #     logoutButton(id = ns('logOut'),label = 'Log Out',
+    #       style = "padding: unset; margin:unset; background-color: #232b2b; border-radius: unset;"
+    #     )
+    #   )
+    # )
   )
 }
 
@@ -30,6 +55,9 @@ mod_data_server <- function(id){
     #userID <- 4
     #TODO fix bug if you start new trip and first entry is a new meal with new ingredient
     #########
+
+    #####OBSERVERS#####
+    observeEvent(input$logOut, {logout()})
 
     # Get Auth0 username
     userName <- session$userData$auth0_info$name
@@ -120,7 +148,7 @@ mod_data_server <- function(id){
       LU_MEAL_TYPE = LU_MEAL_TYPE,
       LU_MEAL = LU_MEAL,
       LU_INGREDIENTS = LU_INGREDIENTS,
-      tripID = ifelse(length(LU_TRIPS$TRIP_ID) == 0, 1, max(LU_TRIPS$TRIP_ID) + 1),
+      tripID = character(),
       tripName = character(),
       tripDesc = character(),
       loadTripMode = FALSE,
@@ -141,7 +169,19 @@ mod_data_server <- function(id){
     gc()
 
     # UI Outputs -----
-    output$userName <- renderText({LOCAL$userName})
+    #output$userName <- renderText({LOCAL$userName})
+
+    output$userName <- renderUI({
+
+      tags$button(class = "getstarted",
+                  style = "background-color: #FFFFFF;",
+                  disabled = "disabled",
+                  LOCAL$userName
+      )
+
+    })
+
+    # Return LOCAL reactive values object
 
     return(LOCAL)
 
