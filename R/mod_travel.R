@@ -55,8 +55,8 @@ mod_travel_server <- function(id){
           title = 'Adding Crew Member Details |',
           session = session,
           size = 'l',
-          footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: row; justify-content: space-around;',
-            actionButton(ns('confirmModalAddCrew'), label = 'Confirm', class = 'btn btn-success'),
+          footer = fluidRow(class = 'modal-footer-row',
+            actionButton(ns('confirmModalAddCrew'), label = 'Confirm', class = 'btn btn-success', class = 'riv'),
             actionButton(ns('cancelModalAddCrew'), label = 'Cancel', class = 'btn btn-default',
                          class = 'riv', class = 'getstarted')
           )

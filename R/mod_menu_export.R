@@ -26,7 +26,7 @@ mod_menu_export_ui <- function(id, session){
       style = 'overflow-x:hidden!important;',
       session = session,
       title = uiOutput(ns('exportMenuModalTitle')),
-      size = 'xl',
+      size = 'fs',
       easyClose = FALSE,
       fade = FALSE,
       footer = fluidRow(class = 'modal-footer-row',

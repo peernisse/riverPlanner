@@ -3,37 +3,32 @@
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #' @importFrom shiny NS tagList
+#' @importFrom DBI dbConnect dbGetQuery dbExecute dbDisconnect
+#' @importFrom RMariaDB MariaDB
 #'
 #' @noRd
 mod_data_ui <- function(id){
   ns <- NS(id)
   tagList(
     tags$li(
-      uiOutput(ns('userName'))
-      # tags$button(class = "getstarted",
-      #   style = "background-color: #FFFFFF;",
-      #   disabled = "disabled",
-      #   textOutput(ns('userName'))
-      # )
+      a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
+        div(class = "form-group shiny-input-container", style = 'width: auto;',
+          tags$input(id = ns("userName"), type = "text", class = "form-control",disabled = "disabled",
+            style = 'width: auto; color: #5cb874; border-color: #5cb874;
+              background-color: #fff; text-align: center;', value = NA
+          )
+        )
+      )
     ),
     tags$li(
-      tags$button(id = ns('logOut'),
-        class = 'shiny-bound-input action-button btn btn-success',
-        style = "margin:15px;",
-        "Log Out"
+      #actionLink(inputId = ns('logOut'), label = "Log Out", class = "nav-link scrollto")
+      a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
+        tags$button(id = ns('logOut'),
+          class = 'nav-link scrollto shiny-bound-input action-button btn btn-success',
+          style = "margin:5px; color: #fff;", "Log Out"
+        )
       )
     )
-    # fluidRow(
-    #   column(width = 12,
-    #     tags$button(class = "btn btn-default getstarted",
-    #       style = "padding: unset; border-radius: unset;",
-    #         textOutput(ns('userName'))
-    #     ),
-    #     logoutButton(id = ns('logOut'),label = 'Log Out',
-    #       style = "padding: unset; margin:unset; background-color: #232b2b; border-radius: unset;"
-    #     )
-    #   )
-    # )
   )
 }
 
@@ -56,12 +51,9 @@ mod_data_server <- function(id){
     #TODO fix bug if you start new trip and first entry is a new meal with new ingredient
     #########
 
-    #####OBSERVERS#####
-    observeEvent(input$logOut, {logout()})
-
     # Get Auth0 username
     userName <- session$userData$auth0_info$name
-
+    updateTextInput(session, inputId = 'userName', value = userName)
 
     ####GOOGLE SHEETS URL AND GET BASE DATA####
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
@@ -169,17 +161,20 @@ mod_data_server <- function(id){
     gc()
 
     # UI Outputs -----
-    #output$userName <- renderText({LOCAL$userName})
+    #output$userName <- renderText({isolate(LOCAL$userName)})
 
-    output$userName <- renderUI({
+    # output$userName <- renderUI({
+    #
+    #   tags$button(class = "getstarted",
+    #     style = "background-color: #FFFFFF;",
+    #     disabled = "disabled",
+    #     LOCAL$userName
+    #   )
+    #
+    # })
 
-      tags$button(class = "getstarted",
-                  style = "background-color: #FFFFFF;",
-                  disabled = "disabled",
-                  LOCAL$userName
-      )
-
-    })
+    #####OBSERVERS#####
+    observeEvent(input$logOut, {logout()})
 
     # Return LOCAL reactive values object
 

@@ -934,8 +934,6 @@ dbDelete <- function(session, input, output, id, to, data = LOCAL, level){
     ns <- session$ns
     LOCAL <- data
 
-    # Remove trip from database
-
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
     authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
     gs4_auth(path = authPath)
@@ -954,9 +952,13 @@ dbDelete <- function(session, input, output, id, to, data = LOCAL, level){
 
     if(level == 'trip'){
 
-        # Remove trip info and inputs if the trip is currently loaded
+        # Case no trip is loaded
 
-        if(id == LOCAL$tripID){
+        if(length(LOCAL$tripID) == 0){LOCAL$tripID <- id}
+
+        # Case trip being deleted is loaded
+
+        if(length(LOCAL$tripID) > 0 & id == LOCAL$tripID){
 
             # Clear trip info from LOCAL
 

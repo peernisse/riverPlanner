@@ -98,7 +98,7 @@ mod_meal_create_ui <- function(id,session){
 
         session = session,
         title = uiOutput(ns('ttl')),
-        size = 'xl',
+        size = 'fs',
         easyClose = FALSE,
         fade = FALSE,
         footer = fluidRow(class = 'modal-footer-row',

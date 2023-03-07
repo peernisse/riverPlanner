@@ -90,7 +90,7 @@ menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
                 ),
                 actionButton(inputId = ns(paste0('del-',mealUniqueId)),label = NULL, icon = icon('trash'),
                              type = "button",class = "btn btn-md btn-danger",
-                             style = 'margin-left: 3px;'),
+                             style = 'margin-left: 30px;'),
             ),
         )
     )
@@ -133,91 +133,28 @@ tripCard <- function(session, data, tripID, tripName, days, noAdults, noKids, tr
   }
 
   div(class = "card card-block mx-2", style = style,
-      div(class = "card-body", style="max-width:350px;",
-          h5(class = "card-title", tripName),
-          h6(class = "card-subtitle mb-2 text-muted",
-             paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
-          ),
-          p(class = "card-text", tripDesc),
-          tags$button(id = ns(killButtonID),
-                      class = "btn btn-danger action-button shiny-bound-input",
-                      type = "button", icon('trash')
-          ),
-          tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
-                      style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-                      type = "button",
-                      'Load Trip'
-          ),
-          tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
-                      #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-                      type = "button",
-                      'Copy Trip'
-          )
+    div(class = "card-body", style="max-width:350px;",
+      h5(class = "card-title", tripName),
+      h6(class = "card-subtitle mb-2 text-muted",
+         paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
+      ),
+      p(class = "card-text", tripDesc),
+      tags$button(id = ns(killButtonID),
+                  class = "btn btn-danger action-button shiny-bound-input",
+                  type = "button", icon('trash')
+      ),
+      tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
+                  style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                  type = "button",
+                  'Load Trip'
+      ),
+      tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
+                  #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                  type = "button",
+                  'Copy Trip'
       )
+    )
   )
-
-
-
-
-  #date <- as.character(upTime$UPTIME)
-
-
-  # if(length(LOCAL$tripID) == 0 | !LOCAL$tripID %in% tripID){
-  #   div(class = "card card-block mx-2", style="text-align: left; min-width:300px;
-  #     margin-bottom:10px; border-left-color: #232b2b; border-left-width: .25rem;
-  #     border-radius: .25rem;",
-  #       div(class = "card-body", style="max-width:350px;",
-  #           h5(class = "card-title", tripName),
-  #           h6(class = "card-subtitle mb-2 text-muted",
-  #              paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
-  #           ),
-  #           p(class = "card-text", tripDesc),
-  #           tags$button(id = ns(killButtonID),
-  #                       class = "btn btn-danger action-button shiny-bound-input",
-  #                       type = "button", icon('trash')
-  #           ),
-  #           tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
-  #                       style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-  #                       type = "button",
-  #                       'Load Trip'
-  #           ),
-  #           tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
-  #                       #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-  #                       type = "button",
-  #                       'Copy Trip'
-  #           )
-  #       )
-  #   )
-  #
-  # } else
-  #
-  # if(LOCAL$tripID == tripID){
-  #   div(class = "card card-block mx-2", style="text-align: left; min-width:300px;
-  #     margin-bottom:10px; border-left-color: #5cb874; border-left-width: .25rem;
-  #     border-radius: .25rem;",
-  #       div(class = "card-body", style="max-width:350px;",
-  #           h5(class = "card-title", tripName),
-  #           h6(class = "card-subtitle mb-2 text-muted",
-  #              paste0(days, ' days | ', noAdults, ' Adults | ', noKids, ' Kids')
-  #           ),
-  #           p(class = "card-text", tripDesc),
-  #           tags$button(id = ns(killButtonID),
-  #                       class = "btn btn-danger action-button shiny-bound-input",
-  #                       type = "button", icon('trash')
-  #           ),
-  #           tags$button(id = ns(loadButtonID), class = "btn action-button shiny-bound-input",
-  #                       style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-  #                       type = "button",
-  #                       'Load Trip'
-  #           ),
-  #           tags$button(id = ns(copyButtonID), class = "btn action-button btn-primary shiny-bound-input",
-  #                       #style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
-  #                       type = "button",
-  #                       'Copy Trip'
-  #           )
-  #       )
-  #   )
-  # }
 }
 
 #####CARDS GENERATORS#####
@@ -230,12 +167,7 @@ makeTripCards <- function(input, output, session, data = LOCAL){
   LOCAL <- data
   ns <- session$ns
 
-
-
   renderUI({
-
-
-
     if(length(LOCAL$userName) == 0 | is.null(LOCAL$userName) | LOCAL$userName == ''){return(NULL)}
 
     tripMap <- LOCAL$LU_TRIPS %>%
@@ -395,8 +327,9 @@ makeDayBoxes <- function(input, output, session, rd, parentId, data = LOCAL$myMe
 #' @noRd
 
 customModalDialog <- function (..., session, title = NULL, footer = modalButton("Dismiss"),
-                               size = c("m", "s", "l", "xl"), easyClose = FALSE, fade = TRUE) {
+                               size = c("m", "s", "l", "xl", "fs"), easyClose = FALSE, fade = TRUE) {
   ns <- session$ns
+
   size <- match.arg(size)
   backdrop <- if (!easyClose) "static"
   keyboard <- if (!easyClose) "false"
@@ -405,8 +338,9 @@ customModalDialog <- function (..., session, title = NULL, footer = modalButton(
     "fade", class = 'show', tabindex = "-1", `data-backdrop` = backdrop,
     `data-bs-backdrop` = backdrop, `data-keyboard` = keyboard,
     `data-bs-keyboard` = keyboard, `aria-labelledby` = "#headerTitle",
-    div(class = "modal-dialog modal-dialog-scrollable", class = switch(size, s = "modal-sm", m = NULL, l = "modal-lg",
-                                                      xl = "modal-xl"),
+    div(class = "modal-dialog modal-dialog-scrollable",
+          class = switch(size, s = "modal-sm", m = NULL, l = "modal-lg",
+                        xl = "modal-xl", fs = "modal-fullscreen"),
         div(class = "modal-content",
             if (!is.null(title))
               div(class = "modal-header",
@@ -734,16 +668,26 @@ customTextAreaInput <- function(inputId, label, value = '', labelColor,
 
 
 #' Accordion item function to be mapped inside accordion container
-#'
+#' @param ns The namespace of the module the function is being used in
+#' @param parentId The id of the parent accordion div the function is called in
+#' @param buttonId The id for the accordion segment button. What will have observeEvent on it
+#' @param buttonTitle The label for the accordion segment button
+#' @param collapseId The id for the collapsible div
+#' @param show Logical. Should the collapsable div begin open or closed
+#' @param body The UI to be displayed in the collapsable accordion segment
+#' @param bgColor Logical. Whether to color the background the same as the page section
+#' the accordion is in, if the section background is other than #fff
+#' @param pad Logical. DEfault TRUE adds left and right padding to accordion segment.
+#' FALSE sets the padding to 0, the segment content reaches edge of page
 #' @param body UI elements. Either uiOutput object or HTML or function that returns HTML
 #' @noRd
 accInner <- function(ns, parentId, buttonId, buttonTitle,
-                     collapseId, body, bgColor = FALSE, pad = TRUE){
+                     collapseId, show = FALSE, body, bgColor = FALSE, pad = TRUE){
   ns <- ns
   classExtra <- character()
   styleExtra <- character()
+  show <- ifelse(show == FALSE,'','show')
 
-  #if(bgColor == FALSE){class <- 'accordion-header'} else
   if(bgColor == TRUE){classExtra <- 'section-bg'}
   if(pad == FALSE){styleExtra <- 'padding: 0px;'}
 
@@ -757,14 +701,14 @@ accInner <- function(ns, parentId, buttonId, buttonTitle,
              `data-target` = paste0("#",ns(collapseId)),
              `aria-expanded` = "true",`aria-controls` = paste0("#",ns(collapseId)),
              buttonTitle
-           ) #end button
-      ), #end h4
-      div(id = ns(collapseId), class = "accordion-collapse collapse",
+           )
+      ),
+      div(id = ns(collapseId), class = "accordion-collapse collapse", class = show,
           `aria-labelledby` = ns(buttonId), `data-parent` = paste0('#',ns(parentId)),
           div(class = "accordion-body", class = classExtra, style = styleExtra,
               body
-          )#end accordion-body
-      )#end accordion-collapse collapse
+          )
+      )
   )
 }
 

@@ -70,7 +70,7 @@ mod_meal_edit_ui <- function(id, session){
       ),
       session = session,
       title = h4(textOutput(ns('modalTitle')), style = 'color: #5cb874'),
-      size = 'xl',
+      size = 'fs',
       easyClose = FALSE,
       fade = FALSE,
       footer = fluidRow(class = 'modal-footer-row',

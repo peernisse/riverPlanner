@@ -30,7 +30,8 @@ mod_trip_ui <- function(id){
                             choices = c('No. People Age <12', '0', seq(1:30)),
                             selected = 'No. People Age <12'
           ),
-          customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description', labelColor = '#232b2b'),
+          customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description',
+                              resize = 'horizontal', width = 'auto', labelColor = '#232b2b'),
 
           actionButton(ns('saveTrip'), class = 'btn btn-success', label = 'Save Trip'),
          # hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
@@ -45,8 +46,9 @@ mod_trip_ui <- function(id){
         h3('My Trips'),
         #uiOutput(ns('test')),
         div(id = ns("tripSelect"), class = "accordion",
-            accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips', buttonTitle = 'View My Trips',
-              collapseId = 'collapseTrips', body = uiOutput(ns('trips')), bgColor = TRUE)
+            accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips',
+              buttonTitle = 'View My Trips', collapseId = 'collapseTrips',
+              show = TRUE, body = uiOutput(ns('trips')), bgColor = TRUE)
         ),
         #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
       )
@@ -311,10 +313,15 @@ mod_trip_server <- function(id, data){
       delTripIDs <- delTripIDs[!delTripIDs %in% createdObservers]
       if(length(delTripIDs) > 0){
         map(delTripIDs, ~ observeEvent(input[[.x]], {
-            tripDelete <<- gsub('kill-tripID-','',.x)
+          tripDelete <<- gsub('kill-tripID-','',.x)
+          tripName <- LOCAL$LU_TRIPS %>%
+            filter(TRIP_ID == gsub('kill-tripID-','',.x)) %>%
+            pull(TRIPNAME) %>%
+            unique(.)
+
             showModal(
               customModalDialog(
-                p('This will permanently delete this trip. Are you sure?'),
+                p('This will permanently delete trip', strong(tripName),'. Are you sure?'),
                 title = 'Warning!',
                 session = session,
                 size = 'xl',

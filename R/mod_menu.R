@@ -41,9 +41,9 @@ mod_menu_ui <- function(id){
         uiOutput(ns('tripMenu')),
         br(),
         actionButton(ns('menuExport'), label = 'View and Download',
-                      class = 'btn btn-success',
-                      #disabled = 'disabled',
-                      style = 'margin:5px;'
+          class = 'btn btn-success',
+          #disabled = 'disabled',
+          style = 'margin:5px;'
         ),
         #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
       )
@@ -330,8 +330,8 @@ mod_menu_server <- function(id, data){
 
   output$sectionTitleTripMenu <- renderUI({
     if(length(LOCAL$tripName) > 0){
-      paste('Manage Trip Menu for',LOCAL$tripName)
-    } else{'Manage Trip Menu'}
+      paste('Customize Trip Menu for',LOCAL$tripName)
+    } else{'Customize Trip Menu'}
   })
 
   # Make meal card rows by meal type
@@ -344,7 +344,6 @@ mod_menu_server <- function(id, data){
   output$cocktails <- renderUI({
     p('No Cocktails yet....')
   })
-
 
   # Make Menu card rows by day
   #TODO make this open the div for the menu day just updated and change the name from test

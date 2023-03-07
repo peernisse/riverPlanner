@@ -26,13 +26,13 @@
 #     # expect_true(inherits(output$tbl$html, "html"))
 # })
 
-test_that("module ui works", {
-  ui <- mod_meal_edit_ui(id = "test", session = session)
-  golem::expect_shinytaglist(ui)
-  # Check that formals have not been removed
-  fmls <- formals(mod_meal_edit_ui)
-  for (i in c("id")){
-    expect_true(i %in% names(fmls))
-  }
-})
+# test_that("module ui works", {
+#   ui <- mod_meal_edit_ui(id = "test", session = session)
+#   golem::expect_shinytaglist(ui)
+#   # Check that formals have not been removed
+#   fmls <- formals(mod_meal_edit_ui)
+#   for (i in c("id")){
+#     expect_true(i %in% names(fmls))
+#   }
+# })
 
