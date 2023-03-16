@@ -1,12 +1,8 @@
 #' travel UI Function
-#'
 #' @description Travel planner module.
-#'
 #' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
 #' @importFrom shiny NS tagList
+#' @noRd
 mod_travel_ui <- function(id){
   ns <- NS(id)
   tagList(
@@ -78,8 +74,3 @@ mod_travel_server <- function(id){
   })
 }
 
-## To be copied in the UI
-# mod_travel_ui("travel_1")
-
-## To be copied in the server
-# mod_travel_server("travel_1")

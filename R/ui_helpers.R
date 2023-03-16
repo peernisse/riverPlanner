@@ -8,7 +8,6 @@
 #' @param subttl The card subtitle displayed in h6()
 #' @param desc The card body text displayed in p()
 #' @noRd
-#'
 mealCard <- function(session,id,data = LOCAL, mtype, ttl, subttl, desc){
     ns <- session$ns
 
@@ -28,26 +27,26 @@ mealCard <- function(session,id,data = LOCAL, mtype, ttl, subttl, desc){
             p(class='card-text',style = 'text-align: left;', desc),
             div(style = 'display: inline-flex; justify-content: flex-end; flex-wrap: nowrap; flex-direction: row;',
                 selectInput(inputId = ns(paste0('rd-',id)),
-                            width = 'fit-content',
-                            size = 1,
-                            selectize = FALSE,
-                            label = NULL,
-                            choices = c('Day',as.character(seq(1:30))),
-                            selected = 'Day'),
+                    width = 'fit-content',
+                    size = 1,
+                    selectize = FALSE,
+                    label = NULL,
+                    choices = c('Day',as.character(seq(1:30))),
+                    selected = 'Day'),
                 selectInput(inputId = ns(paste0('mt-',id)),
-                            width = 'fit-content',
-                            size = 1,
-                            selectize = FALSE,
-                            label = NULL,
-                            choices = c(unique(data$LU_MEAL_TYPE$MEAL_TYPE)),
-                            selected = mtype),
+                    width = 'fit-content',
+                    size = 1,
+                    selectize = FALSE,
+                    label = NULL,
+                    choices = c(unique(data$LU_MEAL_TYPE$MEAL_TYPE)),
+                    selected = mtype),
                 actionButton(inputId = ns(paste0('view-',id)),label = NULL, icon = icon('eye'),
-                             type = "button",class = "btn btn-md btn-primary",
-                             style = 'margin-left: 3px;'
+                    type = "button",class = "btn btn-md btn-primary",
+                    style = 'margin-left: 3px;'
                 ),
                 actionButton(inputId = ns(paste0('add-',id)),label = NULL, icon = icon('plus'),
-                             type = "button",class = "btn btn-md btn-success",
-                             style = 'margin-left: 3px;'),
+                    type = "button",class = "btn btn-md btn-success",
+                    style = 'margin-left: 3px;'),
                 # actionButton(inputId = ns(paste0('del-',id)),label = NULL, icon = icon('trash'),
                 #              type = "button",class = "btn btn-sm btn-danger")
             ),
@@ -63,7 +62,6 @@ mealCard <- function(session,id,data = LOCAL, mtype, ttl, subttl, desc){
 #' @param subttl The card subtitle displayed in h6()
 #' @param desc The card body text displayed in p()
 #' @noRd
-#'
 menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
     ns <- session$ns
     mealUniqueId <- data$MEAL_UNIQUE_ID %>% unique(.)
@@ -114,23 +112,23 @@ tripCard <- function(session, data, tripID, tripName, days, noAdults, noKids, tr
   killButtonID <- paste0('kill-tripID-', tripID)
   copyButtonID <- paste0('copy-tripID-', tripID)
 
- # browser()
+    if(length(LOCAL$tripID) == 0){
+        style <- "text-align: left; min-width:300px;
+          margin-bottom:10px; border-left-color: #232b2b; border-left-width: .25rem;
+          border-radius: .25rem;"
+    }
 
-  if(length(LOCAL$tripID) == 0){style <- "text-align: left; min-width:300px;
-      margin-bottom:10px; border-left-color: #232b2b; border-left-width: .25rem;
-      border-radius: .25rem;"}
+    if(length(LOCAL$tripID) > 0 && !LOCAL$tripID %in% tripID){
+        style <- "text-align: left; min-width:300px;
+          margin-bottom:10px; border-left-color: #232b2b; border-left-width: .25rem;
+          border-radius: .25rem;"
+    }
 
-  if(length(LOCAL$tripID) > 0 && !LOCAL$tripID %in% tripID){
-    style <- "text-align: left; min-width:300px;
-      margin-bottom:10px; border-left-color: #232b2b; border-left-width: .25rem;
-      border-radius: .25rem;"
-  }
-
-  if(length(LOCAL$tripID) > 0 && LOCAL$tripID == tripID){
-    style <- "text-align: left; min-width:300px;
-      margin-bottom:10px; border-left-color: #5cb874; border-left-width: .25rem;
-      border-radius: .25rem;"
-  }
+    if(length(LOCAL$tripID) > 0 && LOCAL$tripID == tripID){
+        style <- "text-align: left; min-width:300px;
+          margin-bottom:10px; border-left-color: #5cb874; border-left-width: .25rem;
+          border-radius: .25rem;"
+    }
 
   div(class = "card card-block mx-2", style = style,
     div(class = "card-body", style="max-width:350px;",
@@ -169,19 +167,26 @@ makeTripCards <- function(input, output, session, data = LOCAL){
 
   renderUI({
     if(length(LOCAL$userName) == 0 | is.null(LOCAL$userName) | LOCAL$userName == ''){return(NULL)}
+    if(nrow(LOCAL$LU_TRIPS) == 0){return(NULL)}
+
+    tripMap1 <- LOCAL$LU_TRIPS %>%
+        filter(USER_ID %in% LOCAL$userID) %>%
+        select(TRIP_ID, TRIP_DESC, TRIPNAME) %>%
+        distinct(.)
 
     tripMap <- LOCAL$LU_TRIPS %>%
-      filter(USERNAME %in% LOCAL$userName) %>%
-      group_by(TRIP_ID, TRIPNAME) %>%
-      summarize(
-        RIVER_DAY = max(as.numeric(RIVER_DAY)),
-        NO_ADULTS = max(as.numeric(NO_ADULTS)),
-        NO_KIDS = max(as.numeric(NO_KIDS)),
-        TRIP_DESC = TRIP_DESC,
-        UPTIME = UPTIME
-      ) %>%
-      unique() %>%
-      arrange(desc(UPTIME))
+      filter(USER_ID %in% LOCAL$userID) %>%
+        group_by(TRIP_ID) %>%
+        summarize(
+            RIVER_DAY = max(as.numeric(RIVER_DAY)),
+            NO_ADULTS = max(as.numeric(NO_ADULTS)),
+            NO_KIDS = max(as.numeric(NO_KIDS)),
+            #TRIP_DESC = TRIP_DESC,
+            UPTIME = max(UPTIME)
+        ) %>%
+        unique() %>%
+        arrange(desc(UPTIME)) %>%
+        left_join(tripMap1, by = c('TRIP_ID'))
 
     div(class = "container-fluid py-2", style = 'padding-left: inherit; padding-right: inherit;',
       div(class = 'row', style = 'text-align: center; margin-bottom: 5px;',
@@ -193,11 +198,11 @@ makeTripCards <- function(input, output, session, data = LOCAL){
           data = LOCAL,
           tripID = .x,
           tripName = tripMap[which(tripMap$TRIP_ID == .x), 'TRIPNAME'],
-          days = tripMap[which(tripMap$TRIP_ID == .x), 3],
-          noAdults = tripMap[which(tripMap$TRIP_ID == .x), 4],
-          noKids = tripMap[which(tripMap$TRIP_ID == .x), 5],
-          tripDesc = tripMap[which(tripMap$TRIP_ID == .x),6],
-          upTime = tripMap[which(tripMap$TRIP_ID == .x),7])
+          days = tripMap[which(tripMap$TRIP_ID == .x), 'RIVER_DAY'],
+          noAdults = tripMap[which(tripMap$TRIP_ID == .x), 'NO_ADULTS'],
+          noKids = tripMap[which(tripMap$TRIP_ID == .x), 'NO_KIDS'],
+          tripDesc = tripMap[which(tripMap$TRIP_ID == .x), 'TRIP_DESC'],
+          upTime = tripMap[which(tripMap$TRIP_ID == .x), 'UPTIME'])
         )
       )
     )
@@ -216,7 +221,6 @@ makeMealCards <- function(input, output, session, mtype, data = LOCAL){
     LOCAL <- data
 
     renderUI({
-
         ns <- session$ns
         filtDat <- LOCAL$ALL_DATA %>% filter(MEAL_TYPE %in% mtype) %>%
             select(MEAL_ID,MEAL_TYPE,MEAL_NAME,MEAL_DESCRIPTION) %>% unique(.)
@@ -232,8 +236,8 @@ makeMealCards <- function(input, output, session, mtype, data = LOCAL){
             div(class = "d-flex flex-row flex-nowrap overflow-auto",
 
                 map(mapIndexRows, ~ mealCard(session,filtDat[.,'MEAL_ID'],data = LOCAL,
-                                             mtype = mtype, filtDat[.,'MEAL_NAME'],
-                                             NULL, filtDat[.,'MEAL_DESCRIPTION']))
+                     mtype = mtype, filtDat[.,'MEAL_NAME'],
+                     NULL, filtDat[.,'MEAL_DESCRIPTION']))
             )
 
         )
@@ -254,7 +258,6 @@ makeMenuCards <- function(input, output, session, day, data){
     ns <- session$ns
 
     renderUI({
-
         ns <- session$ns
 
         filtDat <- data %>% filter(RIVER_DAY %in% day) %>%
@@ -308,8 +311,6 @@ makeDayBoxes <- function(input, output, session, rd, parentId, data = LOCAL$myMe
   )
 }
 
-
-
 #####MODAL DIALOGS#####
 
 #' This is just shiny modalDialog with one extra line to add a button in
@@ -317,6 +318,7 @@ makeDayBoxes <- function(input, output, session, rd, parentId, data = LOCAL$myMe
 #' @param ... UI elements for the body of the modal dialog box.
 #' @param title An optional title for the dialog.
 #' @param footer UI for footer. Use NULL for no footer.
+#' @param session This is added to carry namespace to the UI.
 #' @param size One of "s" for small, "m" (the default) for medium, or "l" for large.
 #' @param easyClose If TRUE, the modal dialog can be dismissed by clicking outside the dialog box,
 #' or be pressing the Escape key. If FALSE (the default), the modal dialog can't be dismissed in those ways;
@@ -355,14 +357,13 @@ customModalDialog <- function (..., session, title = NULL, footer = modalButton(
 }
 
 #' Trip info inputs for meal edit modal
-#'
-#'
-#'
+#' @description Input fields for edit meal modal
+#' @param input,output,session Shiny objects
+#' @param data The LOCAL data rv object
 #' @noRd
 editMealTripInfoInputs <- function(input, output, session, data){
   ns <- session$ns
   LOCAL <- data
-
 
   mealUniqueID <- LOCAL$editMealMealUniqueID
 
@@ -397,14 +398,29 @@ editMealTripInfoInputs <- function(input, output, session, data){
 #' @param data The meal dataframe being viewed/edited. Usually a subset of myMeals
 #' @noRd
 editMealIngredientInputs <- function(input, output, session,data, displayQty = TRUE){
-  #TODO this runs multiple times once for every ingredient
+
+    #TODO this runs multiple times once for every ingredient. It runs multiple
+    # times because if there are any SSF to QTY discrepancies, they rebalance, triggering
+    # the UI again. And because of update text input in the new ingresient form
   ns <- session$ns
   ingUniqueID <- unique(data$INGREDIENT_UNIQUE_ID)
   ing <- unique(data$INGREDIENT)
   desc <- unique(data$INGREDIENT_DESCRIPTION)
   unit <- unique(data$SERVING_SIZE_DESCRIPTION)
   ssf <- unique(data$SERVING_SIZE_FACTOR)
+
   qty <- ifelse(displayQty == FALSE, '', unique(data$QTY))
+  #I THINK this is fixed for now 3/16/2023
+
+  #TODO somewhere the LOCAL$editMealDF QTY gets calculated with a ceiling, or < .5 numbers round to zero
+  #and it is triggered twice the first time viewing the meal. This corrects it for now...
+
+  # qty <- ifelse(displayQty == FALSE, '', round(data$NO_PEOPLE_CALC*data$SERVING_SIZE_FACTOR))
+  #
+  # if(qty == 0){
+  #   qty <- ifelse(displayQty == FALSE, '', plyr::round_any(data$NO_PEOPLE_CALC*data$SERVING_SIZE_FACTOR,.5,ceiling))
+  # }
+
 
   tagList(
     div(class = "input-group", style ='margin-top:12px;',
@@ -441,8 +457,8 @@ editMealIngredientInputs <- function(input, output, session,data, displayQty = T
 
 #' Ingredient picker in edit meal modal or wherever else
 #' @description creates searchable datalist select input of the ingredients in LU_INGREDIENTS
+#' @param input,output,session The shiny app session objects.
 #' @param data The LOCAL$LU_INGREDIENTS dataframe
-#'
 #' @noRd
 selectIngredients <- function(input, output, session, data){
   ns <- session$ns
@@ -451,8 +467,6 @@ selectIngredients <- function(input, output, session, data){
   choices <- c('Start typing to search...',ings)
 
   div(
-#TODO Seeing if this selectInput works on iPhone to type
-
     div(class = "input-group mb-3",
       tags$label(class = "input-group-text", class = 'create-meal',
         `for` = ns('selectIngredient'),
@@ -469,13 +483,13 @@ selectIngredients <- function(input, output, session, data){
         style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;'
       )
     )
-
   )
 }
 
 #' Create new ingredient data entry fields
 #' @description Input fields UI to create a new ingredient from within editMeal modal
-#' @param session The session object
+#' @param input,output,session The shiny app session objects.
+#' @param data The LOCAL reactive values data object..
 #' @noRd
 createIngredients <- function(input, output, session, data){
   ns <- session$ns
@@ -483,7 +497,6 @@ createIngredients <- function(input, output, session, data){
   noPeopleCalc <- as.numeric(LOCAL$editMealDF$NO_PEOPLE_CALC[1])
   cats <- c('Select category',LOCAL$LU_INGREDIENTS$INGREDIENT_CATEGORY %>% unique(.) %>% sort(.))
 
-  #renderUI({
     tagList(
 
       div(class = "input-group", class = 'create-meal', style ='margin-top:12px;',
@@ -571,7 +584,6 @@ createIngredients <- function(input, output, session, data){
           )
       )
     ) # end tagList
-  #})
 }
 
 #####INPUT BOX GROUPS#####
@@ -630,7 +642,6 @@ customTextInput <- function(inputId, label, value = "", labelColor, labelTextCol
   )
 }
 
-
 #' Custom text Area input
 #' @param inputId The input slot that will be used to access the value.
 #' @param label Display label for the control, or NULL for no label.
@@ -668,21 +679,21 @@ customTextAreaInput <- function(inputId, label, value = '', labelColor,
 
 
 #' Accordion item function to be mapped inside accordion container
-#' @param ns The namespace of the module the function is being used in
-#' @param parentId The id of the parent accordion div the function is called in
-#' @param buttonId The id for the accordion segment button. What will have observeEvent on it
-#' @param buttonTitle The label for the accordion segment button
-#' @param collapseId The id for the collapsible div
-#' @param show Logical. Should the collapsable div begin open or closed
-#' @param body The UI to be displayed in the collapsable accordion segment
-#' @param bgColor Logical. Whether to color the background the same as the page section
-#' the accordion is in, if the section background is other than #fff
-#' @param pad Logical. DEfault TRUE adds left and right padding to accordion segment.
-#' FALSE sets the padding to 0, the segment content reaches edge of page
-#' @param body UI elements. Either uiOutput object or HTML or function that returns HTML
+#' @param ns The namespace of the module the function is being used in.
+#' @param parentId The id of the parent accordion div the function is called in.
+#' @param buttonId The id for the accordion segment button. What will have observeEvent on it.
+#' @param buttonTitle The label for the accordion segment button.
+#' @param collapseId The id for the collapsible div.
+#' @param show Logical. Should the collapsable div begin open or closed.
+#' @param body The UI to be displayed in the collapsable accordion segment.
+#' @param bgColor Logical. Whether to color the background the same as the page section.
+#' the accordion is in, if the section background is other than #fff.
+#' @param pad Logical. Default TRUE adds left and right padding to accordion segment.
+#' FALSE sets the padding to 0, the segment content reaches edge of page.
+#' @param body UI elements. Either uiOutput object or HTML or function that returns HTML.
 #' @noRd
-accInner <- function(ns, parentId, buttonId, buttonTitle,
-                     collapseId, show = FALSE, body, bgColor = FALSE, pad = TRUE){
+accInner <- function(ns, parentId, buttonId, buttonTitle, collapseId,
+                     show = FALSE, body, bgColor = FALSE, pad = TRUE){
   ns <- ns
   classExtra <- character()
   styleExtra <- character()
@@ -717,9 +728,9 @@ accInner <- function(ns, parentId, buttonId, buttonTitle,
 #' shopList
 #' @description Makes the grouped ingredient shopping list for the trip
 #' @param data The LOCAL reactive values data object, specifically the myMeals dataframe
+#' @param forOutput Logical. TRUE for dataframe export. FALSE for dataframe to be viewed in app.
 #' @noRd
 shopList <- function(data, forOutput = FALSE){
-  #browser()
   LOCAL <- data
   req(nrow(LOCAL$myMeals) > 0)
   output <- LOCAL$myMeals %>%
@@ -758,16 +769,16 @@ shopList <- function(data, forOutput = FALSE){
 }
 
 #' dailyMenu
+#' @description Creates the HTML data table of meals and ingredients by river day.
+#' This is used in a loop to create the daily menu item.
+#' @param session SEssion used for ns.
+#' @param id The meal unique ID iterator.
+#' @param data The LOCAL rv data object.
 #' @noRd
 dailyMenu <- function(session, id, data){
   ns <- session$ns
-  #browser()
   LOCAL <- data
   req(nrow(LOCAL$myMeals) > 0)
-
-  #DEV###
-  #id <- '158_Breakfast_1'
-  #######
 
   meal <- LOCAL$myMeals %>%
     filter(MEAL_UNIQUE_ID == id)
@@ -784,7 +795,7 @@ dailyMenu <- function(session, id, data){
     select(INGREDIENT, QTY, SERVING_SIZE_DESCRIPTION, STORAGE_DESCRIPTION) %>%
     arrange(INGREDIENT)
 
-  #renderUI({
+
   div(
     h4(header, style = 'color: black; text-align: left;'),
     tags$table(class = "table table-striped",
@@ -809,7 +820,5 @@ dailyMenu <- function(session, id, data){
     ),
     br()
   )
-
-  #})
 }
 

@@ -31,8 +31,8 @@ mod_menu_ui <- function(id){
         br(),
         actionButton(ns('createMeal'), label = 'Create a New Meal', class = 'btn btn-success',
                      style = 'margin:5px;')
-      ) #end column
-    ),# end fluidRow
+      )
+    ),
 
     fluidRow(
       column(width = 12, style = 'text-align: center; margin: 5px;padding: 20px;',
@@ -65,13 +65,7 @@ mod_menu_server <- function(id, data){
     #####VECTOR OF CREATED OBSERVERS FOR EDIT MEAL MODAL#####
     createdObservers <- c()
 
-
     #####REACTIVE BUTTON OBSERVERS#####
-    # Add meal button IDs
-    #TODO this may come into play when I add the create new meal part
-
-    # View meal button IDs
-    #TODO this may come into play when I add the create new meal part
 
     # Delete button IDs
     new_del_button <- reactiveVal(0)
@@ -121,9 +115,6 @@ mod_menu_server <- function(id, data){
               mealId <- gsub('add-','',.x)
               mealUniqueId <- paste0(mealId,'_',mealType,'_',riverDay)
 
-              # TODO this assignment of people will need to be flexible for changing group size during the trip
-
-
               newRecord <- LOCAL$ALL_DATA %>% filter(MEAL_ADD_ID == .x) %>%
                   mutate(RIVER_DAY = riverDay,
                          NO_ADULTS = LOCAL$noAdults,
@@ -157,7 +148,6 @@ mod_menu_server <- function(id, data){
 
                 showNotification(paste(unique(newRecord$MEAL_NAME),'added to trip menu below!'), type = 'default', duration = 5)
 
-
                # Reset input choices
                 #TODO (maybe I will do this, maybe leave them)
 
@@ -180,8 +170,6 @@ mod_menu_server <- function(id, data){
                   val <- val + 1
                   new_edit_button(val)
                 })
-
-
               })# end observeEvent
             ) # end map
       } # end if
@@ -226,7 +214,6 @@ mod_menu_server <- function(id, data){
     })
     )
   })
-
 
   # Menu card delete and edit button observers -----
 
@@ -346,7 +333,6 @@ mod_menu_server <- function(id, data){
   })
 
   # Make Menu card rows by day
-  #TODO make this open the div for the menu day just updated and change the name from test
 
   output$tripMenu <- renderUI({
     if(nrow(LOCAL$myMeals) == 0){return(NULL)}

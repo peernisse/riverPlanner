@@ -11,12 +11,15 @@ Imports:
     auth0,
     bsplus,
     config (>= 0.3.1),
+    DBI,
+    dbplyr,
     dplyr,
     golem (>= 0.3.3.9007),
     googlesheets4,
     htmltools,
     magrittr,
     purrr,
+    RMariaDB,
     rmarkdown,
     shiny (>= 1.6.0),
     shinycssloaders,
@@ -30,4 +33,4 @@ Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
 LazyData: true
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
