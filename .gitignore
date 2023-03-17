@@ -1,11 +1,8 @@
 .Rproj.user
-/dev/
 .Rhistory
 .Rdata
 .httr-oauth
 .DS_Store
-/dev
-./dev
 /.token
 rivermenu-96e6b5c5652d.json
 index.html
@@ -14,3 +11,5 @@ index.html
 /inst/app/www/Green-pro/
 /rsconnect/
 .Renviron
+/dev
+/rsconnect
