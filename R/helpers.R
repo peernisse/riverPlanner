@@ -349,7 +349,7 @@ createMealAddIng <- function(input, output, session, data){
 newIngredientResponse <- function(input, output, session, data){
     ns <- session$ns
     LOCAL <- data
-
+#browser()
     if(input[['ing-new-ing']] == '') {
         showNotification('Ingredient name cannot be blank!', type = 'error', duration = 10)
         return(NULL)
@@ -481,22 +481,24 @@ createMealModalSave <- function(input, output, session, data){
 
     # Get max meal_ids from database LU_MEALS, LU_INGREDIENT, XREF_INGREDIENT
 
-    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
-    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
-    gs4_auth(path = authPath)
-
-        # Get new meal ID again just in case. It gets done when ings are added also
-        maxDbMealID <- googlesheets4::read_sheet(url, 'LU_MEAL', range = 'A:A') %>% max()
-        maxDbXrefMealID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'B:B') %>% max()
-        maxDbMealID <- max(c(maxDbMealID,maxDbXrefMealID))
-
-        # maxDbIngID <- googlesheets4::read_sheet(url, 'LU_INGREDIENTS', range = 'A:A') %>% max()
-        # maxDbXrefIngID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'A:A') %>% max()
-        # maxDbIngID <- max(c(maxDbIngID,maxDbXrefIngID))
-
-    gs4_deauth()
+    # url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    # authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    # gs4_auth(path = authPath)
+    #
+    #     # Get new meal ID again just in case. It gets done when ings are added also
+    #     maxDbMealID <- googlesheets4::read_sheet(url, 'LU_MEAL', range = 'A:A') %>% max()
+    #     maxDbXrefMealID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'B:B') %>% max()
+    #     maxDbMealID <- max(c(maxDbMealID,maxDbXrefMealID))
+    #
+    #     # maxDbIngID <- googlesheets4::read_sheet(url, 'LU_INGREDIENTS', range = 'A:A') %>% max()
+    #     # maxDbXrefIngID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'A:A') %>% max()
+    #     # maxDbIngID <- max(c(maxDbIngID,maxDbXrefIngID))
+    #
+    # gs4_deauth()
 
     # Update LOCAL$LU_MEAL
+
+    maxDbMealID <- getMaxMealID()
 
 
     newRecord <- data.frame(MEAL_ID = maxDbMealID + 1) %>%
@@ -556,8 +558,6 @@ createMealModalSave <- function(input, output, session, data){
         ) %>%
         select(names)
 
-
-
     # Save the trip with all tables getting updated
 
     # Update DB LU_MEAL
@@ -595,7 +595,7 @@ createMealModalSave <- function(input, output, session, data){
 saveTrip <- function(input, output, session, data){
     ns <- session$ns
     LOCAL <- data
-
+#browser()
     # Validate User ID exists and there are data to save
     req(!is.null(LOCAL$userName) & LOCAL$userName != '' & length(LOCAL$userName) > 0)
     req(nrow(LOCAL$myMeals) > 0)
@@ -810,6 +810,25 @@ dbUpdate <- function(from, to, data = LOCAL){
     #TODO make the pulling ID check a range_read so not reading entire table
     #TODO add if statements to use this function for other tables
 
+    # case LU_USERS
+
+    if(to == 'LU_USERS'){
+        check <- read_sheet(url, sheet = to) %>%
+            mutate(check = USERNAME) %>%
+            select(check)
+
+        try <- from %>%
+            mutate(check = USERNAME) %>%
+            select(check)
+
+        if(unique(try$check) %in% unique(check$check) == FALSE){
+            sheet_append(url, from, sheet = to)
+            return(NULL)
+        }
+
+    }
+
+
     # Case LU_INGREDIENTS
 
     if(to == 'LU_INGREDIENTS'){
@@ -839,9 +858,7 @@ dbUpdate <- function(from, to, data = LOCAL){
         try <- from %>%
             mutate(check = paste0(USERNAME,'_',TRIP_ID,'_',MEAL_UNIQUE_ID)) %>%
             select(check)
-
-
-    }
+     }
 
     # Case LU_MEAL
 
@@ -881,8 +898,6 @@ dbUpdate <- function(from, to, data = LOCAL){
 
     }
 
-
-
     # Process to DB
 
     if(unique(try$check) %in% unique(check$check) == TRUE) {
@@ -919,8 +934,6 @@ dbDelete <- function(session, input, output, id, to, data = LOCAL, level){
     ns <- session$ns
     LOCAL <- data
 
-    # Remove trip from database
-
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
     authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
     gs4_auth(path = authPath)
@@ -939,9 +952,13 @@ dbDelete <- function(session, input, output, id, to, data = LOCAL, level){
 
     if(level == 'trip'){
 
-        # Remove trip info and inputs if the trip is currently loaded
+        # Case no trip is loaded
 
-        if(id == LOCAL$tripID){
+        if(length(LOCAL$tripID) == 0){LOCAL$tripID <- id}
+
+        # Case trip being deleted is loaded
+
+        if(length(LOCAL$tripID) > 0 & id == LOCAL$tripID){
 
             # Clear trip info from LOCAL
 
@@ -984,83 +1001,44 @@ dbDelete <- function(session, input, output, id, to, data = LOCAL, level){
     gs4_deauth()
 }
 
-# Export menu items -----
+#'getMaxMealID
+#'
+#'
+#'@noRd
+getMaxMealID <- function(){
 
-#' shopList
-#' @description Makes the grouped ingredient shopping list for the trip
-#' @param data The LOCAL reactive values data object, specifically the myMeals dataframe
-#' @noRd
-shopList <- function(data){
-    LOCAL <- data
-    req(nrow(LOCAL$myMeals) > 0)
-    output <- LOCAL$myMeals %>%
-        group_by(INGREDIENT, SERVING_SIZE_DESCRIPTION) %>%
-        summarize(
-            TOTAL = sum(QTY, na.rm = TRUE) %>% as.character(),
-            MEAL_COUNT = length(INGREDIENT)
-        ) %>%
-        select(INGREDIENT, TOTAL, SERVING_SIZE_DESCRIPTION, MEAL_COUNT)
-    names(output) <- c('Ingredient', 'Quantity', 'Units', 'Meal Count')
-    return(output)
+    # Get max meal_ids from database LU_MEALS, LU_INGREDIENT, XREF_INGREDIENT
+
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+
+    # Get new meal ID again just in case. It gets done when ings are added also
+    maxDbMealID <- googlesheets4::read_sheet(url, 'LU_MEAL', range = 'A:A') %>% max()
+    maxDbXrefMealID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'B:B') %>% max()
+    maxDbMealID <- max(c(maxDbMealID,maxDbXrefMealID))
+
+    # maxDbIngID <- googlesheets4::read_sheet(url, 'LU_INGREDIENTS', range = 'A:A') %>% max()
+    # maxDbXrefIngID <- googlesheets4::read_sheet(url, 'XREF_INGREDIENT', range = 'A:A') %>% max()
+    # maxDbIngID <- max(c(maxDbIngID,maxDbXrefIngID))
+
+    gs4_deauth()
+
+    return(maxDbMealID)
+
+
 }
 
-#' dailyMenu
-#' @noRd
-dailyMenu <- function(session, id, data){
-    ns <- session$ns
-    #browser()
-    LOCAL <- data
-    req(nrow(LOCAL$myMeals) > 0)
+#'getMaxMealID
+#'
+#'
+#'@noRd
+getMaxTripID <- function(){
+    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
+    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
+    gs4_auth(path = authPath)
+        maxDbTripID <- googlesheets4::read_sheet(url, 'LU_TRIPS', range = 'AF:AF') %>% max()
+    gs4_deauth()
 
-    #DEV###
-    #id <- '158_Breakfast_1'
-    #######
-
-    meal <- LOCAL$myMeals %>%
-        filter(MEAL_UNIQUE_ID == id)
-
-    day <- unique(meal$RIVER_DAY)
-    mtype <- unique(meal$MEAL_TYPE)
-    ttl <- unique(meal$MEAL_NAME)
-    noAdults <- unique(meal$NO_ADULTS)
-    noKids <- unique(meal$NO_KIDS)
-
-    header <- paste('Day',day,'|',mtype,'|',ttl,'|',noAdults,'Adults |', noKids,'Kids')
-
-    ings <- meal %>%
-        select(INGREDIENT, QTY, SERVING_SIZE_DESCRIPTION, STORAGE_DESCRIPTION) %>%
-        arrange(INGREDIENT)
-
-    #renderUI({
-        div(
-            h4(header, style = 'color: black; text-align: left;'),
-            tags$table(class = "table table-striped",
-               tags$thead(
-                   tags$tr(
-                       tags$th(scope = 'col', 'Ingredient'),
-                       tags$th(scope = 'col', 'Quantity'),
-                       tags$th(scope = 'col', 'Units'),
-                       tags$th(scope = 'col', 'Storage'),
-                    )
-                ),
-                tags$tbody(
-                    map(1:nrow(ings), ~
-                        tags$tr(
-                            tags$td(ings[.x,1]),
-                            tags$td(ings[.x,2]),
-                            tags$td(ings[.x,3]),
-                            tags$td(ings[.x,4])
-                        )
-                    )
-                )
-            ),
-            br()
-        )
-
-    #})
+    return(maxDbTripID)
 }
-
-
-
-
-#

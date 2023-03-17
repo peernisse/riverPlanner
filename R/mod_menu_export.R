@@ -15,26 +15,29 @@ mod_menu_export_ui <- function(id, session){
       div(id = ns('menuExports'), class = "accordion", style = 'text-align: center;',
         accInner(ns, parentId = 'menuExports', buttonId = ns('shopList'),
           buttonTitle = 'View Shopping List', collapseId = paste0('collapse-',ns('shopList')),
-          body = tableOutput(ns('viewShoplist'))
+          pad = FALSE, body = uiOutput(ns('viewShoplist'))
         ),
         accInner(ns, parentId = 'menuExports', buttonId = ns('dailyMenu'),
           buttonTitle = 'View Daily Menu', collapseId = paste0('collapse-',ns('dailyMenu')),
-          body = uiOutput(ns('viewDailyMenu'))
+          pad = FALSE, body = uiOutput(ns('viewDailyMenu'))
         )
       ),
       # customModalDialog arguments -----
+      style = 'overflow-x:hidden!important;',
       session = session,
       title = uiOutput(ns('exportMenuModalTitle')),
-      size = 'xl',
+      size = 'fs',
       easyClose = FALSE,
       fade = FALSE,
-      footer = fluidRow(style = 'display: flex; flex-wrap: nowrap; flex-direction: column; justify-content: center;',
+      footer = fluidRow(class = 'modal-footer-row',
         downloadButton(ns('exportShoplist'), label = 'Export Shopping List',
-          style = 'margin-top:5px; margin-left 5px;', class = 'btn btn-success'),
+        class = 'btn btn-success riv', style = 'width: 200px;'
+        ),
         downloadButton(ns('exportMenu'), label = 'Export Menu',
-          style = 'margin-top:5px; margin-left 5px;', class = 'btn btn-success'),
+        class = 'btn btn-success riv', style = 'width: 200px;'
+        ),
         actionButton(ns('editMealModalClose_2'), label = 'Close',
-          style = 'margin-top:5px;', class = 'btn btn-default',
+          class = 'btn btn-default',
           class = 'riv', class = 'getstarted')
       ) # end footer
     )
@@ -76,10 +79,9 @@ mod_menu_export_server <- function(id, data){
         # Set up parameters to pass to Rmd document
         params <- list(
           storageTitle = gsub(' ','_',LOCAL$tripName),
-          data = shopList(data = LOCAL),
-          title = paste0('Shop List | ',LOCAL$tripName,' | ',LOCAL$noAdults,' Adults | ',
-                         LOCAL$noKids, ' Kids'
-                  )
+          data = shopList(data = LOCAL, forOutput = TRUE),
+          title = paste0('Shop List | ',LOCAL$tripName,' | ',LOCAL$noAdults,
+            ' Adults | ', LOCAL$noKids, ' Kids')
         )
 
         withProgress(message = 'Creating Shopping List Output...',
@@ -124,9 +126,7 @@ mod_menu_export_server <- function(id, data){
     # UI OUTPUTS -----
 
     # Shopping list view -----
-    output$viewShoplist <- renderTable(shopList(data = LOCAL), striped = TRUE,
-      hover = TRUE, spacing = 's', align = 'c', width = 'auto'
-    )
+    output$viewShoplist <- renderUI({shopList(data = LOCAL)})
 
     # Menu View -----
     output$viewDailyMenu <- renderUI({
@@ -141,7 +141,13 @@ mod_menu_export_server <- function(id, data){
         arrange(RIVER_DAY,MEAL_TYPE) %>%
         pull(MEAL_UNIQUE_ID) %>%
         unique(.)
+
+      # The HTML
+      div(
+        br(),
         map(mealIDs, ~ dailyMenu(session = session, id = .x, data = LOCAL))
+      )
+
     })
 
     # Dynamic Title -----

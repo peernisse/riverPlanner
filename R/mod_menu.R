@@ -9,23 +9,23 @@ mod_menu_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(width = 12, style = 'text-align: center; margin: 5px;',
-        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+      column(width = 12, style = 'text-align: center; margin: 5px;padding: 20px;',
+        #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
         h3(uiOutput(ns('sectionTitleSelectMeals'))),
 
         div(id = ns("menuSelect"), class = "accordion",
           accInner(ns, parentId = "menuSelect", buttonId = 'breakfasts', buttonTitle = 'Breakfasts',
-            collapseId = 'collapseBreakfasts', body = uiOutput(ns('breakfast'))),
+            collapseId = 'collapseBreakfasts', body = uiOutput(ns('breakfast')), bgColor = FALSE),
           accInner(ns, parentId = "menuSelect", buttonId = 'lunches', buttonTitle = 'Lunches',
-            collapseId = 'collapseLunches', body = uiOutput(ns('lunch'))),
+            collapseId = 'collapseLunches', body = uiOutput(ns('lunch')), bgColor = FALSE),
           accInner(ns, parentId = "menuSelect", buttonId = 'dinners', buttonTitle = 'Dinners',
-            collapseId = 'collapseDinners', body = uiOutput(ns('dinner'))),
+            collapseId = 'collapseDinners', body = uiOutput(ns('dinner')), bgColor = FALSE),
           accInner(ns, parentId = "menuSelect", buttonId = 'appetizers', buttonTitle = 'Appetizers',
-            collapseId = 'collapseAppetizers', body = uiOutput(ns('appetizer'))),
+            collapseId = 'collapseAppetizers', body = uiOutput(ns('appetizer')), bgColor = FALSE),
           accInner(ns, parentId = "menuSelect", buttonId = 'desserts', buttonTitle = 'Desserts',
-            collapseId = 'collapseDesserts', body = uiOutput(ns('dessert'))),
+            collapseId = 'collapseDesserts', body = uiOutput(ns('dessert')), bgColor = FALSE),
           accInner(ns, parentId = "menuSelect", buttonId = 'cocktails', buttonTitle = 'Cocktails',
-            collapseId = 'collapseCocktails', body = uiOutput(ns('cocktail')))
+            collapseId = 'collapseCocktails', body = uiOutput(ns('cocktails')), bgColor = FALSE)
         ),
 
         br(),
@@ -35,18 +35,17 @@ mod_menu_ui <- function(id){
     ),# end fluidRow
 
     fluidRow(
-      column(width = 12, style = 'text-align: center; margin: 5px;',
-        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+      column(width = 12, style = 'text-align: center; margin: 5px;padding: 20px;',
+        #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
         h3(uiOutput(ns('sectionTitleTripMenu'))),
         uiOutput(ns('tripMenu')),
         br(),
-        #TODO make this button disabled when no menu is loaded
         actionButton(ns('menuExport'), label = 'View and Download',
-                      class = 'btn btn-success',
-                      #disabled = 'disabled',
-                      style = 'margin:5px;'
+          class = 'btn btn-success',
+          #disabled = 'disabled',
+          style = 'margin:5px;'
         ),
-        hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
+        #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
       )
     )
   )
@@ -110,7 +109,7 @@ mod_menu_server <- function(id, data){
               # Validate user has created a trip
 
                 if(length(LOCAL$tripName) == 0 & LOCAL$noAdults == 1){
-                  showNotification('Please create a Trip before adding meals.', type = 'error', duration = 10)
+                  showNotification('Please create a Trip (i.e., click "Save Trip") before adding meals.', type = 'error', duration = 10)
                   return(NULL)
                 }
 
@@ -282,11 +281,14 @@ mod_menu_server <- function(id, data){
         # Edit button observers -----
         edit_id <- editMealButtonIDs[new_edit_button()]
         map(edit_id, ~
-              observeEvent(input[[.x]],{
-                showModal(
-                  editMealModal(input, output, session, mealUniqueID = gsub('edit-','',.x), data = LOCAL)
-                )
-              }, ignoreInit = TRUE)
+          observeEvent(input[[.x]],{
+            LOCAL$editMealModalSwitch <- TRUE
+            LOCAL$editMealMealUniqueID <- gsub('edit-','',.x)
+            showModal(
+              mod_meal_edit_ui('editMeal', session)
+              #editMealModal(input, output, session, mealUniqueID = gsub('edit-','',.x), data = LOCAL)
+            )
+          }, ignoreInit = TRUE)
         )
       }
 
@@ -305,344 +307,18 @@ mod_menu_server <- function(id, data){
       # Edit button observers -----
       edit_id <- editMealButtonIDs[new_edit_button()]
       map(edit_id, ~
-            observeEvent(input[[.x]],{
-              showModal(
-                editMealModal(input, output, session, mealUniqueID = gsub('edit-','',.x), data = LOCAL)
-              )
-            }, ignoreInit = TRUE)
+        observeEvent(input[[.x]],{
+          LOCAL$editMealModalSwitch <- TRUE
+          LOCAL$editMealMealUniqueID <- gsub('edit-','',.x)
+          showModal(
+            mod_meal_edit_ui('editMeal', session)
+            #editMealModal(input, output, session, mealUniqueID = gsub('edit-','',.x), data = LOCAL)
+          )
+        }, ignoreInit = TRUE)
       )
     }
   })
 
-  # Reactive updates in edit meal modal -----
-
-  observe({
-
-    if(LOCAL$editMealModalSwitch == TRUE) {
-
-      # Get input IDs to observe -----
-
-      noAdultsID <- paste0('editMeal-noAdults-',LOCAL$editMealMealUniqueID)
-      noKidsID <- paste0('editMeal-noKids-',LOCAL$editMealMealUniqueID)
-      noPeopleCalcID <- paste0('editMeal-noPeopleCalc-',LOCAL$editMealMealUniqueID)
-###########HERE----------------------------------------------------------------
-#TODO try setting these 4 things in LOCAL and get rid of this outer observe,
-      #just start from the if(LOCAL$editMealModalSwitch == TRUE)
-
-      ingredientUniqueIDs <- unique(LOCAL$editMealDF$INGREDIENT_UNIQUE_ID)
-
-#####################------------------------------------------
-
-
-      #This can maybe go away
-      #ssfIDs <- paste0('ing-ssf-',ingredientUniqueIDs)
-
-      #####RENDER MODAL UI ELEMENTS#####
-      # Modal title -----
-      output$modalTitle <- renderText({
-        paste(unique(LOCAL$editMealDF$MEAL_NAME),"|",unique(LOCAL$editMealDF$MEAL_TYPE),
-              "| River Day", unique(LOCAL$editMealDF$RIVER_DAY),"|",
-              as.numeric(unique(LOCAL$editMealDF$NO_ADULTS)) + as.numeric(unique(LOCAL$editMealDF$NO_KIDS)),
-              'People'
-        )
-      })
-
-      output$modalTitle2 <- renderText({
-        paste('Add Ingredients to',unique(LOCAL$editMealDF$MEAL_NAME),"|",unique(LOCAL$editMealDF$MEAL_TYPE),
-              "| River Day", unique(LOCAL$editMealDF$RIVER_DAY),"|",
-              as.numeric(unique(LOCAL$editMealDF$NO_ADULTS)) + as.numeric(unique(LOCAL$editMealDF$NO_KIDS)),
-              'People'
-        )
-      })
-
-      # Modal Meal Trip Info -----
-      #TODO these all run twice
-
-      output$mealTripInfo <- renderUI({
-        if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
-          editMealTripInfoInputs(input, output, session, data = isolate(LOCAL))
-      })
-
-      # Modal Ingredient list -----
-
-      output$modalIngs <- renderUI({
-        if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
-          rows <- c(1:nrow(LOCAL$editMealDF))
-          map(rows, ~ editMealIngredientInputs(input, output, session,data = isolate(LOCAL$editMealDF[.x,])))
-      })
-
-      # Modal editMeal select ingredients dropdown -----
-
-      output$modalSelIng <- renderUI({
-
-      #  if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
-        selectIngredients(input, output, session,data = LOCAL$LU_INGREDIENTS)
-      })
-
-      # Modal New Ingredient form -----
-
-      output$modalNewIng <- renderUI({
-      #  if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
-        createIngredients(input, output, session, data = isolate(LOCAL))
-      })
-
-      #####OBSERVE MODAL INPUTS#####
-
-
-      # Observe change in NoAdults -----
-
-      observeEvent(input[[noAdultsID]],{
-        editMealAdjPeople(input, output, session, data = isolate(LOCAL))
-      }, ignoreInit = TRUE)
-
-      # Observe change in NoKids -----
-
-      observeEvent(input[[noKidsID]], {
-        editMealAdjPeople(input, output, session, data = isolate(LOCAL))
-      }, ignoreInit = TRUE)
-
-
-     # Observe manual change in ingredient quantities -----
-
-      qtyIDs <- paste0('ing-qty-',ingredientUniqueIDs)
-      qtyIDs <- qtyIDs[!qtyIDs %in% createdObservers]
-      if(length(qtyIDs) > 0){
-        map(qtyIDs, ~ observeEvent(input[[.x]], {
-            editMealAdjQty(input, output, session, id = .x, data = LOCAL)
-          }, ignoreInit = TRUE)
-        )
-        createdObservers <<- c(createdObservers,qtyIDs)
-      }
-
-      # Observe delete ingredient buttons -----
-
-      delIngIDs <- paste0('del-ing-',ingredientUniqueIDs)
-      delIngIDs <- delIngIDs[!delIngIDs %in% createdObservers]
-      if(length(delIngIDs) > 0){
-
-        map(delIngIDs, ~ observeEvent(input[[.x]], {
-          editMealDelIng(input, output, session, id = .x, data = LOCAL)
-          }, ignoreInit = TRUE, ignoreNULL = TRUE, autoDestroy = TRUE)
-        )
-        createdObservers <<- c(createdObservers,delIngIDs)
-      }
-
-
-      # End of when modal is open code -----
-
-    } # end if
-  }) # end observe
-
-#---------------------------------------------------------------
-
-  # Observe add ingredient button -----
-
-  observeEvent(input[['addIngredient']], {
-    editMealAddIng(input, output, session, data = LOCAL)
-  }, ignoreInit = TRUE, ignoreNULL = TRUE)
-
-
-  # Observe new ingredient quantity input and update multiplier -----
-
-  observeEvent(input[['ing-new-qty']],{
-
-    req(LOCAL$editMealModalSwitch == TRUE)
-    req(nrow(LOCAL$editMealDF) > 0)
-    noPeopleCalc <- as.numeric(input[['ing-new-hypPeople']])
-
-    updateTextInput(session, inputId = 'ing-new-ssf',
-      value = round(as.numeric(input[['ing-new-qty']]) / noPeopleCalc,3)
-    )
-  }, ignoreInit = TRUE)
-
-  # Observe new hypothetical NoPeople input and update multiplier -----
-
-  observeEvent(input[['ing-new-hypPeople']],{
-
-    req(LOCAL$editMealModalSwitch == TRUE)
-    req(nrow(LOCAL$editMealDF) > 0)
-    noPeopleCalc <- as.numeric(input[['ing-new-hypPeople']])
-    ingQty <- if(is.na(as.numeric(input[['ing-new-qty']]))) {1} else {as.numeric(input[['ing-new-qty']])}
-
-    updateTextInput(session, inputId = 'ing-new-ssf',
-                    value = round(ingQty / noPeopleCalc,3)
-    )
-
-    updateTextInput(session, inputId = 'ing-new-qty',
-                    value = ingQty
-    )
-  }, ignoreInit = TRUE)
-
-  # Observe new ingredient button -----
-
-  observeEvent(input[['newIngredient']], {
-    withProgress(message = 'New Ingredient', detail = 'saving to database...', {
-      map(1:5, ~ incProgress(.x/10))
-        newIngredientResponse(input, output, session, data = LOCAL)
-      map(6:10, ~ incProgress(.x/10))
-    })
-  })
-
-  # Observe new ingredient button -----
-#This can eventually go away it was moved to a function
-#   observeEvent(input[['newIngredient']], {
-# #TODO this needs to become a function it is used in edit meal and create meal processes
-#     req(LOCAL$editMealModalSwitch == TRUE)
-#     req(nrow(LOCAL$editMealDF) > 0)
-#
-#     # Get current NO_PEOPLE_CALC
-#     #noPeopleCalc <- LOCAL$editMealDF$NO_PEOPLE_CALC[1]
-#
-#     if(input[['ing-new-ing']] == '') {
-#       showNotification('Ingredient name cannot be blank!', type = 'error', duration = 10)
-#       return(NULL)
-#     }
-#
-#     if(input[['ing-new-cat']] == 'Select category' | input[['ing-new-cat']] == '') {
-#       showNotification('Ingredient category cannot be blank!',
-#                        type = 'error', duration = 10)
-#       return(NULL)
-#     }
-#
-#     if(input[['ing-new-desc']] == '') {
-#       showNotification('Ingredient description cannot be blank!',
-#         type = 'error', duration = 10)
-#       return(NULL)
-#     }
-#
-#     if(input[['ing-new-unit']] == '') {
-#       showNotification('Ingredient units cannot be blank!',
-#         type = 'error', duration = 10)
-#       return(NULL)
-#     }
-#
-#     if(input[['ing-new-ssf']] == '') {
-#       showNotification('Ingredient multiplier cannot be blank!
-#         Enter a quantity for this number of people to produce a multiplier.',
-#         type = 'error', duration = 10)
-#       return(NULL)
-#     }
-#
-#
-#     ingName <- input[['ing-new-ing']]
-#     ingCat <- input[['ing-new-cat']]
-#     ingDesc <- input[['ing-new-desc']]
-#     ingUnit <- input[['ing-new-unit']]
-#     ingSSF <- as.numeric(input[['ing-new-ssf']])
-#     ingStorage <- input[['ing-new-storage']]
-#     ingQty <- input[['ing-new-qty']]
-#
-#
-#     newRecord <- data.frame(
-#       INGREDIENT_ID = max(LOCAL$LU_INGREDIENTS$INGREDIENT_ID) + 1,
-#       INGREDIENT_CATEGORY = ingCat,
-#       INGREDIENT = ingName,
-#       INGREDIENT_DESCRIPTION = ingDesc,
-#       SERVING_SIZE_DESCRIPTION = ingUnit,
-#         SERVING_SIZE_FACTOR = ingSSF,
-#         STORAGE_DESCRIPTION = ingStorage,
-#       UPTIME = Sys.Date(),
-#       UPUSER = LOCAL$userName
-#     )
-#
-#     # Append to LU_INGREDIENTS
-#
-#     LOCAL$LU_INGREDIENTS <- bind_rows(LOCAL$LU_INGREDIENTS, newRecord) %>%
-#       arrange(INGREDIENT)
-#
-#     # Notify ingredient added
-#
-#     showNotification(
-#       paste(ingName, "was added to the 'Add Ingredient' dropdown list above.
-#             You can use the dropdown to add",ingName,"to this meal."),
-#                      type = 'message', duration = 10)
-#
-#   })
-
-  # Update meal button observe -----
-
-  observeEvent(input$updateMeal,{
-# TODO finish this and make all this editMealModal stuff a new module
-#browser()
-    # Validate
-    req(nrow(LOCAL$editMealDF) > 0)
-    mealUniqueID <- LOCAL$editMealDF$MEAL_UNIQUE_ID %>% unique()
-    req(mealUniqueID %in% LOCAL$myMeals$MEAL_UNIQUE_ID)
-
-
-
-    #TODO Validate if info exists in create ingredient form, prompt to enter that and stop
-    # Validate a new ingredient is not sitting in input
-    if(input[['ing-new-ing']] != ''){
-      showNotification('New Ingredient form has data!
-            Do you need to finish creating a new ingredient?',
-                       type = 'error', duration = 10
-      )
-      return(NULL)
-    }
-
-    # Update LOCAL$myMeals
-    #TODO figure this data types discrepancy out better
-    LOCAL$editMealDF$NO_ADULTS <- as.numeric(LOCAL$editMealDF$NO_ADULTS)
-    LOCAL$editMealDF$NO_KIDS <- as.numeric(LOCAL$editMealDF$NO_KIDS)
-    LOCAL$editMealDF$NO_PEOPLE_CALC <- as.numeric(LOCAL$editMealDF$NO_PEOPLE_CALC)
-    LOCAL$editMealDF$QTY <- as.numeric(LOCAL$editMealDF$QTY)
-    LOCAL$editMealDF$MEAL_NOTES <- input[[paste0('notes-',mealUniqueID)]]
-
-    rows <- which(LOCAL$myMeals$MEAL_UNIQUE_ID == mealUniqueID)
-    LOCAL$myMeals <- LOCAL$myMeals[-rows,] %>% bind_rows(LOCAL$editMealDF)
-
-    # Get Trip Info
-
-    trip <- LOCAL$myMeals %>%
-      mutate(
-        TRIP_ID = LOCAL$tripID,
-        TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
-        TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
-        USERNAME = LOCAL$userName,
-        UPTIME = Sys.Date(),
-        UPUSER = LOCAL$userName
-      ) %>%
-      select(., names(LOCAL$LU_TRIPS))
-
-    # Update LOCAL$LU_TRIPS
-    # LOCAL$LU_TRIPS <- LOCAL$LU_TRIPS %>%
-    #   filter(!TRIP_ID %in% trip$TRIP_ID) %>%
-    #   bind_rows(trip)
-
-    # Update DB
-
-    withProgress(message = 'Trip Info', detail = 'saving to database...', {
-      map(1:5, ~ incProgress(.x/10))
-        dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
-      map(6:10, ~ incProgress(.x/10))
-    })
-
-    # Notify
-    showNotification(paste(LOCAL$editMealDF[1,'MEAL_NAME'], 'saved to menu!'),type = 'message')
-
-    # Clean up and close modal
-    LOCAL$editMealModalSwitch <- FALSE
-    LOCAL$editMealDF <- data.frame()
-    removeModal()
-
-  })
-
-  # Cancel edit meal modal button upper right corner -----
-
-  observeEvent(input$editMealModalClose_1,{
-    LOCAL$editMealModalSwitch <- FALSE
-    LOCAL$editMealDF <- data.frame()
-    removeModal()
-  })
-
-  # Cancel edit meal modal button footer -----
-
-  observeEvent(input$editMealModalClose_2,{
-    LOCAL$editMealModalSwitch <- FALSE
-    LOCAL$editMealDF <- data.frame()
-    removeModal()
-  })
 
   #####UI OUTPUTS#####
   # Section titles
@@ -654,8 +330,8 @@ mod_menu_server <- function(id, data){
 
   output$sectionTitleTripMenu <- renderUI({
     if(length(LOCAL$tripName) > 0){
-      paste('Manage Trip Menu for',LOCAL$tripName)
-    } else{'Manage Trip Menu'}
+      paste('Customize Trip Menu for',LOCAL$tripName)
+    } else{'Customize Trip Menu'}
   })
 
   # Make meal card rows by meal type
@@ -668,7 +344,6 @@ mod_menu_server <- function(id, data){
   output$cocktails <- renderUI({
     p('No Cocktails yet....')
   })
-
 
   # Make Menu card rows by day
   #TODO make this open the div for the menu day just updated and change the name from test

@@ -1,5 +1,10 @@
 
-#Define globa variables or get warned during package check
+
+# Options
+
+options(auth0_config_file = "inst/app/_auth0.yml")
+
+# Define globa variables or get warned during package check
 
 utils::globalVariables(
     c("<<-",".","pageNav", "INGREDIENT_ID", "INGREDIENT_CATEGORY" ,
@@ -13,7 +18,8 @@ utils::globalVariables(
      'MEAL_ID','MEAL_NAME','MEAL_DESCRIPTION','RIVER_DAY','','MEAL_UNIQUE_ID',
      'INGREDIENT_UNIQUE_ID','MEAL_ADD_ID','MEAL_VIEW_ID','TRIP_ID','NO_PEOPLE_CALC',
      'USERNAME','TRIP_ID','TRIPNAME','NO_ADULTS','NO_KIDS','TRIP_DESC','<<-',
-     'luMtypes','ttl','USERNAME','TOTAL','MEAL_COUNT','data','desc'
+     'luMtypes','ttl','USERNAME','TOTAL','MEAL_COUNT','data','desc', 'USER_ID',
+     'LU_GS_COLS', 'GS_INDEX', 'COL_INDEX','INSTRUCTIONS', 'TOOLS'
     )
 )
 

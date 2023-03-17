@@ -9,16 +9,17 @@ app_ui <- function(request) {
   suppressDependencies('bootstrap','javascript','jquery')
   #suppressDependencies('bootstrap','javascript')
 
-
   golem_add_external_resources()
   htmlTemplate(filename = './inst/app/www/index.html',
   #htmlTemplate(filename = './inst/app/www/index.html',
 
     trip = mod_trip_ui('trip'),
-    menu = mod_menu_ui('menu')
-
+    menu = mod_menu_ui('menu'),
+    userName = mod_data_ui('data_gs'),
+    gear = mod_gear_ui('gear'),
+    donate = mod_donate_ui('donate'),
+    travel = mod_travel_ui('travel')
   )
-
 }
 
 #' Add external Resources to the Application

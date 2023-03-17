@@ -3,12 +3,32 @@
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #' @importFrom shiny NS tagList
+#' @importFrom DBI dbConnect dbGetQuery dbExecute dbDisconnect
+#' @importFrom RMariaDB MariaDB
 #'
 #' @noRd
 mod_data_ui <- function(id){
   ns <- NS(id)
   tagList(
-    #No UI for data module. Unused.
+    tags$li(
+      a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
+        div(class = "form-group shiny-input-container", style = 'width: auto;',
+          tags$input(id = ns("userName"), type = "text", class = "form-control",disabled = "disabled",
+            style = 'width: auto; color: #5cb874; border-color: #5cb874;
+              background-color: #fff; text-align: center;', value = NA
+          )
+        )
+      )
+    ),
+    tags$li(
+      #actionLink(inputId = ns('logOut'), label = "Log Out", class = "nav-link scrollto")
+      a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
+        tags$button(id = ns('logOut'),
+          class = 'nav-link scrollto shiny-bound-input action-button btn btn-success',
+          style = "margin:5px; color: #fff;", "Log Out"
+        )
+      )
+    )
   )
 }
 
@@ -24,11 +44,16 @@ mod_data_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
+    #browser()
     ###DEV###
-    userName <- 'dev_01' # Will be coming in from Auth0
+    #userName <- 'dev_01' # Will be coming in from Auth0
     #userID <- 4
-    #TODO need to put a stop if incoming userID from AuthO is not in the database
+    #TODO fix bug if you start new trip and first entry is a new meal with new ingredient
     #########
+
+    # Get Auth0 username
+    userName <- session$userData$auth0_info$name
+    updateTextInput(session, inputId = 'userName', value = userName)
 
     ####GOOGLE SHEETS URL AND GET BASE DATA####
     url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
@@ -37,13 +62,29 @@ mod_data_server <- function(id){
 
     LU_USERS <- read_sheet(url, sheet = "LU_USERS")
 
-    # Establish UserID
-    if(!userName %in% LU_USERS$USERNAME){
-      showNotification('Username not found. Try a different username or contact us.',duration = 10, type = 'error')
-      return(NULL)
-    }
+    # Establish UserID in DB if not there
 
-    userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+    if(!userName %in% LU_USERS$USERNAME){
+      newid <- max(LU_USERS$USER_ID) + 1
+      if(length(grep('@', userName)) != 0){email <- userName} else {email <- ''}
+      newrecord <- data.frame(
+        USER_ID = as.numeric(newid),
+        USERNAME = userName,
+        EMAIL = email,
+        UPTIME = Sys.time(),
+        UPUSER = userName
+      )
+
+      dbUpdate(newrecord, 'LU_USERS', data = NULL)
+
+      LU_USERS <- read_sheet(url, sheet = "LU_USERS")
+      userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+
+    } else {
+
+      userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+
+    }
 
     # Get remaining dataframes filtered by userID
 
@@ -76,6 +117,9 @@ mod_data_server <- function(id){
     LU_INGREDIENTS <- read_sheet(url, sheet = "LU_INGREDIENTS") %>%
       filter(USER_ID %in% c(0,userID))
 
+    gs4_deauth()
+
+
     ALL_DATA <- LU_MEAL %>%
       select(-c(UPTIME, UPUSER, USER_ID)) %>%
       left_join(XREF_INGREDIENT %>% select(MEAL_ID,INGREDIENT_ID), by = 'MEAL_ID') %>%
@@ -96,7 +140,7 @@ mod_data_server <- function(id){
       LU_MEAL_TYPE = LU_MEAL_TYPE,
       LU_MEAL = LU_MEAL,
       LU_INGREDIENTS = LU_INGREDIENTS,
-      tripID = ifelse(length(LU_TRIPS$TRIP_ID) == 0, 1, max(LU_TRIPS$TRIP_ID) + 1),
+      tripID = character(),
       tripName = character(),
       tripDesc = character(),
       loadTripMode = FALSE,
@@ -115,6 +159,24 @@ mod_data_server <- function(id){
 
     rm(XREF_INGREDIENT,LU_USERS, LU_TRIPS, LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,ALL_DATA)
     gc()
+
+    # UI Outputs -----
+    #output$userName <- renderText({isolate(LOCAL$userName)})
+
+    # output$userName <- renderUI({
+    #
+    #   tags$button(class = "getstarted",
+    #     style = "background-color: #FFFFFF;",
+    #     disabled = "disabled",
+    #     LOCAL$userName
+    #   )
+    #
+    # })
+
+    #####OBSERVERS#####
+    observeEvent(input$logOut, {logout()})
+
+    # Return LOCAL reactive values object
 
     return(LOCAL)
 
