@@ -34,7 +34,6 @@ mod_data_ui <- function(id){
 
 #' data Server Function
 #' @description Handles database queries and updates.
-#'
 #' @importFrom googlesheets4 read_sheet gs4_auth
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter mutate case_when select group_by summarize arrange pull left_join bind_rows bind_cols distinct

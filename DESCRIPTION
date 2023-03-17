@@ -1,6 +1,6 @@
 Package: riverPlanner
 Title: River Trip Planner
-Version: 0.0.0.9000
+Version: 1.0.0.9000
 Authors@R: 
     person("Peter", "EerNisse", , "peernisse@gmail.com", role = c("cre", "aut"))
 Description: Modular application to plan gear, crew contacts, and menu.
@@ -11,12 +11,14 @@ Imports:
     auth0,
     bsplus,
     config (>= 0.3.1),
+    DBI,
     dplyr,
     golem (>= 0.3.3.9007),
     googlesheets4,
     htmltools,
     magrittr,
     purrr,
+    RMariaDB,
     rmarkdown,
     shiny (>= 1.6.0),
     shinycssloaders,
