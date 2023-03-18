@@ -233,7 +233,7 @@ mod_meal_edit_server <- function(id, data = LOCAL){
       #req(input[['ing-new-qty']] != '')
         req(
             round(as.numeric(input[['ing-new-qty']])/as.numeric(input[['ing-new-hypPeople']]), 3) !=
-                as.numeric(input[['ing-new-ssf']])
+                as.numeric(input[['ing-new-ssf']]) || is.na(as.numeric(input[['ing-new-ssf']]))
         )
       req(LOCAL$editMealModalSwitch == TRUE)
       req(nrow(LOCAL$editMealDF) > 0)
@@ -273,7 +273,7 @@ mod_meal_edit_server <- function(id, data = LOCAL){
     })
 
 
-     # Update meal button observe -----
+     # Update save meal button observe -----
 
     observeEvent(input$updateMeal,{
         req(nrow(LOCAL$editMealDF) > 0)

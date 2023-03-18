@@ -4,9 +4,17 @@
 #' @description Function opens MariaDB connection to mySQL database
 #' @noRd
 rivConnect <- function(){
-    DBI::dbConnect(RMariaDB::MariaDB(), dbname = "mydb",
-        username = 'peernisse', password = '@5thStreet',
-        host = 'SEDOH-L01P-2TCD', port = 3306
+    # DBI::dbConnect(RMariaDB::MariaDB(), dbname = "mydb",
+    #     username = 'peernisse', password = '@5thStreet',
+    #     host = 'SEDOH-L01P-2TCD', port = 3306
+    # )
+
+    DBI::dbConnect(RMariaDB::MariaDB(),
+       dbname = "rpdb",
+       username = 'rpdb-service',
+       password = '@5thStreet',
+       host = 'riverplanner-databse.cifsiggcktwz.us-east-1.rds.amazonaws.com',
+       port = 3306
     )
 }
 
@@ -17,7 +25,7 @@ rivConnect <- function(){
 getMaxTripID <- function(){
     con <- rivConnect()
     dbExecute(con, "start transaction;")
-    maxDbTripID <- dbGetQuery(con, 'SELECT max(TRIP_ID) from LU_TRIPS;')
+    maxDbTripID <- dbGetQuery(con, 'SELECT max(TRIP_ID) from lu_trips;')
     dbExecute(con,"commit;")
     dbDisconnect(con)
     return(as.integer(maxDbTripID))
@@ -29,7 +37,7 @@ getMaxTripID <- function(){
 getMaxIngID <- function(){
     con <- rivConnect()
     dbExecute(con, "start transaction;")
-    maxDbIngpID <- dbGetQuery(con, 'SELECT max(INGREDIENT_ID) from LU_INGREDIENTS;')
+    maxDbIngpID <- dbGetQuery(con, 'SELECT max(INGREDIENT_ID) from lu_ingredients;')
     dbExecute(con,"commit;")
     dbDisconnect(con)
     return(as.integer(maxDbIngpID))
@@ -55,6 +63,7 @@ getMaxMealID <- function(){
 #' @param data List. The LOCAL reactiveValues object is intended to be passed to saveTrip
 #' @noRd
 saveTrip <- function(input, output, session, data){
+
     ns <- session$ns
     LOCAL <- data
     # Validate User ID exists and there are data to save
@@ -129,7 +138,7 @@ upsertXrefTrips <- function(con = con, from = xrefT, data = LOCAL, row){
     dbExecute(con, "start transaction;")
     if(length(dbIDs) > 0 & recordID %in% dbIDs){
         dbExecute(con,
-          paste0("UPDATE `mydb`.`xref_trips` SET `MEAL_ID` = '",from$MEAL_ID[i],"',",
+          paste0("UPDATE xref_trips SET MEAL_ID = '",from$MEAL_ID[i],"',",
                  "`RIVER_DAY` = '",from$RIVER_DAY[i],"',",
                  "`INGREDIENT_ID` = '",from$INGREDIENT_ID[i],"',",
                  "`TRIP_ID` = '",from$TRIP_ID[i],"',",
@@ -155,7 +164,7 @@ upsertXrefTrips <- function(con = con, from = xrefT, data = LOCAL, row){
 
     if(length(dbIDs) == 0 | !recordID %in% dbIDs){
         dbExecute(con,
-            paste0("INSERT INTO `mydb`.`xref_trips` (",
+            paste0("INSERT INTO xref_trips (",
                 "`MEAL_ID`,`RIVER_DAY`,`INGREDIENT_ID`,`TRIP_ID`,",
                 "`MEAL_TYPE_ID`,`MEAL_NOTES`,`NO_ADULTS`,`NO_KIDS`,",
                 "`NO_PEOPLE_CALC`,`SERVING_SIZE_FACTOR`,`USER_ID`,`UPTIME`,`UPUSER`) VALUES ('",
