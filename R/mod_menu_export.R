@@ -1,12 +1,10 @@
 #' menu_export UI Function
-#'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
+#' @description Runs the UI for menu export view and download..
+#' @param id The module ID.
+#' @param session This is used for customModalDialog.
 #' @importFrom shiny NS tagList
 #' @import rmarkdown
 #' @noRd
-#'
 mod_menu_export_ui <- function(id, session){
   ns <- NS(id)
 
@@ -45,7 +43,9 @@ mod_menu_export_ui <- function(id, session){
 }
 
 #' menu_export Server Functions
-#'
+#' @description Server module handles downloads of RMarkdown HTML output files.
+#' @param id The module ID.
+#' @param data The LOCAL reactive values data object.
 #' @noRd
 mod_menu_export_server <- function(id, data){
   moduleServer( id, function(input, output, session){
@@ -69,10 +69,10 @@ mod_menu_export_server <- function(id, data){
     # Export shoplist
     # TODO contact someone about the download puts out the preceding filename
     # if you export, then load a different trip, then export, the first export filename is used again
+    # its the right output but wrong file name
     output$exportShoplist<-downloadHandler(
       filename = paste(LOCAL$tripName,"_shopList", ".html", sep = ""),
       content = function(file){
-#browser()
         tempReport <- file.path(tempdir(), "shopList.Rmd")
         file.copy("./inst/app/www/shopList.Rmd", tempReport, overwrite = TRUE)
 
@@ -98,7 +98,6 @@ mod_menu_export_server <- function(id, data){
     output$exportMenu<-downloadHandler(
       filename = paste(LOCAL$tripName,"_dailyMenu", ".html", sep = ""),
       content = function(file){
-        #browser()
         tempReport <- file.path(tempdir(), "dailyMenu.Rmd")
         file.copy("./inst/app/www/dailyMenu.Rmd", tempReport, overwrite = TRUE)
 
@@ -130,11 +129,11 @@ mod_menu_export_server <- function(id, data){
 
     # Menu View -----
     output$viewDailyMenu <- renderUI({
-      ns <- session$ns
-      #browser()
-      req(nrow(LOCAL$myMeals) > 0)
-      req(LOCAL$exportMenuModalSwitch == TRUE)
-      mealIDs <- LOCAL$myMeals %>%
+        ns <- session$ns
+
+        req(nrow(LOCAL$myMeals) > 0)
+        req(LOCAL$exportMenuModalSwitch == TRUE)
+        mealIDs <- LOCAL$myMeals %>%
         mutate(
           MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack'))
         ) %>%
@@ -142,12 +141,11 @@ mod_menu_export_server <- function(id, data){
         pull(MEAL_UNIQUE_ID) %>%
         unique(.)
 
-      # The HTML
-      div(
-        br(),
-        map(mealIDs, ~ dailyMenu(session = session, id = .x, data = LOCAL))
-      )
-
+        # The HTML
+        div(
+            br(),
+            map(mealIDs, ~ dailyMenu(session = session, id = .x, data = LOCAL))
+        )
     })
 
     # Dynamic Title -----

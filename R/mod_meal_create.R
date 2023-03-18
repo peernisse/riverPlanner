@@ -1,18 +1,12 @@
 #' meal_create UI Function
-#'
 #' @description A shiny Module.
-#'
 #' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
 #' @importFrom shiny NS tagList
+#' @noRd
 mod_meal_create_ui <- function(id,session){
   ns <- NS(id)
   tagList(
-    #showModal(
-
-      customModalDialog(
+    customModalDialog(
         # Instructions -----
         h5('New Meal Details'),
         p('--Fill in your new meal details and add ingredients for your new meal.
@@ -108,12 +102,11 @@ mod_meal_create_ui <- function(id,session){
         ) # end footer
 
       ) # End customModalDialog
-   # ) # end showModal
-  ) # end tagList
+    ) # end tagList
 }
 
 #' meal_create Server Functions
-#'
+#' @description Server function for create meal modal.
 #' @noRd
 mod_meal_create_server <- function(id, data = LOCAL){
   moduleServer( id, function(input, output, session){
@@ -209,31 +202,24 @@ mod_meal_create_server <- function(id, data = LOCAL){
     # Observe new ingredient quantity input and update multiplier -----
 
     observeEvent(input[['ing-new-qty']],{
-      #req(LOCAL$editMealModalSwitch == TRUE)
-      #req(nrow(LOCAL$editMealDF) > 0)
       noPeopleCalc <- as.numeric(input[['ing-new-hypPeople']])
-
-      updateTextInput(session, inputId = 'ing-new-ssf',
-                      value = round(as.numeric(input[['ing-new-qty']]) / noPeopleCalc,3)
-      )
+          updateTextInput(session, inputId = 'ing-new-ssf',
+            value = round(as.numeric(input[['ing-new-qty']]) / noPeopleCalc,3)
+          )
     }, ignoreInit = TRUE)
 
     # Observe new hypothetical NoPeople input and update multiplier -----
 
     observeEvent(input[['ing-new-hypPeople']],{
-
-      #req(LOCAL$editMealModalSwitch == TRUE)
-      #req(nrow(LOCAL$editMealDF) > 0)
       noPeopleCalc <- as.numeric(input[['ing-new-hypPeople']])
       ingQty <- if(is.na(as.numeric(input[['ing-new-qty']]))) {1} else {as.numeric(input[['ing-new-qty']])}
+          updateTextInput(session, inputId = 'ing-new-ssf',
+                          value = round(ingQty / noPeopleCalc,3)
+          )
 
-      updateTextInput(session, inputId = 'ing-new-ssf',
-                      value = round(ingQty / noPeopleCalc,3)
-      )
-
-      updateTextInput(session, inputId = 'ing-new-qty',
-                      value = ingQty
-      )
+          updateTextInput(session, inputId = 'ing-new-qty',
+                          value = ingQty
+          )
     }, ignoreInit = TRUE)
 
     # Observe delete ingredient buttons -----
@@ -243,7 +229,6 @@ mod_meal_create_server <- function(id, data = LOCAL){
       delIngIDs <- paste0('del-ing-',ingredientUniqueIDs)
       delIngIDs <- delIngIDs[!delIngIDs %in% createdObservers]
       if(length(delIngIDs) > 0){
-
         map(delIngIDs, ~ observeEvent(input[[.x]], {
           createMealDelIng(input, output, session, id = .x, data = LOCAL)
         }, ignoreInit = TRUE, ignoreNULL = TRUE, autoDestroy = TRUE)
@@ -251,7 +236,6 @@ mod_meal_create_server <- function(id, data = LOCAL){
         createdObservers <<- c(createdObservers,delIngIDs)
       }
     })
-
 
     # Observe SAVE createMeal button -----
 
@@ -305,7 +289,6 @@ mod_meal_create_server <- function(id, data = LOCAL){
       createIngredients(input, output, session, data = isolate(LOCAL))
     })
 
-
     # Dynamic Title -----
 
     observe({
@@ -322,9 +305,3 @@ mod_meal_create_server <- function(id, data = LOCAL){
 
   })
 }
-
-## To be copied in the UI
-# mod_meal_create_ui("meal_create_1")
-
-## To be copied in the server
-# mod_meal_create_server("meal_create_1")

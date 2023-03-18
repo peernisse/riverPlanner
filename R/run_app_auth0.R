@@ -4,8 +4,6 @@
 #' @export
 #' @importFrom shiny shinyApp
 #' @importFrom golem with_golem_options
-#'
-#'
 run_app_auth0 <- function(...) {
     with_golem_options(
         app = auth0::shinyAppAuth0(

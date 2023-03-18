@@ -1,12 +1,9 @@
 #' meal_edit UI Function
-#'
 #' @description A shiny Module.
-#'
 #' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
 #' @importFrom shiny NS tagList
+#' @importFrom plyr round_any
+#' @noRd
 mod_meal_edit_ui <- function(id, session){
   ns <- NS(id)
   tagList(
@@ -57,16 +54,16 @@ mod_meal_edit_ui <- function(id, session){
       ),
 
       fluidRow(style = 'margin-top:20px;',
-               column(width = 12,
-                      h5('Tools'),
-                      uiOutput(ns('tools'))
-               )
+        column(width = 12,
+          h5('Tools'),
+          uiOutput(ns('tools'))
+        )
       ),
       fluidRow(style = 'margin-top:20px;',
-               column(width = 12,
-                      h5('Instructions'),
-                      uiOutput(ns('inst'))
-               )
+        column(width = 12,
+          h5('Instructions'),
+          uiOutput(ns('inst'))
+        )
       ),
       session = session,
       title = h4(textOutput(ns('modalTitle')), style = 'color: #5cb874'),
@@ -83,7 +80,7 @@ mod_meal_edit_ui <- function(id, session){
 }
 
 #' meal_edit Server Functions
-#'
+#' @description Server function for edit meal modal.
 #' @noRd
 mod_meal_edit_server <- function(id, data = LOCAL){
   moduleServer( id, function(input, output, session){
@@ -92,17 +89,15 @@ mod_meal_edit_server <- function(id, data = LOCAL){
     createdObservers <- c()
 
     observe({
-      #browser()
-
-      if(length(LOCAL$tripID) > 0){
+      if(LOCAL$editMealModalSwitch == TRUE & length(LOCAL$tripID) > 0){
 
         mealUniqueID <- LOCAL$editMealMealUniqueID
         req(!length(mealUniqueID) > 1)
-        req(LOCAL$editMealModalSwitch == TRUE)
+        #req(LOCAL$editMealModalSwitch == TRUE)
 
         #TODO figure out why this goes 3 times and blinks
-
         if(nrow(LOCAL$editMealDF) == 0 | !mealUniqueID %in% LOCAL$editMealDF$MEAL_UNIQUE_ID){
+
           LOCAL$editMealDF <- LOCAL$myMeals %>% filter(MEAL_UNIQUE_ID == mealUniqueID)
         } else {
           LOCAL$editMealDF <- isolate(LOCAL$editMealDF)
@@ -121,16 +116,8 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         noAdultsID <- paste0('editMeal-noAdults-',LOCAL$editMealMealUniqueID)
         noKidsID <- paste0('editMeal-noKids-',LOCAL$editMealMealUniqueID)
         noPeopleCalcID <- paste0('editMeal-noPeopleCalc-',LOCAL$editMealMealUniqueID)
-        ###########HERE----------------------------------------------------------------
-        #TODO try setting these 4 things in LOCAL and get rid of this outer observe,
-        #just start from the if(LOCAL$editMealModalSwitch == TRUE)
 
         ingredientUniqueIDs <- unique(LOCAL$editMealDF$INGREDIENT_UNIQUE_ID)
-
-        #####################------------------------------------------
-
-        #This can maybe go away
-        #ssfIDs <- paste0('ing-ssf-',ingredientUniqueIDs)
 
         #####RENDER MODAL UI ELEMENTS#####
         # Modal title -----
@@ -151,7 +138,6 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         })
 
         # Modal Meal Trip Info -----
-        #TODO these all run twice
 
         output$mealTripInfo <- renderUI({
           if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
@@ -163,6 +149,7 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         output$modalIngs <- renderUI({
           if(nrow(LOCAL$editMealDF) == 0){return(NULL)}
           rows <- c(1:nrow(LOCAL$editMealDF))
+
           map(rows, ~ editMealIngredientInputs(input, output, session,data = isolate(LOCAL$editMealDF[.x,])))
         })
 
@@ -187,12 +174,16 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         # Observe change in NoAdults -----
 
         observeEvent(input[[noAdultsID]],{
+
+            if(as.numeric(input[[noAdultsID]]) == LOCAL$noAdults){return(NULL)}
           editMealAdjPeople(input, output, session, data = isolate(LOCAL))
         }, ignoreInit = TRUE)
 
         # Observe change in NoKids -----
 
         observeEvent(input[[noKidsID]], {
+
+            if(as.numeric(input[[noKidsID]]) == LOCAL$noKids){return(NULL)}
           editMealAdjPeople(input, output, session, data = isolate(LOCAL))
         }, ignoreInit = TRUE)
 
@@ -203,6 +194,7 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         qtyIDs <- qtyIDs[!qtyIDs %in% createdObservers]
         if(length(qtyIDs) > 0){
           map(qtyIDs, ~ observeEvent(input[[.x]], {
+
             editMealAdjQty(input, output, session, id = .x, data = LOCAL)
           }, ignoreInit = TRUE)
           )
@@ -214,14 +206,12 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         delIngIDs <- paste0('del-ing-',ingredientUniqueIDs)
         delIngIDs <- delIngIDs[!delIngIDs %in% createdObservers]
         if(length(delIngIDs) > 0){
-
           map(delIngIDs, ~ observeEvent(input[[.x]], {
             editMealDelIng(input, output, session, id = .x, data = LOCAL)
           }, ignoreInit = TRUE, ignoreNULL = TRUE, autoDestroy = TRUE)
           )
           createdObservers <<- c(createdObservers,delIngIDs)
         }
-
 
         # End of when modal is open code -----
 
@@ -232,6 +222,7 @@ mod_meal_edit_server <- function(id, data = LOCAL){
     # Observe add ingredient button -----
 
     observeEvent(input[['addIngredient']], {
+
       editMealAddIng(input, output, session, data = LOCAL)
     }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
@@ -239,12 +230,17 @@ mod_meal_edit_server <- function(id, data = LOCAL){
 
     observeEvent(input[['ing-new-qty']],{
 
+      #req(input[['ing-new-qty']] != '')
+        req(
+            round(as.numeric(input[['ing-new-qty']])/as.numeric(input[['ing-new-hypPeople']]), 3) !=
+                as.numeric(input[['ing-new-ssf']]) || is.na(as.numeric(input[['ing-new-ssf']]))
+        )
       req(LOCAL$editMealModalSwitch == TRUE)
       req(nrow(LOCAL$editMealDF) > 0)
       noPeopleCalc <- as.numeric(input[['ing-new-hypPeople']])
 
       updateTextInput(session, inputId = 'ing-new-ssf',
-                      value = round(as.numeric(input[['ing-new-qty']]) / noPeopleCalc,3)
+        value = round(as.numeric(input[['ing-new-qty']]) / noPeopleCalc,3)
       )
     }, ignoreInit = TRUE)
 
@@ -277,72 +273,65 @@ mod_meal_edit_server <- function(id, data = LOCAL){
     })
 
 
-     # Update meal button observe -----
+     # Update save meal button observe -----
 
     observeEvent(input$updateMeal,{
-      # TODO finish this and make all this editMealModal stuff a new module
-      #browser()
-      # Validate
-      req(nrow(LOCAL$editMealDF) > 0)
-      mealUniqueID <- LOCAL$editMealDF$MEAL_UNIQUE_ID %>% unique()
-      req(mealUniqueID %in% LOCAL$myMeals$MEAL_UNIQUE_ID)
+        req(nrow(LOCAL$editMealDF) > 0)
+        mealUniqueID <- LOCAL$editMealDF$MEAL_UNIQUE_ID %>% unique()
+        req(mealUniqueID %in% LOCAL$myMeals$MEAL_UNIQUE_ID)
 
-
-
-      #TODO Validate if info exists in create ingredient form, prompt to enter that and stop
-      # Validate a new ingredient is not sitting in input
-      if(input[['ing-new-ing']] != ''){
+        # Validate a new ingredient is not sitting in input
+        if(input[['ing-new-ing']] != ''){
         showNotification('New Ingredient form has data!
             Do you need to finish creating a new ingredient?',
                          type = 'error', duration = 10
         )
         return(NULL)
-      }
+        }
 
-      # Update LOCAL$myMeals
-      #TODO figure this data types discrepancy out better
-      LOCAL$editMealDF$NO_ADULTS <- as.numeric(LOCAL$editMealDF$NO_ADULTS)
-      LOCAL$editMealDF$NO_KIDS <- as.numeric(LOCAL$editMealDF$NO_KIDS)
-      LOCAL$editMealDF$NO_PEOPLE_CALC <- as.numeric(LOCAL$editMealDF$NO_PEOPLE_CALC)
-      LOCAL$editMealDF$QTY <- as.numeric(LOCAL$editMealDF$QTY)
-      LOCAL$editMealDF$MEAL_NOTES <- input[['meal-notes']]
+        # Update LOCAL$myMeals
+        #TODO figure this data types discrepancy out better
+        LOCAL$editMealDF$NO_ADULTS <- as.numeric(LOCAL$editMealDF$NO_ADULTS)
+        LOCAL$editMealDF$NO_KIDS <- as.numeric(LOCAL$editMealDF$NO_KIDS)
+        LOCAL$editMealDF$NO_PEOPLE_CALC <- as.numeric(LOCAL$editMealDF$NO_PEOPLE_CALC)
 
-      rows <- which(LOCAL$myMeals$MEAL_UNIQUE_ID == mealUniqueID)
-      LOCAL$myMeals <- LOCAL$myMeals[-rows,] %>% bind_rows(LOCAL$editMealDF)
+        LOCAL$editMealDF$QTY <- as.numeric(LOCAL$editMealDF$QTY)
+        LOCAL$editMealDF$MEAL_NOTES <- input[['meal-notes']]
 
-      # Get Trip Info
+        rows <- which(LOCAL$myMeals$MEAL_UNIQUE_ID == mealUniqueID)
+        LOCAL$myMeals <- LOCAL$myMeals[-rows,] %>% bind_rows(LOCAL$editMealDF)
 
-      trip <- LOCAL$myMeals %>%
+        # Get Trip Info
+
+        trip <- LOCAL$myMeals %>%
         mutate(
           TRIP_ID = LOCAL$tripID,
           TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
           TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
+          USER_ID = LOCAL$userID,
           USERNAME = LOCAL$userName,
           UPTIME = Sys.Date(),
           UPUSER = LOCAL$userName
         ) %>%
         select(., names(LOCAL$LU_TRIPS))
 
-      # Update LOCAL$LU_TRIPS
-      # LOCAL$LU_TRIPS <- LOCAL$LU_TRIPS %>%
-      #   filter(!TRIP_ID %in% trip$TRIP_ID) %>%
-      #   bind_rows(trip)
+        # Update DB
 
-      # Update DB
-
-      withProgress(message = 'Trip Info', detail = 'saving to database...', {
+        withProgress(message = 'Trip Info', detail = 'saving to database...', {
         map(1:5, ~ incProgress(.x/10))
-        dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
+            dbUpdate(con, from = trip, to = 'LU_TRIPS', data = LOCAL)
         map(6:10, ~ incProgress(.x/10))
-      })
+        })
 
-      # Notify
-      showNotification(paste(LOCAL$editMealDF[1,'MEAL_NAME'], 'saved to menu!'),type = 'message')
+        # Notify
 
-      # Clean up and close modal
-      LOCAL$editMealModalSwitch <- FALSE
-      LOCAL$editMealDF <- data.frame()
-      removeModal()
+        showNotification(paste(LOCAL$editMealDF[1,'MEAL_NAME'], 'saved to menu!'),type = 'message')
+
+        # Clean up and close modal
+
+        LOCAL$editMealModalSwitch <- FALSE
+        LOCAL$editMealDF <- data.frame()
+        removeModal()
 
     })
 
@@ -365,7 +354,7 @@ mod_meal_edit_server <- function(id, data = LOCAL){
 
     # Static UI outputs -----
     observe({
-      #browser()
+      #
       # Description
       output$desc <- renderText({unique(LOCAL$editMealDF$MEAL_DESCRIPTION)})
 
@@ -410,9 +399,3 @@ mod_meal_edit_server <- function(id, data = LOCAL){
 
   })
 }
-
-## To be copied in the UI
-# mod_meal_edit_ui("meal_edit_1")
-
-## To be copied in the server
-# mod_meal_edit_server("meal_edit_1")

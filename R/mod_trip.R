@@ -1,13 +1,9 @@
 #' trip UI Function
-#'
 #' @description A shiny Module.
-#'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #' @importFrom shinycssloaders withSpinner
-#' @importFrom auth0 logoutButton logout
-#' @noRd
-#'
 #' @importFrom shiny NS tagList
+#' @noRd
 mod_trip_ui <- function(id){
   ns <- NS(id)
   tagList(
@@ -46,9 +42,9 @@ mod_trip_ui <- function(id){
         h3('My Trips'),
         #uiOutput(ns('test')),
         div(id = ns("tripSelect"), class = "accordion",
-            accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips',
-              buttonTitle = 'View My Trips', collapseId = 'collapseTrips',
-              show = TRUE, body = uiOutput(ns('trips')), bgColor = TRUE)
+          accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips',
+            buttonTitle = 'View My Trips', collapseId = 'collapseTrips',
+            show = TRUE, body = uiOutput(ns('trips')), bgColor = TRUE)
         ),
         #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
       )
@@ -76,170 +72,142 @@ mod_trip_server <- function(id, data){
 
 
     #####OBSERVERS#####
-
+#TODO make this a function
     observeEvent(input$saveTrip,{
-#browser()
-      if(is.null(input$tripName) | input$tripName == '') {
-        showNotification('Please enter trip name', type = 'error', duration = 5)
-        return(NULL)
-      }
+            if(is.null(input$tripName) | input$tripName == '') {
+            showNotification('Please enter trip name', type = 'error', duration = 5)
+            return(NULL)
+            }
 
-      if(is.null(input$noAdults) | input$noAdults == 'No. People Age 12+') {
-        showNotification('Please enter number of adults', type = 'error', duration = 5)
-        return(NULL)
-      }
+            if(is.null(input$noAdults) | input$noAdults == 'No. People Age 12+') {
+            showNotification('Please enter number of adults', type = 'error', duration = 5)
+            return(NULL)
+            }
 
-      if(is.null(input$noKids) | input$noKids == 'No. People Age <12') {
-        showNotification('Please enter number of kids', type = 'error', duration = 5)
-        return(NULL)
-      }
+            if(is.null(input$noKids) | input$noKids == 'No. People Age <12') {
+            showNotification('Please enter number of kids', type = 'error', duration = 5)
+            return(NULL)
+            }
 
-      # Check that trip name does not start with 'Copy Of'
-      if(startsWith(input$tripName, 'Copy Of') ==  TRUE){
-        showNotification('Please change the trip name before saving', type = 'error', duration = 10)
-        return(NULL)
-      }
+            # Check that trip name does not start with 'Copy Of'
+            if(startsWith(input$tripName, 'Copy Of') ==  TRUE){
+            showNotification('Please change the trip name before saving', type = 'error', duration = 10)
+            return(NULL)
+            }
 
-      if(nrow(LOCAL$myMeals) == 0 | is.null(LOCAL$myMeals) | length(LOCAL$tripID) == 0){
-        LOCAL$tripID <- getMaxTripID() + 1
+            if(nrow(LOCAL$myMeals) == 0 | is.null(LOCAL$myMeals) | length(LOCAL$tripID) == 0){
+            LOCAL$tripID <- getMaxTripID() + 1
 
-        #TODO Need to save a trip record in the DB here to reserve the trip ID quickly
+            #TODO Need to save a trip record in the DB here to reserve the trip ID quickly
 
-        LOCAL$tripName <- input$tripName
-        LOCAL$tripDesc <- input$tripDesc
-        LOCAL$noAdults <- as.numeric(input$noAdults)
-        LOCAL$noKids <- ifelse(input$noKids == '' | input$noKids == 'No. People Age <12',0,as.numeric(input$noKids))
-        LOCAL$noPeople <- as.numeric(LOCAL$noAdults) + as.numeric(LOCAL$noKids)
-        LOCAL$noPeopleCalc <- ceiling(as.numeric(LOCAL$noAdults) + (as.numeric(LOCAL$noKids) * .65))
+            LOCAL$tripName <- input$tripName
+            LOCAL$tripDesc <- input$tripDesc
+            LOCAL$noAdults <- as.numeric(input$noAdults)
+            LOCAL$noKids <- ifelse(input$noKids == '' | input$noKids == 'No. People Age <12',0,as.numeric(input$noKids))
+            LOCAL$noPeople <- as.numeric(LOCAL$noAdults) + as.numeric(LOCAL$noKids)
+            LOCAL$noPeopleCalc <- ceiling(as.numeric(LOCAL$noAdults) + (as.numeric(LOCAL$noKids) * .65))
 
-        showNotification(paste0('Trip ',LOCAL$tripName,' started for ',LOCAL$noPeople,' people!
-          Start adding trip data to enable saving to the database.'),
-          type = 'message', duration = 10)
-        return(NULL)
-      }
+            showNotification(paste0('Trip ',LOCAL$tripName,' started for ',LOCAL$noPeople,' people!
+              Start adding trip data to enable saving to the database.'),
+              type = 'message', duration = 10)
+            return(NULL)
+            }
 
-      # If save is clicked on a new trip with a meals but have not
-      # saved from the edit meal modal yet there is no 'TRIPNAME' column in myMeals yet
+            if(nrow(LOCAL$myMeals) > 0 & is.null(LOCAL$myMeals$TRIPNAME)){
 
-      if(nrow(LOCAL$myMeals) > 0 & is.null(LOCAL$myMeals$TRIPNAME)){
+            # Get Trip Info
 
-        # Get Trip Info
+            trip <- LOCAL$myMeals %>%
+              mutate(
+                TRIP_ID = LOCAL$tripID,
+                TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
+                TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
+                USERNAME = LOCAL$userName,
+                UPTIME = Sys.Date(),
+                UPUSER = LOCAL$userName
+              ) %>%
+              select(., names(LOCAL$LU_TRIPS))
 
-        trip <- LOCAL$myMeals %>%
-          mutate(
-            TRIP_ID = LOCAL$tripID,
-            TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
-            TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
-            USERNAME = LOCAL$userName,
-            UPTIME = Sys.Date(),
-            UPUSER = LOCAL$userName
-          ) %>%
-          select(., names(LOCAL$LU_TRIPS))
+            # Save to database
 
-        # Save to database
+            withProgress(message = 'Trip Info', detail = 'saving to database...', {
+              map(1:5, ~ incProgress(.x/10))
+                dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
+              map(6:10, ~ incProgress(.x/10))
+            })
+            showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
+                             type = 'message', duration = 10)
+            return(NULL)
+            }
 
-        withProgress(message = 'Trip Info', detail = 'saving to database...', {
-          map(1:5, ~ incProgress(.x/10))
-            dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
-          map(6:10, ~ incProgress(.x/10))
-        })
-        showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
-                         type = 'message', duration = 10)
-        return(NULL)
-      }
+            # For copying a trip or changing name - Check if input name matches myMeals
+            if(nrow(LOCAL$myMeals) > 0 & input$tripName != LOCAL$myMeals$TRIPNAME[1]){
 
-      # For copying a trip or changing name - Check if input name matches myMeals
-      if(nrow(LOCAL$myMeals) > 0 & input$tripName != LOCAL$myMeals$TRIPNAME[1]){
-
-        showModal(
-          customModalDialog(
-            p(
-              paste0("The Trip Name entered: '",input$tripName,
-              "' does not match the loaded trip name '",LOCAL$myMeals$TRIPNAME[1],
-              "'. Are you changing the name?")
-            ),
-            title = 'Warning!',
-            session = session,
-            size = 'xl',
-            footer = fluidRow(class = 'modal-footer-row',
-              actionButton(ns('confirmModalSaveTrip'), label = 'Confirm',
-                           class = 'btn btn-success'), class = 'riv',
-              actionButton(ns('cancelModalSaveTrip'), label = 'Cancel',
-                           class = 'btn btn-default', class = 'riv', class = 'getstarted')
-            )
-          )
-        )
-        return(NULL)
-
-      } else
-
-      # Check if the input field NoAdults and NoKids matches LOCAL
-      if(!as.numeric(input$noAdults) %in% LOCAL$noAdults |
-         !as.numeric(input$noKids) %in% LOCAL$noKids){
-
-        showModal(
-          customModalDialog(
-            p(
-              paste0("The trip size entered: ",input$noAdults," Adults | ",input$noKids,
-                     " Kids; does not match the loaded trip size: ",LOCAL$noAdults,
-                     " Adults | ",LOCAL$noKids," Kids; Are you changing the trip size?
-            NOTE: Confirming this change will re-calculate all meal ingredient quantities for the new trip size."
+            showModal(
+              customModalDialog(
+                p(
+                  paste0("The Trip Name entered: '",input$tripName,
+                  "' does not match the loaded trip name '",LOCAL$myMeals$TRIPNAME[1],
+                  "'. Are you changing the name?")
+                ),
+                title = 'Warning!',
+                session = session,
+                size = 'xl',
+                footer = fluidRow(class = 'modal-footer-row',
+                  actionButton(ns('confirmModalSaveTrip'), label = 'Confirm',
+                               class = 'btn btn-success'), class = 'riv',
+                  actionButton(ns('cancelModalSaveTrip'), label = 'Cancel',
+                               class = 'btn btn-default', class = 'riv', class = 'getstarted')
+                )
               )
-            ),
-            title = 'Warning!',
-            session = session,
-            size = 'xl',
-            footer = fluidRow(class = 'modal-footer-row',
-              actionButton(ns('confirmModalSaveTrip'), label = 'Confirm',
-                           class = 'btn btn-success', class = 'riv'),
-              actionButton(ns('cancelModalSaveTrip'), label = 'Cancel',
-                           class = 'btn btn-default', class = 'riv', class = 'getstarted')
             )
-          )
-        )
-        return(NULL)
+            return(NULL)
 
-      } else {
+            } else
 
-        withProgress(message = 'Saving', detail = 'Saving trip...', {
-          map(1:5, ~ incProgress(.x/10))
+            # Check if the input field NoAdults and NoKids matches LOCAL
+            if(!as.numeric(input$noAdults) %in% LOCAL$noAdults |
+             !as.numeric(input$noKids) %in% LOCAL$noKids){
 
-          saveTrip(input, output, session = session, data = LOCAL)
+            showModal(
+              customModalDialog(
+                p(
+                  paste0("The trip size entered: ",input$noAdults," Adults | ",input$noKids,
+                         " Kids; does not match the loaded trip size: ",LOCAL$noAdults,
+                         " Adults | ",LOCAL$noKids," Kids; Are you changing the trip size?
+                NOTE: Confirming this change will re-calculate all meal ingredient quantities for the new trip size."
+                  )
+                ),
+                title = 'Warning!',
+                session = session,
+                size = 'xl',
+                footer = fluidRow(class = 'modal-footer-row',
+                  actionButton(ns('confirmModalSaveTrip'), label = 'Confirm',
+                               class = 'btn btn-success', class = 'riv'),
+                  actionButton(ns('cancelModalSaveTrip'), label = 'Cancel',
+                               class = 'btn btn-default', class = 'riv', class = 'getstarted')
+                )
+              )
+            )
+            return(NULL)
 
-          tripSave <<-c()
-          removeModal()
-          map(6:10, ~ incProgress(.x/10))
-        })
+            } else {
 
-      }
-
-
-
-      # if(input$noAdults != 'No. People Age 12+' & is.na(as.numeric(input$noAdults)) == TRUE) {
-      #   showNotification('Number of adults must be just a number', type = 'error', duration = 5)
-      #   return(NULL)
-      # }
-
-
-
-      # if(input$noKids != 'No. People Age <12' & is.na(as.numeric(input$noKids)) == TRUE) {
-      #   showNotification('Number of kids must be just a number', type = 'error', duration = 5)
-      #   return(NULL)
-      # }
-
-
-
-      # showNotification(paste('Trip',LOCAL$tripName,'created for', LOCAL$noPeople,'people!'),
-      #                  type = 'default', duration = 5
-      # )
-
+                withProgress(message = 'Saving', detail = 'Saving trip...', {
+                  map(1:5, ~ incProgress(.x/10))
+                    saveTrip(input, output, session = session, data = LOCAL)
+                  tripSave <<-c()
+                  removeModal()
+                  map(6:10, ~ incProgress(.x/10))
+                })
+            }
     })
 
     # Observe Load Copy or Delete Trip -----
 
     observe({
       tripIDs <- LOCAL$LU_TRIPS %>%
-        filter(USERNAME == LOCAL$userName) %>%
+        filter(USER_ID == LOCAL$userID) %>%
         pull(TRIP_ID) %>% unique()
 
       # Observe Copy Trip buttons
@@ -273,8 +241,6 @@ mod_trip_server <- function(id, data){
         )
         createdObservers <<- c(createdObservers,copyTripIDs)
       } # end if
-
-
 
       # Observe load trip buttons
       loadTripIDs <- paste0('load-tripID-',tripIDs)
@@ -313,8 +279,8 @@ mod_trip_server <- function(id, data){
       delTripIDs <- delTripIDs[!delTripIDs %in% createdObservers]
       if(length(delTripIDs) > 0){
         map(delTripIDs, ~ observeEvent(input[[.x]], {
-          tripDelete <<- gsub('kill-tripID-','',.x)
-          tripName <- LOCAL$LU_TRIPS %>%
+            tripDelete <<- gsub('kill-tripID-','',.x)
+            tripName <- LOCAL$LU_TRIPS %>%
             filter(TRIP_ID == gsub('kill-tripID-','',.x)) %>%
             pull(TRIPNAME) %>%
             unique(.)
@@ -378,7 +344,7 @@ mod_trip_server <- function(id, data){
       withProgress(message = 'Copying', detail = 'Copying trip...', {
         map(1:5, ~ incProgress(.x/10))
 
-        copyTrip(session = session, id = tripCopy, data = LOCAL)
+        copyTrip(session, id = tripCopy, data = LOCAL)
 
         tripCopy <<-c()
         removeModal()
@@ -388,7 +354,6 @@ mod_trip_server <- function(id, data){
       showNotification('Trip Copied', type = 'message', duration = 5)
 
     })
-
 
     # Observe confirm trip load -----
     observeEvent(input$confirmModalLoadTrip,{
@@ -412,12 +377,11 @@ mod_trip_server <- function(id, data){
 
     # Observe confirm trip delete -----
     observeEvent(input$confirmModalDelTrip, {
+
       req(length(tripDelete) > 0)
       withProgress(message = 'Deleting', detail = 'Deleting trip...', {
         map(1:5, ~ incProgress(.x/10))
-          dbDelete(session = session, input = input, output = output, id = tripDelete,
-            to = 'LU_TRIPS', data = LOCAL, level = 'trip')
-
+          deleteTrip(session, id = tripDelete, data = LOCAL)
         LOCAL$LU_TRIPS <- LOCAL$LU_TRIPS %>% filter(!TRIP_ID %in% tripDelete)
         tripDelete <<-c()
         removeModal()
@@ -443,9 +407,3 @@ mod_trip_server <- function(id, data){
 
   })
 }
-
-## To be copied in the UI
-# mod_trip_ui("trip_1")
-
-## To be copied in the server
-# mod_trip_server("trip_1")

@@ -1,184 +1,194 @@
 #' data UI Function
-#' @description A shiny Module.
-#'
+#' @description A shiny Module handles initial data load and setup.
+#' Handles the username and logout button in the page header.#'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #' @importFrom shiny NS tagList
-#' @importFrom DBI dbConnect dbGetQuery dbExecute dbDisconnect
+#' @importFrom DBI dbConnect dbGetQuery dbExecute dbDisconnect dbIsValid
 #' @importFrom RMariaDB MariaDB
-#'
 #' @noRd
 mod_data_ui <- function(id){
-  ns <- NS(id)
-  tagList(
-    tags$li(
-      a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
-        div(class = "form-group shiny-input-container", style = 'width: auto;',
-          tags$input(id = ns("userName"), type = "text", class = "form-control",disabled = "disabled",
-            style = 'width: auto; color: #5cb874; border-color: #5cb874;
+    ns <- NS(id)
+    tagList(
+        tags$li(
+            a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
+              div(class = "form-group shiny-input-container", style = 'width: auto;',
+                  tags$input(id = ns("userName"), type = "text", class = "form-control",disabled = "disabled",
+                             style = 'width: auto; color: #5cb874; border-color: #5cb874;
               background-color: #fff; text-align: center;', value = NA
-          )
+                  )
+              )
+            )
+        ),
+        tags$li(
+            #actionLink(inputId = ns('logOut'), label = "Log Out", class = "nav-link scrollto")
+            a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
+              tags$button(id = ns('logOut'),
+                          class = 'nav-link scrollto shiny-bound-input action-button btn btn-success',
+                          style = "margin:5px; color: #fff;", "Log Out"
+              )
+            )
         )
-      )
-    ),
-    tags$li(
-      #actionLink(inputId = ns('logOut'), label = "Log Out", class = "nav-link scrollto")
-      a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
-        tags$button(id = ns('logOut'),
-          class = 'nav-link scrollto shiny-bound-input action-button btn btn-success',
-          style = "margin:5px; color: #fff;", "Log Out"
-        )
-      )
     )
-  )
 }
 
 #' data Server Function
 #' @description Handles database queries and updates.
-#' @importFrom googlesheets4 read_sheet gs4_auth
+
+#' @importFrom auth0 logoutButton logout
+
 #' @importFrom magrittr %>%
-#' @importFrom dplyr filter mutate case_when select group_by summarize arrange pull left_join bind_rows bind_cols distinct
-#'
+#' @importFrom dplyr filter mutate case_when select group_by ungroup
+#' @importFrom dplyr summarize arrange pull left_join bind_rows bind_cols distinct
 #' @noRd
 mod_data_server <- function(id){
-  moduleServer( id, function(input, output, session){
-    ns <- session$ns
+    moduleServer( id, function(input, output, session){
+        ns <- session$ns
 
-    #browser()
-    ###DEV###
-    #userName <- 'dev_01' # Will be coming in from Auth0
-    #userID <- 4
-    #TODO fix bug if you start new trip and first entry is a new meal with new ingredient
-    #########
+        # Get Auth0 username
+        userName <- session$userData$auth0_info$name
+        updateTextInput(session, inputId = 'userName', value = userName)
 
-    # Get Auth0 username
-    userName <- session$userData$auth0_info$name
-    updateTextInput(session, inputId = 'userName', value = userName)
+        # Connect databse
 
-    ####GOOGLE SHEETS URL AND GET BASE DATA####
-    url <- 'https://docs.google.com/spreadsheets/d/1qbWU0Ix6VrUumYObYyddZ1NvCTEjVk18VeWxbvrw5iY/edit?usp=sharing'
-    authPath <- './inst/app/www/.token/rivermenu-96e6b5c5652d.json'
-    gs4_auth(path = authPath)
+        con <- rivConnect()
 
-    LU_USERS <- read_sheet(url, sheet = "LU_USERS")
+        # Get users table and userID if it is there
 
-    # Establish UserID in DB if not there
+        LU_USERS <- dbGetQuery(con,'select * from lu_users;')
+        userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% unique()
 
-    if(!userName %in% LU_USERS$USERNAME){
-      newid <- max(LU_USERS$USER_ID) + 1
-      if(length(grep('@', userName)) != 0){email <- userName} else {email <- ''}
-      newrecord <- data.frame(
-        USER_ID = as.numeric(newid),
-        USERNAME = userName,
-        EMAIL = email,
-        UPTIME = Sys.time(),
-        UPUSER = userName
-      )
+        # Establish UserID in DB if not there
 
-      dbUpdate(newrecord, 'LU_USERS', data = NULL)
+        if(!userName %in% LU_USERS$USERNAME | length(userID) == 0){
+            newid <- max(LU_USERS$USER_ID) + 1
+            if(length(grep('@', userName)) != 0){email <- userName} else {email <- ''}
+            newrecord <- data.frame(
+                USER_ID = as.numeric(newid),
+                USERNAME = userName,
+                EMAIL = email,
+                UPTIME = Sys.time(),
+                UPUSER = userName
+            )
 
-      LU_USERS <- read_sheet(url, sheet = "LU_USERS")
-      userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+            dbUpdate(con, newrecord, 'LU_USERS', data = NULL)
+            con <- rivConnect()
+            LU_USERS <- dbGetQuery(con,'select * from lu_users;')
+            userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% unique()
+            dbDisconnect(con)
+        }
 
-    } else {
+        # Get remaining dataframes filtered by userID
 
-      userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% pull()
+        LU_MEAL <- dbGetQuery(con,
+            paste0('select * from lu_meal where USER_ID in (0,',userID,');')
+        )
 
-    }
+        LU_INGREDIENTS <- dbGetQuery(con,
+            paste0('select * from lu_ingredients where USER_ID in (0,',userID,');')
+        )
 
-    # Get remaining dataframes filtered by userID
+        LU_MEAL_TYPE <- dbGetQuery(con,
+            paste0('select * from lu_meal_type where USER_ID in (0,',userID,');')
+        )
 
-    LU_TRIPS <- read_sheet(url, sheet = "LU_TRIPS") %>%
-      filter(USER_ID %in% c(0,userID)) %>%
-      replace(is.na(.),'')
+        LU_TRIPS_DB <- dbGetQuery(con,
+            paste0('select * from lu_trips where USER_ID in (',userID,');')
+        )
+
+        XREF_INGREDIENT <- dbGetQuery(con,
+            paste0('select * from xref_ingredient where USER_ID in (0,',userID,');')
+        )
+
+        XREF_TRIPS <- dbGetQuery(con,
+            paste0('select * from xref_trips where USER_ID in (',userID,');')
+        )
+
+        dbDisconnect(con)
+
+        # Create LU_TRIPS
+
+        LU_TRIPS <- XREF_TRIPS %>%
+            #select(-c(UPUSER, UPTIME)) %>%
+            left_join(
+                LU_MEAL %>% select(c(MEAL_ID,MEAL_NAME,MEAL_DESCRIPTION,TOOLS,INSTRUCTIONS,
+                                     MEAL_ADD_ID,MEAL_DEL_ID,MEAL_VIEW_ID,MEAL_EDIT_ID)),
+                by = c('MEAL_ID')
+            ) %>%
+            left_join(
+                LU_MEAL_TYPE %>% select(MEAL_TYPE_ID, MEAL_TYPE), by = c('MEAL_TYPE_ID')
+            ) %>%
+            left_join(
+                LU_INGREDIENTS %>% select(INGREDIENT_ID, INGREDIENT_CATEGORY,INGREDIENT,
+                  INGREDIENT_DESCRIPTION,SERVING_SIZE_DESCRIPTION, STORAGE_DESCRIPTION),
+                by = c('INGREDIENT_ID')
+            ) %>%
+            left_join(LU_USERS %>% select(USER_ID, USERNAME), by = c('USER_ID')) %>%
+            left_join(LU_TRIPS_DB %>% select(TRIP_ID, TRIPNAME, TRIP_DESC), by = c('TRIP_ID')) %>%
+            mutate(
+                MEAL_UNIQUE_ID = paste0(MEAL_ID,'_',MEAL_TYPE,'_',RIVER_DAY),
+                INGREDIENT_UNIQUE_ID = paste0(MEAL_UNIQUE_ID,'_',INGREDIENT_ID),
+                # QTY = round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+
+                #QTY = ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+                QTY = case_when(
+                    NO_PEOPLE_CALC * SERVING_SIZE_FACTOR < 0.5 ~
+                        round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, round),
+                    TRUE ~ round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+                )
+            )
+
+        # Create ALL_DATA
+
+        ALL_DATA <- LU_MEAL %>%
+            select(-c(UPTIME, UPUSER, USER_ID)) %>%
+            left_join(XREF_INGREDIENT %>% select(MEAL_ID,INGREDIENT_ID), by = 'MEAL_ID') %>%
+            left_join(LU_INGREDIENTS %>% select(-c(UPTIME,UPUSER, USER_ID)), by = 'INGREDIENT_ID') %>%
+            mutate(
+                USERNAME = userName,
+                USER_ID = userID
+            )
+
+        ####INSTANTIATE REACTIVE VALUES DATA OBJECT#####
+
+        LOCAL <- reactiveValues(
+            userName = userName,
+            userID = userID,
+            LU_USERS = LU_USERS,
+            LU_TRIPS = LU_TRIPS,
+            XREF_INGREDIENT = XREF_INGREDIENT,
+            LU_MEAL_TYPE = LU_MEAL_TYPE,
+            LU_MEAL = LU_MEAL,
+            LU_INGREDIENTS = LU_INGREDIENTS,
+            LU_TRIPS_DB = LU_TRIPS_DB,
+            XREF_TRIPS = XREF_TRIPS,
+            tripID = character(),
+            tripName = character(),
+            tripDesc = character(),
+            loadTripMode = FALSE,
+            noAdults = 1,
+            noKids = 0,
+            noPeople = 1,
+            noPeopleCalc = 1,
+            myMeals = data.frame(),
+            editMealDF = data.frame(),
+            editMealModalSwitch = FALSE,
+            editMealMealUniqueID = NULL,
+            createMealDF = data.frame(),
+            exportMenuModalSwitch = FALSE,
+            ALL_DATA = ALL_DATA
+        )
+
+        rm(XREF_INGREDIENT,LU_USERS, XREF_TRIPS, LU_TRIPS, LU_TRIPS_DB, LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,ALL_DATA)
+        gc()
 
 
-    XREF_INGREDIENT <- read_sheet(url, sheet = "XREF_INGREDIENT") %>%
-      filter(USER_ID %in% c(0,userID))
+        #####OBSERVERS#####
+        observeEvent(input$logOut, {logout()})
 
-    LU_MEAL_TYPE <- read_sheet(url, sheet = "LU_MEAL_TYPE") %>%
-      filter(USER_ID %in% c(0,userID)) %>%
-      mutate(
-        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack'))
-      )
+        # Return LOCAL reactive values object
 
-    LU_MEAL <- read_sheet(url, sheet = 'LU_MEAL') %>%
-      filter(USER_ID %in% c(0,userID)) %>%
-      mutate(
-        MEAL_TYPE = factor(MEAL_TYPE, levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail', 'Snack')),
-        MEAL_ADD_ID = paste0('add-',MEAL_ID),
-        MEAL_DEL_ID = paste0('del-',MEAL_ID),
-        MEAL_VIEW_ID = paste0('view-',MEAL_ID),
-        MEAL_EDIT_ID = paste0('edit-',MEAL_ID),
-        MEAL_UNIQUE_ID = '',
-        INGREDIENT_UNIQUE_ID = '',
-        RIVER_DAY = NA_real_)
+        return(LOCAL)
 
-    LU_INGREDIENTS <- read_sheet(url, sheet = "LU_INGREDIENTS") %>%
-      filter(USER_ID %in% c(0,userID))
-
-    gs4_deauth()
-
-
-    ALL_DATA <- LU_MEAL %>%
-      select(-c(UPTIME, UPUSER, USER_ID)) %>%
-      left_join(XREF_INGREDIENT %>% select(MEAL_ID,INGREDIENT_ID), by = 'MEAL_ID') %>%
-      left_join(LU_INGREDIENTS %>% select(-c(UPTIME,UPUSER, USER_ID)), by = 'INGREDIENT_ID') %>%
-      mutate(
-        USERNAME = userName,
-        USER_ID = userID
-      )
-
-    ####INSTANTIATE REACTIVE VALUES DATA OBJECT#####
-
-    LOCAL <- reactiveValues(
-      userName = userName,
-      userID = userID,
-      LU_USERS = LU_USERS,
-      LU_TRIPS = LU_TRIPS,
-      XREF_INGREDIENT = XREF_INGREDIENT,
-      LU_MEAL_TYPE = LU_MEAL_TYPE,
-      LU_MEAL = LU_MEAL,
-      LU_INGREDIENTS = LU_INGREDIENTS,
-      tripID = character(),
-      tripName = character(),
-      tripDesc = character(),
-      loadTripMode = FALSE,
-      noAdults = 1,
-      noKids = 0,
-      noPeople = 1,
-      noPeopleCalc = 1,
-      myMeals = data.frame(),
-      editMealDF = data.frame(),
-      editMealModalSwitch = FALSE,
-      editMealMealUniqueID = NULL,
-      createMealDF = data.frame(),
-      exportMenuModalSwitch = FALSE,
-      ALL_DATA = ALL_DATA
-    )
-
-    rm(XREF_INGREDIENT,LU_USERS, LU_TRIPS, LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,ALL_DATA)
-    gc()
-
-    # UI Outputs -----
-    #output$userName <- renderText({isolate(LOCAL$userName)})
-
-    # output$userName <- renderUI({
-    #
-    #   tags$button(class = "getstarted",
-    #     style = "background-color: #FFFFFF;",
-    #     disabled = "disabled",
-    #     LOCAL$userName
-    #   )
-    #
-    # })
-
-    #####OBSERVERS#####
-    observeEvent(input$logOut, {logout()})
-
-    # Return LOCAL reactive values object
-
-    return(LOCAL)
-
-  })
+    })
 }
 

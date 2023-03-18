@@ -1,12 +1,8 @@
 #' donate UI Function
-#'
 #' @description A shiny Module.
-#'
 #' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
 #' @importFrom shiny NS tagList
+#' @noRd
 mod_donate_ui <- function(id){
   ns <- NS(id)
   tagList(
@@ -14,7 +10,9 @@ mod_donate_ui <- function(id){
   )
 }
 
-#' donate Server Functions
+########### I THINK THIS MODULE CAN GO AWAY 3/15/2023 ##############
+
+#' donate Server Function
 #'
 #' @noRd
 mod_donate_server <- function(id){
