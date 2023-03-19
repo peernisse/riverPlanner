@@ -19,7 +19,9 @@ utils::globalVariables(
      'INGREDIENT_UNIQUE_ID','MEAL_ADD_ID','MEAL_VIEW_ID','TRIP_ID','NO_PEOPLE_CALC',
      'USERNAME','TRIP_ID','TRIPNAME','NO_ADULTS','NO_KIDS','TRIP_DESC','<<-',
      'luMtypes','ttl','USERNAME','TOTAL','MEAL_COUNT','data','desc', 'USER_ID',
-     'LU_GS_COLS', 'GS_INDEX', 'COL_INDEX','INSTRUCTIONS', 'TOOLS'
+     'LU_GS_COLS', 'GS_INDEX', 'COL_INDEX','INSTRUCTIONS', 'TOOLS',
+     'DB_IDS', 'MEAL_DEL_ID', 'MEAL_EDIT_ID', 'MEAL_TYPE_ID', 'RECORD_ID',
+     'con', 'ingsToAdd', 'mealsToAdd', 'read_sheet', 'toDelete', 'xrefIngsToAdd', 'xrefT'
     )
 )
 

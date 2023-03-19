@@ -11,11 +11,32 @@ rivConnect <- function(){
 
     DBI::dbConnect(RMariaDB::MariaDB(),
        dbname = "rpdb",
-       username = 'rpdb-service',
-       password = '@5thStreet',
-       host = 'riverplanner-databse.cifsiggcktwz.us-east-1.rds.amazonaws.com',
+       username = Sys.getenv("RPD_USER"),
+       password = Sys.getenv("RPD_PWD"),
+       host = Sys.getenv("RPD_HOST"),
        port = 3306
     )
+}
+
+#'reserveNewUserID
+#' @description Reserves new USER_ID from lu_users.
+#' @param userName The userName provided by Authentication client.
+#' Used to determine new USER_ID when adding new user.
+#' @returns The newly reserved USER_ID
+#' @noRd
+reserveNewUserID <- function(con, userName){
+    # Reserve new ID within same transaction
+    newid <- dbGetQuery(con,
+        "select max(USER_ID) + 1 as USER_ID from lu_users;") %>%
+        pull() %>%
+        as.integer(.)
+
+    dbExecute(con, paste0("insert into lu_users (USER_ID, USERNAME, EMAIL,
+                UPTIME, UPUSER) VALUES (",newid,",'",userName,
+                "', '", userName,"', now(), 'riverplanner@system.com');")
+              )
+
+    return(newid)
 }
 
 #'getMaxTripID

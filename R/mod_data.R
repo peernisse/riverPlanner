@@ -35,7 +35,7 @@ mod_data_ui <- function(id){
 #' @description Handles database queries and updates.
 
 #' @importFrom auth0 logoutButton logout
-
+#' @importFrom stringr str_to_lower
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter mutate case_when select group_by ungroup
 #' @importFrom dplyr summarize arrange pull left_join bind_rows bind_cols distinct
@@ -43,39 +43,55 @@ mod_data_ui <- function(id){
 mod_data_server <- function(id){
     moduleServer( id, function(input, output, session){
         ns <- session$ns
-
         # Get Auth0 username
-        userName <- session$userData$auth0_info$name
-        updateTextInput(session, inputId = 'userName', value = userName)
+        authPkg <- session$userData$auth0_info
+        authType <- authPkg$sub
+        if(grepl('google', authType)){
+            userName <- paste0(authPkg$nickname,'@gmail.com')
+            email <- userName
+        } else if(grepl('auth0', authType)){
+            userName <- authPkg$name
+            email <- userName
+        } else {
+            stop('Unknown Auth Client')
+            geterrmessage()
+        }
 
-        # Connect databse
+        #userName <- session$userData$auth0_info$name
+
+
+        # Connect database
 
         con <- rivConnect()
 
         # Get users table and userID if it is there
 
-        LU_USERS <- dbGetQuery(con,'select * from lu_users;')
-        userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% unique()
+        dbExecute(con, "start transaction;")
+            LU_USERS <- dbGetQuery(con,'select USER_ID, USERNAME from lu_users;')
+        dbExecute(con,"commit;")
+
+        userID <- LU_USERS[which(str_to_lower(LU_USERS$USERNAME) ==
+                    str_to_lower(userName)),'USER_ID'] %>% unique()
 
         # Establish UserID in DB if not there
 
-        if(!userName %in% LU_USERS$USERNAME | length(userID) == 0){
-            newid <- max(LU_USERS$USER_ID) + 1
-            if(length(grep('@', userName)) != 0){email <- userName} else {email <- ''}
-            newrecord <- data.frame(
-                USER_ID = as.numeric(newid),
-                USERNAME = userName,
-                EMAIL = email,
-                UPTIME = Sys.time(),
-                UPUSER = userName
-            )
-
-            dbUpdate(con, newrecord, 'LU_USERS', data = NULL)
-            con <- rivConnect()
-            LU_USERS <- dbGetQuery(con,'select * from lu_users;')
-            userID <- LU_USERS[which(LU_USERS$USERNAME == userName),'USER_ID'] %>% unique()
-            dbDisconnect(con)
+        if(!str_to_lower(userName) %in% str_to_lower(LU_USERS$USERNAME) ||
+            length(userID) == 0){
+                dbExecute(con, "start transaction;")
+                    newid <- reserveNewUserID(con, userName)
+                    LU_USERS <- dbGetQuery(con,
+                        paste0(
+                            "select * from lu_users where USER_ID = ",
+                            newid, ";"
+                        )
+                    )
+                dbExecute(con,"commit;")
+                userID <- LU_USERS$USER_ID
         }
+
+        # Dispay username in header
+
+        updateTextInput(session, inputId = 'userName', value = userName)
 
         # Get remaining dataframes filtered by userID
 

@@ -306,7 +306,7 @@ editMealAddIng <- function(input, output, session, data){
 #' @noRd
 createMealAddIng <- function(input, output, session, data){
 
-    #TODO This new record needs to be like the above
+    #TODO This new record needs to be like the above -- DONE 3/18/2023
     ns <- session$ns
     LOCAL <- data
 
@@ -322,10 +322,11 @@ createMealAddIng <- function(input, output, session, data){
 
     ingName <- input[['selectIngredient']]
     ingID <- LOCAL$LU_INGREDIENTS[which(LOCAL$LU_INGREDIENTS$INGREDIENT ==
-        input[['selectIngredient']]),'INGREDIENT_ID'] %>%
-        pull()
+                input[['selectIngredient']]),'INGREDIENT_ID'] #%>%
+    #pull()
+    mTypeID <- LOCAL$editMealDF$MEAL_TYPE_ID[1]
 
-    LOCAL$editMealDF$QTY <- as.character(LOCAL$editMealDF$QTY)
+    req(length(ingID) == 1)
 
     newRecord <- LOCAL$LU_INGREDIENTS %>% filter(INGREDIENT_ID == ingID) %>%
         select(-c(UPTIME,UPUSER)) %>%
@@ -333,6 +334,7 @@ createMealAddIng <- function(input, output, session, data){
             MEAL_ID = LOCAL$editMealDF$MEAL_ID[1],
             MEAL_NAME = LOCAL$editMealDF$MEAL_NAME[1],
             MEAL_TYPE = LOCAL$editMealDF$MEAL_TYPE[1],
+            MEAL_TYPE_ID = mTypeID,
             MEAL_DESCRIPTION = LOCAL$editMealDF$MEAL_DESCRIPTION[1],
             TOOLS = LOCAL$editMealDF$TOOLS[1],
             INSTRUCTIONS = LOCAL$editMealDF$INSTRUCTIONS[1],
@@ -346,8 +348,15 @@ createMealAddIng <- function(input, output, session, data){
             NO_ADULTS = LOCAL$editMealDF$NO_ADULTS[1],
             NO_KIDS = LOCAL$editMealDF$NO_KIDS[1],
             NO_PEOPLE_CALC = LOCAL$editMealDF$NO_PEOPLE_CALC[1],
-            QTY = as.character(ceiling(as.numeric(NO_PEOPLE_CALC) * SERVING_SIZE_FACTOR)),
+            #QTY = as.character(ceiling(as.numeric(NO_PEOPLE_CALC) * SERVING_SIZE_FACTOR)),
             MEAL_NOTES = LOCAL$editMealDF$MEAL_NOTES[1]
+        ) %>%
+        mutate(
+            QTY = case_when(
+                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR < 0.5 ~
+                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, round),
+                TRUE ~ round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+            )
         )
 
     LOCAL$editMealDF <- bind_rows(LOCAL$editMealDF, newRecord)
@@ -805,24 +814,25 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
 
     # Case LU_USERS
 
-    if(to == 'LU_USERS'){
-        check <- dbGetQuery(con, paste0('select distinct USERNAME from ',to,';'))
-
-        try <- from %>%
-            mutate(check = USERNAME) %>%
-            select(check)
-
-        if(unique(try$check) %in% unique(check$check) == FALSE){
-
-            qry <- paste0("INSERT INTO `LU_USERS` (`USER_ID`, `USERNAME`, `EMAIL`, `UPTIME`, `UPUSER`) values('",
-                          from[1,1],"','",from[1,2],"','",from[1,3],"','",Sys.time(),"','",from[1,5],"');")
-
-            dbExecute(con, "start transaction;")
-            dbExecute(con,qry)
-            dbExecute(con,"commit;")
-            dbDisconnect(con)
-        }
-    }
+    # if(to == 'LU_USERS' || to == 'lu_users'){
+    #     to <- stringr::str_to_lower(to)
+    #     check <- dbGetQuery(con, paste0('select distinct username from ',to,';'))
+    #
+    #     try <- from %>%
+    #         mutate(check = USERNAME) %>%
+    #         select(check)
+    #
+    #     if(unique(try$check) %in% unique(check$check) == FALSE){
+    #
+    #         qry <- paste0("INSERT INTO lu_users (`USER_ID`, `USERNAME`, `EMAIL`, `UPTIME`, `UPUSER`) values('",
+    #                       from[1,1],"','",from[1,2],"','",from[1,3],"','",Sys.time(),"','",from[1,5],"');")
+    #
+    #         dbExecute(con, "start transaction;")
+    #         dbExecute(con,qry)
+    #         dbExecute(con,"commit;")
+    #         dbDisconnect(con)
+    #     }
+    # }
 
     # Case LU_INGREDIENTS
 
@@ -900,7 +910,7 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
         if(!LOCAL$tripID %in% dbGetQuery(con, 'select trip_id from lu_trips;')$trip_id){
             dbExecute(con, "start transaction;")
             dbExecute(con,
-                paste0("insert into `LU_TRIPS` (`TRIP_ID`,`TRIPNAME`,
+                paste0("insert into lu_trips (`TRIP_ID`,`TRIPNAME`,
                     `TRIP_DESC`,`USER_ID`,`UPTIME`,`UPUSER`)
                     values ('",luT$TRIP_ID[1],"','",luT$TRIPNAME[1],"','",luT$TRIP_DESC[1],
                        "','",luT$USER_ID[1],"','",Sys.time(),"','",LOCAL$userName,"');")

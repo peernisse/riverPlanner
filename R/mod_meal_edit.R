@@ -222,8 +222,9 @@ mod_meal_edit_server <- function(id, data = LOCAL){
     # Observe add ingredient button -----
 
     observeEvent(input[['addIngredient']], {
-
-      editMealAddIng(input, output, session, data = LOCAL)
+        withProgress(message = 'Adding Ingredient', detail = 'saving to database...', {
+            editMealAddIng(input, output, session, data = LOCAL)
+        })
     }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
     # Observe new ingredient quantity input and update multiplier -----
