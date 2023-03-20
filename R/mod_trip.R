@@ -7,49 +7,55 @@
 mod_trip_ui <- function(id){
   ns <- NS(id)
   tagList(
-
-    fluidRow(
-      column(width = 12, style = 'display: grid; text-align: center;
-             justify-content: space-around; margin: 5px; padding: 20px;',
-       # hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
-
-
-        #h3('New Trip'),
-          h3(withSpinner(type = 4, color = '#5cb874', uiOutput(ns('sectionTitleTrip')))),
-          customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#232b2b', placeholder = 'Enter Trip Name'),
-
-          customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#232b2b',
-                            choices = c('No. People Age 12+', '0', seq(1:30)),
-                            selected = 'No. People Age 12+'
-          ),
-          customSelectInput(inputId = ns('noKids'), label = 'Kids <12', labelColor = '#232b2b',
-                            choices = c('No. People Age <12', '0', seq(1:30)),
-                            selected = 'No. People Age <12'
-          ),
-          customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description',
-                              resize = 'horizontal', width = 'auto', labelColor = '#232b2b'),
-
-          actionButton(ns('saveTrip'), class = 'btn btn-success', label = 'Save Trip'),
-         # hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
-
-      )
-    ),
-    br(),
-    fluidRow(
-      column(width = 12, style = '/*display: grid;*/ text-align: center;
-             justify-content: space-around; margin: 5px; padding: 20px;',
-        #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
-        h3('My Trips'),
-        #uiOutput(ns('test')),
-        div(id = ns("tripSelect"), class = "accordion",
-          accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips',
-            buttonTitle = 'View My Trips', collapseId = 'collapseTrips',
-            show = TRUE, body = uiOutput(ns('trips')), bgColor = TRUE)
+    tags$section(id="trip", class="shiny section-bg",
+        div(class="section-title",
+            h2('Trip Details'),
+            p('Enter your trip details. Your trip plan will be saved as you
+              work on it to come back to, and if you ever want to use it again.')
         ),
-        #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
-      )
-    ),
-    uiOutput(ns('js'))
+        fluidRow(
+            column(width = 12, style = 'display: grid; text-align: center;
+                 justify-content: space-around; margin: 5px; padding: 20px;',
+                   # hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+
+
+                   #h3('New Trip'),
+                   h3(withSpinner(type = 4, color = '#5cb874', uiOutput(ns('sectionTitleTrip')))),
+                   customTextInput(inputId = ns('tripName'), label = 'Trip Name', labelColor = '#232b2b', placeholder = 'Enter Trip Name'),
+
+                   customSelectInput(inputId = ns('noAdults'), label = 'Adults 12+', labelColor = '#232b2b',
+                                     choices = c('No. People Age 12+', '0', seq(1:30)),
+                                     selected = 'No. People Age 12+'
+                   ),
+                   customSelectInput(inputId = ns('noKids'), label = 'Kids <12', labelColor = '#232b2b',
+                                     choices = c('No. People Age <12', '0', seq(1:30)),
+                                     selected = 'No. People Age <12'
+                   ),
+                   customTextAreaInput(inputId = ns('tripDesc'), label = 'Trip Description',
+                                       resize = 'horizontal', width = 'auto', labelColor = '#232b2b'),
+
+                   actionButton(ns('saveTrip'), class = 'btn btn-success', label = 'Save Trip'),
+                   # hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
+
+            )
+        ),
+        br(),
+        fluidRow(
+            column(width = 12, style = '/*display: grid;*/ text-align: center;
+                 justify-content: space-around; margin: 5px; padding: 20px;',
+                   #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
+                   h3('My Trips'),
+                   #uiOutput(ns('test')),
+                   div(id = ns("tripSelect"), class = "accordion",
+                       accInner(ns, parentId = "tripSelect", buttonId = 'savedTrips',
+                                buttonTitle = 'View My Trips', collapseId = 'collapseTrips',
+                                show = TRUE, body = uiOutput(ns('trips')), bgColor = TRUE)
+                   ),
+                   #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;')
+            )
+        ),
+        uiOutput(ns('js'))
+    ) # end section
   )
 }
 

@@ -10,6 +10,10 @@ mod_data_ui <- function(id){
     ns <- NS(id)
     tagList(
         tags$li(
+            actionLink(inputId = ns('feedback'), 'Feedback')
+            #tags$a(id = ns('feedback'), class="nav-link", 'Feedback')
+        ),
+        tags$li(
             a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
               div(class = "form-group shiny-input-container", style = 'width: auto;',
                   tags$input(id = ns("userName"), type = "text", class = "form-control",disabled = "disabled",
@@ -199,6 +203,87 @@ mod_data_server <- function(id){
 
 
         #####OBSERVERS#####
+        # Observe Feedback link click
+
+        observeEvent(input$feedback, {
+            showModal(
+                customModalDialog(
+                    h4('Please Provide Feedback or Report a Bug'),
+                    p('To report a bug: Provide as much detail about what you were trying to do and what happened,
+                      along with any error messages that were displayed.'),
+                    p('Feedback: We welcome all feedback or requests for additional features. Provide as much detail as possible.'),
+                    p('Your responses will be stored in the database and reviewed periodically by the administrator/developer. You will recieve
+                       an email when your reported issue has been addressed.'),
+                    selectInput(inputId = ns('feedback-type'), label = 'Issue Type',
+                                choices = c('Feature Request','Bug Report'), selected = 'Feature Request'
+                    ),
+                    textInput(inputId = ns('feedback-title'), label = 'Issue Title'
+                    ),
+                    textAreaInput(inputId = ns('feedback-desc'), label = 'Issue Description'
+                    ),
+                    session = session,
+                    title = h4('River Planner Feedback', style = 'color: #5cb874'),
+                    size = 'l',
+                    easyClose = FALSE,
+                    fade = FALSE,
+                    footer = fluidRow(class = 'modal-footer-row',
+                                      actionButton(ns('submitFeedback'), label = 'Submit', class = 'btn btn-success', class = 'riv'),
+                                      actionButton(ns('editMealModalClose_2'), label = 'Cancel', class = 'btn btn-default',
+                                                   class = 'riv', class = 'getstarted')
+                    )
+                )
+            )
+        })
+
+        # Cancel edit meal modal button upper right corner -----
+
+        observeEvent(input$editMealModalClose_1,{
+            LOCAL$editMealModalSwitch <- FALSE
+            LOCAL$editMealDF <- data.frame()
+            removeModal()
+        })
+
+        # Cancel edit meal modal button footer -----
+
+        observeEvent(input$editMealModalClose_2,{
+            LOCAL$editMealModalSwitch <- FALSE
+            LOCAL$editMealDF <- data.frame()
+            removeModal()
+        })
+
+        # Observe feedback modal submit -----
+
+        observeEvent(input$submitFeedback, {
+            req(length(LOCAL$userID) > 0)
+            userID <- LOCAL$userID
+            userName <- LOCAL$userName
+            type <- input$`feedback-type`
+            title <- input$`feedback-title`
+            desc <- input$`feedback-desc`
+
+            con <- rivConnect()
+            dbExecute(con, 'start transaction;')
+            dbExecute(con,
+                paste0("insert into feedback (",
+                       "USER_ID, F_TYPE, F_TITLE, F_DESC, UPTIME, UPUSER) VALUES (",
+                       userID,", '",
+                       type,"', '",
+                       title,"', '",
+                       desc,"', ",
+                       "now()",", '",
+                       userName,"');"
+                )
+            )
+            dbExecute(con, 'commit;')
+            dbDisconnect(con)
+            showNotification("Thanks for your Feedback! We will follow up with any questions.",
+                type = 'message'
+            )
+            removeModal()
+        })
+
+        # Observe logout button -----
+
         observeEvent(input$logOut, {logout()})
 
         # Return LOCAL reactive values object
