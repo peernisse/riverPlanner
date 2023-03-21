@@ -123,7 +123,7 @@ mod_menu_server <- function(id, data){
                          MEAL_TYPE = mealType,
                          MEAL_UNIQUE_ID = mealUniqueId,
                          INGREDIENT_UNIQUE_ID = paste0(MEAL_UNIQUE_ID,'_',INGREDIENT_ID),
-                         QTY = ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR),
+                         #QTY = ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR),
                          MEAL_NOTES = '',
                          TRIPNAME = LOCAL$tripName,
                          TRIP_DESC = LOCAL$tripDesc,
@@ -131,8 +131,15 @@ mod_menu_server <- function(id, data){
                          UPTIME = Sys.Date(),
                          UPUSER = LOCAL$userName,
                          TRIP_ID = LOCAL$tripID
+                  ) %>%
+                  mutate(
+                      QTY = case_when(
+                          NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                              round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
+                          TRUE ~ ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+                      )
                   )
-
+            # last_edit
               # Validate that that meal on that day does not already exist
                 if(nrow(LOCAL$myMeals) > 0 & paste0(gsub('add-','',.x),'_',mealType,'_',riverDay) %in% LOCAL$myMeals$MEAL_UNIQUE_ID){
                   showNotification('This Meal Exists on this Day Already!', type = 'error', duration = 5)

@@ -151,8 +151,8 @@ mod_data_server <- function(id){
 
                 #QTY = ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
                 QTY = case_when(
-                    NO_PEOPLE_CALC * SERVING_SIZE_FACTOR < 0.5 ~
-                        round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, round),
+                    NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                        round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
                     TRUE ~ round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
                 )
             )
