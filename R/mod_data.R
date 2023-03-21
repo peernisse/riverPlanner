@@ -265,11 +265,12 @@ mod_data_server <- function(id){
             dbExecute(con, 'start transaction;')
             dbExecute(con,
                 paste0("insert into feedback (",
-                       "USER_ID, F_TYPE, F_TITLE, F_DESC, UPTIME, UPUSER) VALUES (",
+                       "USER_ID, F_TYPE, F_TITLE, F_DESC, F_STATUS, UPTIME, UPUSER) VALUES (",
                        userID,", '",
                        type,"', '",
                        title,"', '",
-                       desc,"', ",
+                       desc,"', '",
+                       "OPEN","', ",
                        "now()",", '",
                        userName,"');"
                 )
