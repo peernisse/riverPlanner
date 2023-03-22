@@ -1,5 +1,5 @@
 name: riverPlanner
-remote_url: 'https://peernisse.shinyapps.io/riverplanner'
+remote_url: 'https://apps.datatimellc.com/riverPlanner'
 auth0_config:
   api_url: !expr paste0('https://', Sys.getenv('AUTH0_USER'), '.us.auth0.com')
   credentials:
