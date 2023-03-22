@@ -99,7 +99,16 @@ saveTrip <- function(input, output, session, data){
         LOCAL$myMeals$NO_ADULTS <- as.numeric(input$noAdults)
         LOCAL$myMeals$NO_KIDS <- as.numeric(input$noKids)
         LOCAL$myMeals$NO_PEOPLE_CALC <- ceiling(as.numeric(LOCAL$myMeals$NO_ADULTS) + (as.numeric(LOCAL$myMeals$NO_KIDS) * .65))
-        LOCAL$myMeals$QTY <- round(LOCAL$myMeals$NO_PEOPLE_CALC * LOCAL$myMeals$SERVING_SIZE_FACTOR)
+        #LOCAL$myMeals$QTY <- round(LOCAL$myMeals$NO_PEOPLE_CALC * LOCAL$myMeals$SERVING_SIZE_FACTOR)
+
+        LOCAL$myMeals <- isolate(LOCAL$myMeals) %>%
+            mutate(
+                QTY = case_when(
+                    NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                        round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
+                    TRUE ~ ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+                )
+            )
 
         # Update calculations in LOCAL$LU_TRIPS placeholder
         # TODO this might not be needed so I did not code it. LU_TRIPS already gets replaced in dbUpdate()

@@ -432,7 +432,7 @@ editMealIngredientInputs <- function(input, output, session,data, displayQty = T
 
     ),
     div(class = "input-group",
-        tags$span(class = "input-group-text", 'Description'),
+        tags$span(class = "input-group-text", "Description"),
         tags$input(id = ns(paste0('ing-desc-',ingUniqueID)), value = desc, type = "text",
                    disabled = 'disabled', `aria-label` = "Description", class = "form-control")
     ),

@@ -151,8 +151,8 @@ mod_data_server <- function(id){
 
                 #QTY = ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
                 QTY = case_when(
-                    NO_PEOPLE_CALC * SERVING_SIZE_FACTOR < 0.5 ~
-                        round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, round),
+                    NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                        round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
                     TRUE ~ round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
                 )
             )
@@ -265,11 +265,12 @@ mod_data_server <- function(id){
             dbExecute(con, 'start transaction;')
             dbExecute(con,
                 paste0("insert into feedback (",
-                       "USER_ID, F_TYPE, F_TITLE, F_DESC, UPTIME, UPUSER) VALUES (",
+                       "USER_ID, F_TYPE, F_TITLE, F_DESC, F_STATUS, UPTIME, UPUSER) VALUES (",
                        userID,", '",
                        type,"', '",
                        title,"', '",
-                       desc,"', ",
+                       desc,"', '",
+                       "OPEN","', ",
                        "now()",", '",
                        userName,"');"
                 )

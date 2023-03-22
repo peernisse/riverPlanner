@@ -114,9 +114,9 @@ editMealAdjPeople <- function(input, output, session, data){
     LOCAL$editMealDF <- isolate(LOCAL$editMealDF) %>%
         mutate(
             QTY = case_when(
-                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR < 0.5 ~
-                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, round),
-                TRUE ~ round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
+                TRUE ~ ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
             )
         )
 
@@ -269,9 +269,6 @@ editMealAddIng <- function(input, output, session, data){
             NO_ADULTS = LOCAL$editMealDF$NO_ADULTS[1],
             NO_KIDS = LOCAL$editMealDF$NO_KIDS[1],
             NO_PEOPLE_CALC = LOCAL$editMealDF$NO_PEOPLE_CALC[1],
-            #QTY = as.character(round(as.numeric(NO_PEOPLE_CALC) * SERVING_SIZE_FACTOR)),
-            #QTY = as.character(plyr::round_any(as.numeric(NO_PEOPLE_CALC) * SERVING_SIZE_FACTOR, 0.5, round)),
-            #QTY = as.character(ceiling(as.numeric(NO_PEOPLE_CALC) * SERVING_SIZE_FACTOR)),
             MEAL_NOTES = LOCAL$editMealDF$MEAL_NOTES[1],
             USER_ID = LOCAL$userID,
             USERNAME = LOCAL$userName,
@@ -283,9 +280,9 @@ editMealAddIng <- function(input, output, session, data){
         ) %>%
         mutate(
             QTY = case_when(
-                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR < 0.5 ~
-                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, round),
-                TRUE ~ round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
+                TRUE ~ ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
             )
         )
 
@@ -353,9 +350,9 @@ createMealAddIng <- function(input, output, session, data){
         ) %>%
         mutate(
             QTY = case_when(
-                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR < 0.5 ~
-                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, round),
-                TRUE ~ round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
+                TRUE ~ ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
             )
         )
 
