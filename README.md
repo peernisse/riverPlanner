@@ -38,7 +38,11 @@ devtools::install_github("peernisse/riverPlanner")
 
 ## Live Version
 
-Not up yet.
+### Shinyapps.io
+https://peernisse.shinyapps.io/riverplanner
+
+### Shiny Server @ datatimellc
+https://apps.datatimellc.com/riverPlanner
 
 ## Code of Conduct
 
