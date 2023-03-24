@@ -1,7 +1,6 @@
 #' menu UI Function
 #' @description A shiny Module.
 #' @param id,input,output,session Internal parameters for {shiny}.
-#' @import bsplus
 #' @importFrom shiny NS tagList
 #' @importFrom dplyr anti_join
 #' @noRd

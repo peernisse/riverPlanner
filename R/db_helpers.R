@@ -4,11 +4,6 @@
 #' @description Function opens MariaDB connection to mySQL database
 #' @noRd
 rivConnect <- function(){
-    # DBI::dbConnect(RMariaDB::MariaDB(), dbname = "mydb",
-    #     username = 'peernisse', password = '@5thStreet',
-    #     host = 'SEDOH-L01P-2TCD', port = 3306
-    # )
-
     DBI::dbConnect(RMariaDB::MariaDB(),
        dbname = "rpdb",
        username = Sys.getenv("RPD_USER"),
@@ -571,7 +566,12 @@ refreshLOCAL <- function(con, data, tables){
         mutate(
             MEAL_UNIQUE_ID = paste0(MEAL_ID,'_',MEAL_TYPE,'_',RIVER_DAY),
             INGREDIENT_UNIQUE_ID = paste0(MEAL_UNIQUE_ID,'_',INGREDIENT_ID),
-            QTY = round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+            # QTY = round(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+            QTY = case_when(
+                NO_PEOPLE_CALC * SERVING_SIZE_FACTOR <= 0.5 ~
+                    round_any(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR, 0.5, ceiling),
+                TRUE ~ ceiling(NO_PEOPLE_CALC * SERVING_SIZE_FACTOR)
+            )
         )
 
     LOCAL$ALL_DATA <- LOCAL$LU_MEAL %>%

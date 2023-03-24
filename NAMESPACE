@@ -2,7 +2,6 @@
 
 export(run_app)
 export(run_app_auth0)
-import(bsplus)
 import(rmarkdown)
 import(shiny)
 import(tictoc)
