@@ -22,8 +22,6 @@ app_server <- function(input, output, session) {
 
     mod_gear_server('gear')
 
-    mod_donate_server('donate')
-
     mod_travel_server('travel')
 
 }

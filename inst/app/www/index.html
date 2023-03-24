@@ -29,20 +29,15 @@
   <!-- Template Main CSS File -->
   <link href="www/assets/css/style.css" rel="stylesheet">
 
-  <!-- JS chunk to allow app refresh with auth0 enabled-->
+  <!-- JS chunk to allow app refresh with auth0 enabled this was causing
+  assets like images not to load. I will try it with a longer wait time
+    but for now it is off.
   <script>
-    setTimeout(function(){history.pushState({}, 'Page Title', '/riverplanner');},2000);
-    /*
-    another way to do it
-    setTimeout(function(){history.replaceState(null, '', '/')}, 2000);
-    */
-
-    /*
-    for prod
-    setTimeout(function(){history.pushState({}, 'Page Title', '/riverplanner');},2000);
-    */
-
+    setTimeout(function(){history.pushState({}, 'Page Title', '/riverPlanner');},20000);
   </script>
+
+    -->
+
 
   <!-- =======================================================
   * Template Name: Green - v4.7.0
@@ -279,8 +274,7 @@
           </div>
 
           <div class="col-lg-3 cta-btn-container text-center">
-          <!--  <a class="cta-btn align-middle" href="#">Support</a>
-            {{ donate }}-->
+
 
             <div id="donate-button-container">
               <div id="donate-button"></div>
