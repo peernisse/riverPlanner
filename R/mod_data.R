@@ -47,22 +47,27 @@ mod_data_ui <- function(id){
 mod_data_server <- function(id){
     moduleServer( id, function(input, output, session){
         ns <- session$ns
+
         # Get Auth0 username
         authPkg <- session$userData$auth0_info
         authType <- authPkg$sub
-        if(grepl('google', authType)){
-            userName <- paste0(authPkg$nickname,'@gmail.com')
+        if(is.null(authType)){
+            userName <- 'dev1@dev.dev'
             email <- userName
-        } else if(grepl('auth0', authType)){
-            userName <- authPkg$name
-            email <- userName
-        } else {
-            stop('Unknown Auth Client')
-            geterrmessage()
         }
 
-        #userName <- session$userData$auth0_info$name
-
+        if(!is.null(authType)){
+            if(grepl('google', authType)){
+                userName <- paste0(authPkg$nickname,'@gmail.com')
+                email <- userName
+            } else if(grepl('auth0', authType)){
+                userName <- authPkg$name
+                email <- userName
+            } else {
+                stop('Unknown Auth Client')
+                geterrmessage()
+            }
+        }
 
         # Connect database
 
