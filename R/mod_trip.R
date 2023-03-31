@@ -11,7 +11,8 @@ mod_trip_ui <- function(id){
         div(class="section-title",
             h2('Trip Details'),
             p('Enter your trip details. Your trip plan will be saved as you
-              work on it to come back to, and if you ever want to use it again.')
+              work on it to come back to, and if you ever want to use it again.'),
+            tags$a(href="https://river-planner.com", target="_blank","< Click Here to goto Instructions >")
         ),
         fluidRow(
             column(width = 12, style = 'display: grid; text-align: center;

@@ -12,9 +12,11 @@ knitr::opts_chunk$set(echo = FALSE,warning = F,error = F,message = F)
 ```
 
 
+<!--html_preserve-->
+
 ```{r results="asis", echo = FALSE}
-#library(dplyr)
-#library(purrr)
+# library(dplyr)
+# library(purrr)
 
 myMeals<-params$data %>% as.data.frame()
 
@@ -25,9 +27,17 @@ mealIDs <- myMeals %>%
         arrange(RIVER_DAY,MEAL_TYPE) %>%
         pull(MEAL_UNIQUE_ID) %>%
         unique(.)
-        map(mealIDs, ~ dailyMenu(session = session, id = .x, data = LOCAL))
+
+        # map(mealIDs, ~ dailyMenu(session = session, id = .x, data = LOCAL))
+
+        for(i in 1:length(mealIDs)){
+            print(dailyMenu(session = session, id = mealIDs[i], data = LOCAL))
+        }
  
 ```
+
+<!--/html_preserve-->
+
 
 ```{css, echo = FALSE}
 

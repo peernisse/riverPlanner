@@ -140,7 +140,6 @@ mod_menu_export_server <- function(id, data){
         arrange(RIVER_DAY,MEAL_TYPE) %>%
         pull(MEAL_UNIQUE_ID) %>%
         unique(.)
-
         # The HTML
         div(
             br(),
