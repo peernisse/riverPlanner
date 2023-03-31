@@ -799,24 +799,24 @@ dailyMenu <- function(session, id, data){
   div(
     h4(header, style = 'color: black; text-align: left;'),
     tags$table(class = "table table-striped",
-               tags$thead(
-                 tags$tr(
-                   tags$th(scope = 'col', 'Ingredient'),
-                   tags$th(scope = 'col', 'Quantity'),
-                   tags$th(scope = 'col', 'Units'),
-                   tags$th(scope = 'col', 'Storage'),
-                 )
-               ),
-               tags$tbody(
-                 map(1:nrow(ings), ~
-                       tags$tr(
-                         tags$td(ings[.x,1]),
-                         tags$td(ings[.x,2]),
-                         tags$td(ings[.x,3]),
-                         tags$td(ings[.x,4])
-                       )
-                 )
-               )
+   tags$thead(
+     tags$tr(
+       tags$th(scope = 'col', 'Ingredient'),
+       tags$th(scope = 'col', 'Quantity'),
+       tags$th(scope = 'col', 'Units'),
+       tags$th(scope = 'col', 'Storage'),
+     )
+   ),
+   tags$tbody(
+     map(1:nrow(ings), ~
+           tags$tr(
+             tags$td(ings[.x,1]),
+             tags$td(ings[.x,2]),
+             tags$td(ings[.x,3]),
+             tags$td(ings[.x,4])
+           )
+     )
+   )
     ),
     br()
   )
