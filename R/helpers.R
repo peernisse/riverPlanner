@@ -132,7 +132,6 @@ editMealAdjPeople <- function(input, output, session, data){
 #' @param data The LOCAL data object containing the editMealDF object for the currently being edited meal
 #' @noRd
 editMealAdjQty <- function(input, output, session, id, data){
-
     ns <- session$ns
     LOCAL<- data
     .x <- id
@@ -142,6 +141,8 @@ editMealAdjQty <- function(input, output, session, id, data){
     if(LOCAL$editMealDF$QTY[row] == as.numeric(input[[.x]]) | is.na(as.numeric(input[[.x]]))) {return(NULL)}
 
     LOCAL$editMealDF$QTY[row] <- isolate(input[[.x]])
+
+    LOCAL$editMealDF$QTY <- LOCAL$editMealDF$QTY %>% as.numeric(.)
 
     LOCAL$editMealDF$SERVING_SIZE_FACTOR[row] <- isolate({
         round(
@@ -219,7 +220,6 @@ createMealDelIng <- function(input, output, session, id, data){
 #' @param data The LOCAL reactive values data object
 #' @noRd
 editMealAddIng <- function(input, output, session, data){
-
     ns <- session$ns
     LOCAL <- data
 
