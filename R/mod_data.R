@@ -98,14 +98,14 @@ mod_data_server <- function(id){
                 userID <- LU_USERS$USER_ID
         }
 
-        # Dispay username in header
+        # Display username in header
 
         updateTextInput(session, inputId = 'userName', value = userName)
 
         # Get remaining dataframes filtered by userID
 
         LU_MEAL <- dbGetQuery(con,
-            paste0('select * from lu_meal where USER_ID in (0,',userID,');')
+            paste0('select * from lu_meal where MEAL_ID <> 0 AND USER_ID in (0,',userID,');')
         )
 
         LU_INGREDIENTS <- dbGetQuery(con,

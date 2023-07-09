@@ -800,8 +800,8 @@ gs4ColIndex <- function(url, colName, sheetName){
 #' update of the database tables. Guides the delete, upsert... functions.
 #' @param con database connection that exists in the parent. Placeholder arg.
 #' @param from DF of data going to data base
+#' @param to The database table name where the update should happen. DB table should match the DF in `from`
 #' @importFrom dbplyr sql_query_append
-#' @noRd
 dbUpdate <- function(con = NULL, from, to, data = LOCAL){
     LOCAL <- data
 
@@ -891,7 +891,17 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
 
         # Update LU_TRIPS -----
 
-        luT <- LOCAL$myMeals %>% select(names(LOCAL$LU_TRIPS_DB)) %>% unique()
+        ## Case first save of trip no meals yet
+
+        if(nrow(LOCAL$myMeals) == 0){
+            luT <- from
+        }
+
+        ## Case meals have been added
+
+        if(nrow(LOCAL$myMeals) > 0){
+            luT <- LOCAL$myMeals %>% select(names(LOCAL$LU_TRIPS_DB)) %>% unique()
+        }
 
         if(LOCAL$tripID %in% dbGetQuery(con, 'select trip_id from lu_trips;')$trip_id){
             dbExecute(con, "start transaction;")
@@ -917,8 +927,33 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
 
         # Udate XREF_TRIPS -----
 
-        xrefT <- LOCAL$myMeals %>% select(names(LOCAL$XREF_TRIPS)) %>%
-            mutate(UPTIME = Sys.Date(), UPUSER = LOCAL$userName)
+        ## Case first save of trip no meals yet
+
+        if(nrow(LOCAL$myMeals) == 0){
+
+            xrefT <- data.frame(
+                MEAL_ID = 0,
+                RIVER_DAY = 1,
+                INGREDIENT_ID = 1,
+                TRIP_ID = LOCAL$tripID,
+                MEAL_TYPE_ID = 1,
+                MEAL_NOTES = 'startup',
+                NO_ADULTS = LOCAL$noAdults,
+                NO_KIDS = LOCAL$noKids,
+                NO_PEOPLE_CALC = LOCAL$noPeopleCalc,
+                SERVING_SIZE_FACTOR = 1,
+                USER_ID = LOCAL$userID,
+                UPTIME = Sys.Date(),
+                UPUSER = LOCAL$userName
+            )
+        }
+
+        ## Case meals have been added
+
+        if(nrow(LOCAL$myMeals) > 0){
+            xrefT <- LOCAL$myMeals %>% select(names(LOCAL$XREF_TRIPS)) %>%
+                mutate(UPTIME = Sys.Date(), UPUSER = LOCAL$userName)
+        }
 
         dbExecute(con, "start transaction;")
             dbXrefT <- dbGetQuery(con, paste0("SELECT * FROM xref_trips WHERE USER_ID = ",

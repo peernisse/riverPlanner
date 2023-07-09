@@ -81,6 +81,7 @@ mod_trip_server <- function(id, data){
     #####OBSERVERS#####
 #TODO make this a function
     observeEvent(input$saveTrip,{
+
             if(is.null(input$tripName) | input$tripName == '') {
             showNotification('Please enter trip name', type = 'error', duration = 5)
             return(NULL)
@@ -114,9 +115,33 @@ mod_trip_server <- function(id, data){
             LOCAL$noPeople <- as.numeric(LOCAL$noAdults) + as.numeric(LOCAL$noKids)
             LOCAL$noPeopleCalc <- ceiling(as.numeric(LOCAL$noAdults) + (as.numeric(LOCAL$noKids) * .65))
 
-            showNotification(paste0('Trip ',LOCAL$tripName,' started for ',LOCAL$noPeople,' people!
-              Start adding trip data to enable saving to the database.'),
-              type = 'message', duration = 10)
+            # Save trip record to DB even without any meals added 7/9/2023
+
+            tripStart <- data.frame(
+                TRIP_ID = LOCAL$tripID,
+                TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
+                TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
+                USER_ID = LOCAL$userID,
+                USERNAME = LOCAL$userName,
+                UPTIME = Sys.Date(),
+                UPUSER = LOCAL$userName
+            )
+
+            # Save to database
+
+            withProgress(message = 'Trip Info', detail = 'saving to database...', {
+                map(1:5, ~ incProgress(.x/10))
+                dbUpdate(from = tripStart, to = 'LU_TRIPS', data = LOCAL)
+                map(6:10, ~ incProgress(.x/10))
+            })
+
+            showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
+                             type = 'message', duration = 10)
+
+            # showNotification(paste0('Trip ',LOCAL$tripName,' started for ',LOCAL$noPeople,' people!
+            #   Start adding trip data to enable saving to the database.'),
+            #   type = 'message', duration = 10)
+
             return(NULL)
             }
 
