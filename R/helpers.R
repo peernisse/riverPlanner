@@ -61,22 +61,22 @@ viewMeal <- function(session, id, data){
             p(style = 'font-style: italic;', '--This meal can be edited once added to the trip menu--'),
             fluidRow(
                 column(width = 3,
-                       h5('Ingredients'),
-                       tags$ul(
-                           map(ings, ~ tags$li(.x))
-                       )
+                   h5('Ingredients'),
+                   tags$ul(
+                       map(ings, ~ tags$li(.x))
+                   )
                 ),
                 column(width = 3,
-                       h5('Tools'),
-                       tags$ul(
-                           map(tools, ~ tags$li(.x))
-                       )
+                   h5('Tools'),
+                   tags$ul(
+                       map(tools, ~ tags$li(.x))
+                   )
                 ),
                 column(width = 6,
-                       h5('Instructions'),
-                       tags$ol(
-                           map(inst, ~ tags$li(.x))
-                       )
+                   h5('Instructions'),
+                   tags$ol(
+                       map(inst, ~ tags$li(.x))
+                   )
                 )
             ),
             session = session,
