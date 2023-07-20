@@ -683,6 +683,11 @@ loadTrip <- function(session, id, data){
     updateTextInput(session = session, 'noAdults', value = LOCAL$noAdults)
     updateTextInput(session = session, 'noKids', value = LOCAL$noKids)
     updateTextInput(session = session, 'tripDesc', value = LOCAL$tripDesc)
+
+    # Case if the trip gets loaded but only the default startup meal is there, now remove it
+
+    if(0 %in% LOCAL$myMeals$MEAL_ID){LOCAL$myMeals <- filter(LOCAL$myMeals, MEAL_ID != 0)}
+
 }
 
 #' deleteTripResponse

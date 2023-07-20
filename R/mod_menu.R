@@ -32,7 +32,6 @@ mod_menu_ui <- function(id){
                      style = 'margin:5px;')
       )
     ),
-
     fluidRow(
       column(width = 12, style = 'text-align: center; margin: 5px;padding: 20px;',
         #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
@@ -334,14 +333,14 @@ mod_menu_server <- function(id, data){
   output$dinner <- makeMealCards(input, output, session, mtype = 'Dinner', LOCAL)
   output$appetizer <- makeMealCards(input, output, session, mtype = 'Appetizer', LOCAL)
   output$dessert <- makeMealCards(input, output, session, mtype = 'Dessert', LOCAL)
-  output$cocktails <- renderUI({
-    p('No Cocktails yet....')
-  })
+  output$cocktails <- makeMealCards(input, output, session, mtype = 'Cocktail', LOCAL)
 
   # Make Menu card rows by day
 
   output$tripMenu <- renderUI({
-    if(nrow(LOCAL$myMeals) == 0){return(NULL)}
+    if(nrow(LOCAL$myMeals) == 0){
+        return(p('< No Meals Yet > HINT: Create or Load a Trip and add Meals...'))
+    }
 
     days <- unique(LOCAL$myMeals$RIVER_DAY) %>% sort(.)
     div(id = ns('rdSelect'), class = "accordion",

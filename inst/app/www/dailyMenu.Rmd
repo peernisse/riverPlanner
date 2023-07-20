@@ -14,10 +14,10 @@ knitr::opts_chunk$set(echo = FALSE,warning = F,error = F,message = F)
 
 <!--html_preserve-->
 
-```{r results="asis", echo = FALSE}
+```{r menuGeneration, results = "asis", echo=FALSE, message=FALSE, warning=FALSE}
 # library(dplyr)
 # library(purrr)
-
+# browser()
 myMeals<-params$data %>% as.data.frame()
 
 mealIDs <- myMeals %>%
@@ -30,9 +30,12 @@ mealIDs <- myMeals %>%
 
         # map(mealIDs, ~ dailyMenu(session = session, id = .x, data = LOCAL))
 
-        for(i in 1:length(mealIDs)){
+
+        for(i in seq_along(mealIDs)){
             print(dailyMenu(session = session, id = mealIDs[i], data = LOCAL))
+            
         }
+
  
 ```
 

@@ -780,8 +780,6 @@ dailyMenu <- function(session, id, data){
   LOCAL <- data
   req(nrow(LOCAL$myMeals) > 0)
 
-  browser()
-
   meal <- LOCAL$myMeals %>%
     filter(MEAL_UNIQUE_ID == id)
 

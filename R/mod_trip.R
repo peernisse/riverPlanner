@@ -238,6 +238,7 @@ mod_trip_server <- function(id, data){
     # Observe Load Copy or Delete Trip -----
 
     observe({
+
       tripIDs <- LOCAL$LU_TRIPS %>%
         filter(USER_ID == LOCAL$userID) %>%
         pull(TRIP_ID) %>% unique()
@@ -271,14 +272,24 @@ mod_trip_server <- function(id, data){
             )
           }, ignoreInit = TRUE) # end observeEvent
         )
+
         createdObservers <<- c(createdObservers,copyTripIDs)
+
       } # end if
 
-      # Observe load trip buttons
+      ## Observe load trip buttons ----
+
       loadTripIDs <- paste0('load-tripID-',tripIDs)
       loadTripIDs <- loadTripIDs[!loadTripIDs %in% createdObservers]
+
       if(length(loadTripIDs) > 0){
         map(loadTripIDs, ~ observeEvent(input[[.x]], {
+
+            if(length(LOCAL$tripID) > 0 && gsub('load-tripID-','',.x) == LOCAL$tripID){
+                showNotification(paste('Trip:', LOCAL$tripName,'is already loaded!'), type = 'error')
+                return(NULL)
+            }
+
             tripLoad <<- gsub('load-tripID-','',.x)
             tripName <- LOCAL$LU_TRIPS %>%
               filter(TRIP_ID == gsub('load-tripID-','',.x)) %>%
