@@ -789,36 +789,57 @@ dailyMenu <- function(session, id, data){
   noAdults <- unique(meal$NO_ADULTS)
   noKids <- unique(meal$NO_KIDS)
 
+  tools <- meal$TOOLS[1] %>% gsub('; ',';',.) %>%
+      strsplit(.,';') %>% unlist()
+
+  inst <- meal$INSTRUCTIONS[1]%>% gsub('; ',';',.) %>%
+      strsplit(.,';') %>% unlist()
+
   header <- paste('Day',day,'|',mtype,'|',ttl,'|',noAdults,'Adults |', noKids,'Kids')
 
   ings <- meal %>%
     select(INGREDIENT, QTY, SERVING_SIZE_DESCRIPTION, STORAGE_DESCRIPTION) %>%
     arrange(INGREDIENT)
 
+    ## Output daily menu html ----
 
-  div(
-    h4(header, style = 'color: black; text-align: left;'),
-    tags$table(class = "table table-striped",
-   tags$thead(
-     tags$tr(
-       tags$th(scope = 'col', 'Ingredient'),
-       tags$th(scope = 'col', 'Quantity'),
-       tags$th(scope = 'col', 'Units'),
-       tags$th(scope = 'col', 'Storage'),
-     )
-   ),
-   tags$tbody(
-     map(1:nrow(ings), ~
-           tags$tr(
-             tags$td(ings[.x,1]),
-             tags$td(ings[.x,2]),
-             tags$td(ings[.x,3]),
-             tags$td(ings[.x,4])
-           )
-     )
-   )
-    ),
-    br()
-  )
+    div(
+        h4(header, style = 'color: black; text-align: left;'),
+        tags$table(class = "table table-striped",
+            tags$thead(
+                tags$tr(
+                    tags$th(scope = 'col', 'Ingredient'),
+                    tags$th(scope = 'col', 'Quantity'),
+                    tags$th(scope = 'col', 'Units'),
+                    tags$th(scope = 'col', 'Storage'),
+                )
+            ),
+            tags$tbody(
+                map(1:nrow(ings), ~
+                    tags$tr(
+                        tags$td(ings[.x,1]),
+                        tags$td(ings[.x,2]),
+                        tags$td(ings[.x,3]),
+                        tags$td(ings[.x,4])
+                    )
+                )
+            )
+        ),
+        fluidRow(
+            column(width = 4, style = 'text-align: left;',
+                h5('Tools'),
+                tags$ul(
+                    map(tools, ~ tags$li(.x))
+                )
+            ),
+            column(width = 8, style = 'text-align: left;',
+                h5('Instructions'),
+                tags$ol(
+                    map(inst, ~ tags$li(.x))
+                )
+            )
+        ),
+        br()
+    )
 }
 
