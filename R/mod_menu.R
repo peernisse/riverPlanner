@@ -11,7 +11,6 @@ mod_menu_ui <- function(id){
       column(width = 12, style = 'text-align: center; margin: 5px;padding: 20px;',
         #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
         h3(uiOutput(ns('sectionTitleSelectMeals'))),
-
         div(id = ns("menuSelect"), class = "accordion",
           accInner(ns, parentId = "menuSelect", buttonId = 'breakfasts', buttonTitle = 'Breakfasts',
             collapseId = 'collapseBreakfasts', body = uiOutput(ns('breakfast')), bgColor = FALSE),

@@ -1,8 +1,23 @@
+# GLOBAL OBJECTS AND OPTIONS
 
-
-# Options
+# OPTIONS ----
 
 options(auth0_config_file = "inst/app/_auth0.yml")
+
+# FUNCTIONS ----
+
+#' top of page alerts
+#' @noRd
+alerts <- function(){
+    tagList(
+        alertIcon(icon = 'info', type = 'primary', style = 'margin: 10px; border-left-width: 10px;',
+            p(style = 'margin-top: 15px;', tags$strong('New!'),'You can now edit your personal meals at the base level.
+                Look for the `pencil` icon on your meal cards under `Select Meals`.'
+            )
+        )
+    )
+
+}
 
 # Define globa variables or get warned during package check
 

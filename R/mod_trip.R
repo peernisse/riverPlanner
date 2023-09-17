@@ -7,6 +7,7 @@
 mod_trip_ui <- function(id){
   ns <- NS(id)
   tagList(
+    alerts(),
     tags$section(id="trip", class="shiny section-bg",
         div(class="section-title",
             h2('Trip Details'),
