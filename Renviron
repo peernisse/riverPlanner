@@ -1,0 +1,12 @@
+#AUTH0_USER=riverplanner
+#AUTH0_KEY=DXZxFZU1dfgKaqAzPqlWKgahARlGJDdc
+#AUTH0_SECRET=Z6ukXsLQ1Vk3biWXl9zsUeGZGGAqw0GRD85LVv6j9C_SbehRZAIoFrcuqxQYjnDS
+# AUTH0_USER=datatimellc
+# AUTH0_KEY=ieFmtaj8Fs6CT3AGhIoTkFczcOZYpHTG
+# AUTH0_SECRET=JUitxn6oIFFYqeyzdsFOp-lT3BjAJZbOEEjvEyrOwHce7mdZbBQyCs5CE6VZJPMb
+AUTH0_USER=river-planner
+AUTH0_KEY=1FB9dTVE9PuZIHXP6NJWRkLnZPqfYeoj
+AUTH0_SECRET=HzH7TUgESBk-iPyQUHwrhtGXPrEtMi2P1JWLOKvCpNFbTcWN50axDeaR8-YLXZ9m
+RPD_USER = rpdb-service
+RPD_PWD = @5thStreet
+RPD_HOST = riverplanner-databse.cifsiggcktwz.us-east-1.rds.amazonaws.com
