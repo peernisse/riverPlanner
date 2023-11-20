@@ -1,98 +1,3 @@
-#####CARDS TEMPLATES#####
-
-#' Meal card UI function
-#' @description View and adjust Meal record info in a card.
-#' @param session The shiny session
-#' @param id The id to give the card div. Also, prepended with 'add-' to use as the button id.
-#' @param ttl The card title displayed in h5()
-#' @param subttl The card subtitle displayed in h6()
-#' @param desc The card body text displayed in p()
-#' @noRd
-mealCard <- function(session,id,data = LOCAL, mtype, ttl, subttl, desc){
-    ns <- session$ns
-
-    if(file.exists(paste0('./inst/app/www/assets/img/menu/',mtype,'-',id,'.jpg')) == TRUE){
-        imgsrc <- paste0('www/assets/img/menu/',mtype,'-',id,'.jpg')
-    } else {
-        imgsrc <- 'www/assets/img/menu/default.jpg'
-    }
-
-    div(id = ns(id), class = "card card-block mx-2", style="min-width:300px; margin-bottom:10px;",
-        tags$img(class="card-img-top", alt="100%x280" , src = imgsrc,
-                 height = '300', width = '300'
-        ),
-        div(class = "card-body",style="min-width:300px;",
-            h5(class = "card-title d-flex justify-content-between align-items-left", ttl,),
-            h6(class='card-subtitle mb-2 text-muted', subttl),
-            p(class='card-text',style = 'text-align: left;', desc),
-            div(style = 'display: inline-flex; justify-content: flex-end; flex-wrap: nowrap; flex-direction: row;',
-                selectInput(inputId = ns(paste0('rd-',id)),
-                    width = 'fit-content',
-                    size = 1,
-                    selectize = FALSE,
-                    label = NULL,
-                    choices = c('Day',as.character(seq(1:30))),
-                    selected = 'Day'),
-                selectInput(inputId = ns(paste0('mt-',id)),
-                    width = 'fit-content',
-                    size = 1,
-                    selectize = FALSE,
-                    label = NULL,
-                    choices = c(unique(data$LU_MEAL_TYPE$MEAL_TYPE)),
-                    selected = mtype),
-                actionButton(inputId = ns(paste0('view-',id)),label = NULL, icon = icon('eye'),
-                    type = "button",class = "btn btn-md btn-primary",
-                    style = 'margin-left: 3px;'
-                ),
-                actionButton(inputId = ns(paste0('add-',id)),label = NULL, icon = icon('plus'),
-                    type = "button",class = "btn btn-md btn-success",
-                    style = 'margin-left: 3px;'),
-                # actionButton(inputId = ns(paste0('del-',id)),label = NULL, icon = icon('trash'),
-                #              type = "button",class = "btn btn-sm btn-danger")
-            ),
-        )
-    )
-}
-
-#' Menu card UI function
-#' @description View and adjust Meal record info in a card.
-#' @param session The shiny session
-#' @param id The id to give the card div. Also, prepended with 'add-' to use as the button id.
-#' @param ttl The card title displayed in h5()
-#' @param subttl The card subtitle displayed in h6()
-#' @param desc The card body text displayed in p()
-#' @noRd
-menuCard <- function(session,id, data, mtype, ttl, subttl, desc){
-    ns <- session$ns
-    mealUniqueId <- data$MEAL_UNIQUE_ID %>% unique(.)
-
-    if(file.exists(paste0('./inst/app/www/assets/img/menu/',mtype,'-',id,'.jpg')) == TRUE){
-        imgsrc <- paste0('www/assets/img/menu/',mtype,'-',id,'.jpg')
-    } else {
-        imgsrc <- 'www/assets/img/menu/default.jpg'
-    }
-
-    div(id = ns(paste0('myMeals-',id)), class = "card card-block mx-2", style="min-width:300px; margin-bottom:10px;",
-        tags$img(class="card-img-top", alt="100%x280" , src = imgsrc,
-                 height = '300', width = '300'
-        ),
-        div(class = "card-body",style="max-width:350px;",
-            h5(class = "card-title d-flex justify-content-between align-items-left", paste(mtype,'|',ttl),),
-            h6(class='card-subtitle mb-2 text-muted', subttl),
-            p(class='card-text',style = 'text-align: left;', desc),
-            div(style = 'display: inline-flex; justify-content: flex-end; flex-wrap: nowrap; flex-direction: row;',
-
-                actionButton(inputId = ns(paste0('edit-',mealUniqueId)),label = NULL, icon = icon('pencil'),
-                             type = "button",class = "btn btn-md btn-primary",
-                             style = 'margin-left: 3px;'
-                ),
-                actionButton(inputId = ns(paste0('del-',mealUniqueId)),label = NULL, icon = icon('trash'),
-                             type = "button",class = "btn btn-md btn-danger",
-                             style = 'margin-left: 30px;'),
-            ),
-        )
-    )
-}
 
 #' Trip card
 #' @description The UI card displays saved trip info
@@ -209,128 +114,28 @@ makeTripCards <- function(input, output, session, data = LOCAL){
   })
 }
 
-#' Meal card generator function
-#' @description The functional programming logic to generate cards, input objects,
-#' and related observers.
-#' @param session The shiny session
-#' @param data Passing in the 'LOCAL' reactiveValues data object
-#' @param mtype One of the meal types in LOCAL$LU_MEAL$MEAL_TYPE. Used to break
-#' the cards out into accordion collapsible sections on the page.
-#' @noRd
-makeMealCards <- function(input, output, session, mtype, data = LOCAL){
-    LOCAL <- data
-
-    renderUI({
-        ns <- session$ns
-        filtDat <- LOCAL$ALL_DATA %>% filter(MEAL_TYPE %in% mtype) %>%
-            select(MEAL_ID,MEAL_TYPE,MEAL_NAME,MEAL_DESCRIPTION) %>% unique(.)
-        mapIndexRows <- which(filtDat$MEAL_TYPE == mtype)
-
-        # Make cards
-
-        div(class = "container-fluid py-2", style = 'padding-left: inherit; padding-right: inherit;',
-            div(class = 'row', style = 'text-align: center; margin-bottom: 5px;',
-              h6(paste0('<- Explore ',mtype,' (',length(mapIndexRows),') Items ->'))
-            ),
-
-            div(class = "d-flex flex-row flex-nowrap overflow-auto",
-
-                map(mapIndexRows, ~ mealCard(session,filtDat[.,'MEAL_ID'],data = LOCAL,
-                     mtype = mtype, filtDat[.,'MEAL_NAME'],
-                     NULL, filtDat[.,'MEAL_DESCRIPTION']))
-            )
-
-        )
-
-    })
-}
-
-#' Menu card generator function
-#' @description The functional programming logic to generate cards, input objects,
-#' and related observers. Meant to be used in a loop for makeDayBoxes
-#' @param input,output,session The shiny session objects
-#' @param data Passing in the 'LOCAL' reactiveValues data object
-#' @param day The river day.
-#'
-#' @noRd
-makeMenuCards <- function(input, output, session, day, data){
-    # The data should be the LOCAL$myMeals DF
-    ns <- session$ns
-
-    renderUI({
-        ns <- session$ns
-
-        filtDat <- data %>% filter(RIVER_DAY %in% day) %>%
-            select(RIVER_DAY, MEAL_ID, MEAL_UNIQUE_ID, MEAL_TYPE,MEAL_NAME,MEAL_DESCRIPTION) %>% unique(.)
-
-        mapIndexRows <- which(filtDat$RIVER_DAY == day)
-
-        # Make cards
-        div(class = "container-fluid py-2",
-            div(class = 'row', style = 'text-align: center; margin-bottom: 5px;',
-                h6(paste0('<- Explore Day ',day,' (',length(mapIndexRows),') Items ->'))
-            ),
-            div(class = "d-flex flex-row flex-nowrap overflow-auto",
-
-                map(mapIndexRows, ~ menuCard(session,filtDat[.,'MEAL_ID'],data = filtDat[.,],
-                                             mtype = filtDat[.,'MEAL_TYPE'], filtDat[.,'MEAL_NAME'],
-                                             NULL, filtDat[.,'MEAL_DESCRIPTION']))
-            )
-
-        )
-
-    })
-}
-
-#' makeDayBoxes
-#' @description Creates a collapsible horizontal row of menu cards. Uses the BS5 accordion CSS
-#' @param input,output,session The shiny session objects
-#' @param rd The river day to focus on. Must be a single river day numeric
-#' @param parentId The div ID of the parent accordion div
-#' @param data The reactive myMeals dataframe. The growing DF of selected meals to be displayed as cards.
-#'
-#' @noRd
-makeDayBoxes <- function(input, output, session, rd, parentId, data = LOCAL$myMeals){
-  req(!is.null(data) == TRUE & (nrow(data) > 0) == TRUE)
-  ns <- session$ns
-
-  data <- data %>%
-    filter(RIVER_DAY == rd) %>%
-    mutate(
-      MEAL_TYPE = factor(MEAL_TYPE,
-                         levels = c('Breakfast','Lunch','Dinner','Appetizer','Dessert','Cocktail'))
-    ) %>%
-    arrange(RIVER_DAY,MEAL_TYPE)
-
-  buttonId <- paste0('riverDay-',rd)
-  collapseId <- paste0('collapse-',buttonId)
-  buttonTitle <- paste0('River Day ',rd)
-
-  accInner(ns, parentId, buttonId, buttonTitle, collapseId,
-    body = makeMenuCards(input, output, session, day = rd, data = data)
-  )
-}
 
 #####MODAL DIALOGS#####
 
 #' This is just shiny modalDialog with one extra line to add a button in
 #' @description The shiny modalDialog function with added upper right close button for bootstrap 5
 #' @param ... UI elements for the body of the modal dialog box.
+#' @param input The shin input object
+#' @param displayXClose Logical Whether to disable the extra close `X` button in upper right.
+#' TRUE = Enabled, FALSE = disabled
 #' @param title An optional title for the dialog.
 #' @param footer UI for footer. Use NULL for no footer.
-#' @param session This is added to carry namespace to the UI.
+#' @param session This is added to carry namespace to the UI if override not used.
 #' @param size One of "s" for small, "m" (the default) for medium, or "l" for large.
 #' @param easyClose If TRUE, the modal dialog can be dismissed by clicking outside the dialog box,
 #' or be pressing the Escape key. If FALSE (the default), the modal dialog can't be dismissed in those ways;
 #' instead it must be dismissed by clicking on a modalButton(), or from a call to removeModal() on the server.
 #' @param fade If FALSE, the modal dialog will have no fade-in animation (it will simply appear rather than fade in to view).
-#' @param label The contents of the button or link–usually a text label, but you could also use any other HTML, like an image.
-#' @param icon An optional icon() to appear on the button.
-#' @noRd
-
-customModalDialog <- function (..., session, title = NULL, footer = modalButton("Dismiss"),
-                               size = c("m", "s", "l", "xl", "fs"), easyClose = FALSE, fade = TRUE) {
-  ns <- session$ns
+customModalDialog <- function (..., input, session, displayXClose = TRUE, title = NULL, footer = modalButton("Dismiss"),
+                    size = c("m", "s", "l", "xl", "fs"), easyClose = FALSE, fade = TRUE) {
+    ns <- session$ns
+    if(displayXClose == FALSE) displayXClose <- 'disabled'
+    if(displayXClose == TRUE) displayXClose <- NULL
 
   size <- match.arg(size)
   backdrop <- if (!easyClose) "static"
@@ -347,9 +152,9 @@ customModalDialog <- function (..., session, title = NULL, footer = modalButton(
             if (!is.null(title))
               div(class = "modal-header",
                 tags$h5(id = ns('headerTitle'), class = "modal-title", title),
-                tags$button(type="button", id = ns('editMealModalClose_1'), label = NULL,
-                  class="btn-close shiny-bound-input", `data-dismiss`="modal",
-                  `data-bs-dismiss`="modal", `aria-label`="Close")
+                tags$button(type = "button", id = ns('editMealModalClose_1'), label = NULL,
+                  class="btn-close shiny-bound-input", `data-dismiss` = 'modal',
+                  disabled = displayXClose, `data-bs-dismiss` = 'modal', `aria-label`="Close")
               ),
               div(class = "modal-body", ...),
             if (!is.null(footer))
@@ -398,7 +203,6 @@ editMealTripInfoInputs <- function(input, output, session, data){
 #' @param data The meal dataframe being viewed/edited. Usually a subset of myMeals
 #' @noRd
 editMealIngredientInputs <- function(input, output, session,data, displayQty = TRUE){
-
     #TODO this runs multiple times once for every ingredient. It runs multiple
     # times because if there are any SSF to QTY discrepancies, they rebalance, triggering
     # the UI again. And because of update text input in the new ingresient form
@@ -499,7 +303,7 @@ createIngredients <- function(input, output, session, data){
 
     tagList(
 
-      div(class = "input-group", class = 'create-meal', style ='margin-top:12px;',
+      div(class = "input-group", class = 'create-meal', style ='margin-top: 12px;',
           tags$span(class = "input-group-text", 'New Ingredient',
                     style = 'background-color: #ed7000; border-color: #ed7000; color: #fff;'),
           tags$input(id = ns('ing-new-ing'),
@@ -602,6 +406,7 @@ createIngredients <- function(input, output, session, data){
 customSelectInput <- function(inputId, label, labelColor, labelTextColor = '#fff',
                               choices, selected = choices[1], disabled = NULL){
 
+    req(!is.null(selected))
   if(selected == choices[1]) {choices <- choices[!choices %in% selected]} else {choices = choices}
 
     div(class = "input-group mb-3",

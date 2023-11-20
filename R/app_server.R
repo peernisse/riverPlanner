@@ -3,7 +3,7 @@
 #'     DO NOT REMOVE.
 #' @param mdata The global reactiveValues object shared between modules
 #' @import shiny tictoc
-#' @importFrom purrr map map_chr
+#' @importFrom purrr map map_chr map2
 #' @importFrom utils data
 #' @noRd
 app_server <- function(input, output, session) {
@@ -15,6 +15,8 @@ app_server <- function(input, output, session) {
     LOCAL <- mod_menu_server('menu', data = LOCAL)
 
     LOCAL <- mod_meal_edit_server('editMeal', data = LOCAL)
+
+    LOCAL <- mod_root_meal_edit_server('rootEditMeal', data = LOCAL)
 
     LOCAL <- mod_meal_create_server('createMeal', data = LOCAL)
 

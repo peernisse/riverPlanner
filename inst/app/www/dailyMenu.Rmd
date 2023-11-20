@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = FALSE,warning = F,error = F,message = F)
 ```{r menuGeneration, results = "asis", echo=FALSE, message=FALSE, warning=FALSE}
 # library(dplyr)
 # library(purrr)
-# browser()
+
 myMeals<-params$data %>% as.data.frame()
 
 mealIDs <- myMeals %>%

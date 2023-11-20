@@ -8,7 +8,7 @@ mod_menu_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(width = 12, style = 'text-align: center; margin: 5px;padding: 20px;',
+      column(width = 12, style = 'text-align: center; margin: 5px; padding: 20px;',
         #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
         h3(uiOutput(ns('sectionTitleSelectMeals'))),
         div(id = ns("menuSelect"), class = "accordion",
@@ -208,16 +208,49 @@ mod_menu_server <- function(id, data){
     )
   })
 
-  # View meal button observer -----
+    # View meal button observer -----
 
-  viewButtonIDs <- reactive(LOCAL$ALL_DATA$MEAL_VIEW_ID %>% unique(.))
-  observe({
-    map(viewButtonIDs(), ~ observeEvent(input[[.x]],{
-      viewMeal(session, id = .x, data = LOCAL)
-      createdObservers <<- c(createdObservers,.x) %>% unique()
+    viewButtonIDs <- reactive(LOCAL$ALL_DATA$MEAL_VIEW_ID %>% unique(.))
+    observe({
+        map(viewButtonIDs(), ~ observeEvent(input[[.x]],{
+                viewMeal(session, id = .x, data = LOCAL)
+                createdObservers <<- c(createdObservers,.x) %>% unique()
+            })
+        )
     })
-    )
-  })
+
+    # Root Edit Meal Button Listener ----
+
+    rootEditButtonIDs <- reactive({
+        out <- LOCAL$LU_MEAL %>%
+            filter(USER_ID == LOCAL$userID) %>% pull(MEAL_ID) %>%
+            unique()
+
+        return(paste0('root-edit-',out))
+    })
+
+    observe({
+        map(rootEditButtonIDs(), ~ observeEvent(input[[.x]],{
+                # This prevents modal reload after saving bug
+                if(LOCAL$rootEditMealButton == TRUE &
+                    LOCAL$rootEditMealModalSwitch == FALSE){
+                    LOCAL$rootEditMealButton <- FALSE
+                    return(NULL)
+                }
+
+                LOCAL$rootEditMealButton <- TRUE
+                LOCAL$rootEditMealModalSwitch <- TRUE
+                LOCAL$rootEditMealMealUniqueID <- gsub('root-edit-', '',.x)
+                showModal(mod_root_meal_edit_ui('rootEditMeal', session))
+
+                createdObservers <<- c(createdObservers,.x) %>% unique()
+            })
+        )
+    })
+
+    # observeEvent(input[[paste0('root-edit-',id)]],{
+    #
+    # })
 
   # Menu card delete and edit button observers -----
 
@@ -254,7 +287,7 @@ mod_menu_server <- function(id, data){
         # Delete button observers -----
         del_id <- delMealButtonIDs[new_del_button()]
         map(del_id, ~ observeEvent(input[[.x]],{delMealResponse(
-            session = session, input = input, output = output,
+            #session = session, input = input, output = output,
             id = .x, data = LOCAL)},
           ignoreInit = TRUE, once = TRUE)
         )
@@ -269,7 +302,8 @@ mod_menu_server <- function(id, data){
           new_edit_button(val)
         })
 
-        # Edit button observers -----
+        ## Edit button observers -----
+
         edit_id <- editMealButtonIDs[new_edit_button()]
         map(edit_id, ~
           observeEvent(input[[.x]],{
@@ -287,15 +321,17 @@ mod_menu_server <- function(id, data){
 
     } else {
 
-      # Delete button observers -----
+      ## Delete button observers -----
+
       del_id <- delMealButtonIDs[new_del_button()]
       map(del_id, ~ observeEvent(input[[.x]],{delMealResponse(
-          session = session, input = input, output = output,
+          #session = session, input = input, output = output,
           id = .x, data = LOCAL)},
         ignoreInit = TRUE, once = TRUE)
       )
 
-      # Edit button observers -----
+      ## Edit button observers -----
+
       edit_id <- editMealButtonIDs[new_edit_button()]
       map(edit_id, ~
         observeEvent(input[[.x]],{

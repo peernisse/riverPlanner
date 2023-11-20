@@ -1,5 +1,5 @@
 # test_that("app ui", {
-#   browser()
+#
 #   ui <- app_ui()
 #   #golem::expect_shinytaglist(ui)
 #   # Check that formals have not been removed

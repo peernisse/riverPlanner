@@ -8,11 +8,18 @@
 #' @param id The delete button ID for that menu card
 #' @param data The LOCAL data object#'
 #' @noRd
-delMealResponse <- function(session, input, output, id, data){
+#delMealResponse <- function(session, input, output, id, data){
+delMealResponse <- function(id, data){
+
     LOCAL <- data
     mealName <- LOCAL$myMeals %>%
         filter(MEAL_UNIQUE_ID %in% gsub('del-','',id)) %>%
         select(MEAL_NAME) %>%
+        unique()
+
+    mealId <- LOCAL$myMeals %>%
+        filter(MEAL_UNIQUE_ID %in% gsub('del-','',id)) %>%
+        pull(MEAL_ID) %>%
         unique()
 
     # Remove the meal from myMeals. This was running twice so if else stops the second run
@@ -21,11 +28,47 @@ delMealResponse <- function(session, input, output, id, data){
         LOCAL$myMeals <- subset(LOCAL$myMeals, !MEAL_UNIQUE_ID %in% gsub('del-','',id))
     } else {return(NULL)}
 
-    # Remove the meal from XREF_TRIPS if it is there
+    # toKill <- LOCAL$XREF_TRIPS %>%
+    #     filter(USER_ID == LOCAL$userID, MEAL_ID == mealId) %>%
+    #     mutate(
+    #         MEAL_TYPE = map(MEAL_TYPE_ID, ~ getMealType(.x)),
+    #         mealDelId = paste0(MEAL_ID, '_',MEAL_TYPE, '_',RIVER_DAY)
+    #     ) %>%
+    #     select(TRIP_ID, MEAL_ID, mealDelId) %>%
+    #     unique()
 
-    withProgress(message = 'Deleting', detail = paste0('Deleting ', mealName, ' from trip...'), {
+    # if(nrow(toKill) <= 1){
+    #     xrefT <- data.frame(
+    #         MEAL_ID = 0,
+    #         RIVER_DAY = 1,
+    #         INGREDIENT_ID = 1,
+    #         TRIP_ID = LOCAL$tripID,
+    #         MEAL_TYPE_ID = 1,
+    #         MEAL_NOTES = 'startup',
+    #         NO_ADULTS = LOCAL$noAdults,
+    #         NO_KIDS = LOCAL$noKids,
+    #         NO_PEOPLE_CALC = LOCAL$noPeopleCalc,
+    #         SERVING_SIZE_FACTOR = 1,
+    #         USER_ID = LOCAL$userID,
+    #         UPTIME = Sys.Date(),
+    #         UPUSER = LOCAL$userName
+    #     )
+    #     #add dummy record bc about to kill last of this meal in xref_trips
+    #     #this is so the trip record is not abandoned in lu_trips
+    #
+    #     con <- rivConnect()
+    #     upsertXrefTrips(con = con, from = xrefT, data = LOCAL, row = 1)
+    #     dbDisconnect(con)
+    # }
+
+    #now remove the last legit record of this meal in xref trips
+    # Remove the meal from XREF_TRIPS. delMealResponse() assumes trip is loaded
+
+    withProgress(message = 'Deleting', detail = paste0('Deleting ', mealName, ' from menu...'), {
         map(1:5, ~ incProgress(.x/10))
-            delMeal(session, input, output, id = gsub('del-','',id), data = LOCAL)
+            #delMeal(session, input, output, id = gsub('del-','',id), data = LOCAL)
+            tripId <- isolate(LOCAL$tripID)
+            delMeal(id = gsub('del-','',id), data = LOCAL, tripId = tripId)
         map(6:10, ~ incProgress(.x/10))
     })
 
@@ -153,12 +196,13 @@ editMealAdjQty <- function(input, output, session, id, data){
 
 #' Action to take when delete ingredient button is pressed on editMeal modal
 #' @description When delete ingredient is pressed remove item from LOCAL$editMealDF
-#' and rebuild the modal. If you delete all ingredients, the meal rebuilds from the database with all ingredients
+#' and rebuild the modal.
 #' @param input,output,session The shiny app session objects
 #' @param id The UI input ID of the deleted ingredient delete button
 #' @param data The LOCAL data object containing the editMealDF object for the currently being edited meal
 #' @noRd
 editMealDelIng <- function(input, output, session, id, data){
+
     ns <- session$ns
     LOCAL<- data
     .x <- id
@@ -368,6 +412,7 @@ createMealAddIng <- function(input, output, session, data){
 #' @param data The LOCAL reactive values data object.
 #' @noRd
 newIngredientResponse <- function(input, output, session, data){
+
     ns <- session$ns
     LOCAL <- data
 
@@ -754,7 +799,7 @@ deleteTrip <- function(session, id, data){
 }
 
 # DATABASE CRUD -----
-
+# TODO 11/17/2023 This function can go away
 #' gs4ColIndex
 #' @description Return googlesheets column by name. Used to get row numbers
 #' by condition to do a range read so not reading entire sheets
@@ -764,41 +809,43 @@ deleteTrip <- function(session, id, data){
 #' @returns One column dataframe from the sheet
 #' so we can specify to read just one GS column by name
 #' @noRd
-gs4ColIndex <- function(url, colName, sheetName){
-    #colName <- 'QTY'
-    #sheetName <- 'LU_TRIPS'
+NULL
 
-    names <- read_sheet(url, sheet = sheetName, range = '1:1') %>% names()
-    colNum <- which(names == colName)
-
-    if(length(colNum) == 0){
-        showNotification(
-            paste('No column of name',colName,'found in table',sheetName),
-            duration = 10, type = 'error')
-        return(NULL)
-    }
-
-    l1 <- LETTERS
-    l2 <- paste0('A',LETTERS)
-    l3 <- paste0('B',LETTERS)
-    l4 <- paste0('C',LETTERS)
-
-    gsIndex <- c(l1, l2, l3, l4)
-
-    LU_GS_COLS <<- data.frame(
-        COL_INDEX = seq(1:length(gsIndex)),
-        GS_INDEX = gsIndex
-    ) %>%
-    mutate(
-        GS_INDEX = paste0(GS_INDEX,':',GS_INDEX)
-    )
-
-    gsIndex <- LU_GS_COLS %>% filter(COL_INDEX == colNum) %>% pull(GS_INDEX)
-
-    # Get the column
-    return(read_sheet(url, sheet = sheetName, range = gsIndex))
-
-}
+# gs4ColIndex <- function(url, colName, sheetName){
+#     #colName <- 'QTY'
+#     #sheetName <- 'LU_TRIPS'
+#
+#     names <- read_sheet(url, sheet = sheetName, range = '1:1') %>% names()
+#     colNum <- which(names == colName)
+#
+#     if(length(colNum) == 0){
+#         showNotification(
+#             paste('No column of name',colName,'found in table',sheetName),
+#             duration = 10, type = 'error')
+#         return(NULL)
+#     }
+#
+#     l1 <- LETTERS
+#     l2 <- paste0('A',LETTERS)
+#     l3 <- paste0('B',LETTERS)
+#     l4 <- paste0('C',LETTERS)
+#
+#     gsIndex <- c(l1, l2, l3, l4)
+#
+#     LU_GS_COLS <<- data.frame(
+#         COL_INDEX = seq(1:length(gsIndex)),
+#         GS_INDEX = gsIndex
+#     ) %>%
+#     mutate(
+#         GS_INDEX = paste0(GS_INDEX,':',GS_INDEX)
+#     )
+#
+#     gsIndex <- LU_GS_COLS %>% filter(COL_INDEX == colNum) %>% pull(GS_INDEX)
+#
+#     # Get the column
+#     return(read_sheet(url, sheet = sheetName, range = gsIndex))
+#
+# }
 
 #' dbUpdate
 #' @description Case conditions and set up to guide insert or
@@ -806,6 +853,7 @@ gs4ColIndex <- function(url, colName, sheetName){
 #' @param con database connection that exists in the parent. Placeholder arg.
 #' @param from DF of data going to data base
 #' @param to The database table name where the update should happen. DB table should match the DF in `from`
+#' @param data RV. The LOCAL rv data object
 #' @importFrom dbplyr sql_query_append
 dbUpdate <- function(con = NULL, from, to, data = LOCAL){
     LOCAL <- data
@@ -930,7 +978,7 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
             dbExecute(con,"commit;")
         }
 
-        # Udate XREF_TRIPS -----
+        # Update XREF_TRIPS -----
 
         ## Case first save of trip no meals yet
 
@@ -985,6 +1033,12 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
 
     dbDisconnect(con)
 }
+
+# ROOT DELETE MEAL RECORDS FUNCTIONS ----
+
+
+
+
 
 
 
