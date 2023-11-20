@@ -12,6 +12,8 @@ dbUpdate(con = NULL, from, to, data = LOCAL)
 \item{from}{DF of data going to data base}
 
 \item{to}{The database table name where the update should happen. DB table should match the DF in `from`}
+
+\item{data}{RV. The LOCAL rv data object}
 }
 \description{
 Case conditions and set up to guide insert or

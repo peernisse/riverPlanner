@@ -266,6 +266,7 @@ deleteLuTrips <- function(con, id, data){
 #' This is the .x object within map
 #' @noRd
 upsertLuIngredients <- function(con = con, from = ingsToAdd, data = LOCAL, row){
+    
     LOCAL <- data
     i <- row
 
@@ -289,7 +290,8 @@ upsertLuIngredients <- function(con = con, from = ingsToAdd, data = LOCAL, row){
                  "`SERVING_SIZE_DESCRIPTION` = '",from$SERVING_SIZE_DESCRIPTION[i],"',",
                  "`SERVING_SIZE_FACTOR` = '",from$SERVING_SIZE_FACTOR[i],"',",
                  "`STORAGE_DESCRIPTION` = '",from$STORAGE_DESCRIPTION[i],"',",
-                 "`USER_ID` = '",LOCAL$userID,"',",
+                 "`USER_ID` = '",from$USER_ID[i],"',",
+                 #"`USER_ID` = '",LOCAL$userID,"',",
                  "`UPTIME` = '",Sys.Date(),"',",
                  "`UPUSER` = '",LOCAL$userName,"'",
                  " WHERE ",
@@ -328,8 +330,12 @@ upsertLuIngredients <- function(con = con, from = ingsToAdd, data = LOCAL, row){
 #' This is the .x object within map
 #' @noRd
 upsertXrefIng <- function(con = con, from = xrefIngsToAdd, data = LOCAL, row){
+    
     LOCAL <- data
     i <- row
+
+    if(length(unique(from$USER_ID)) > 1) stop('Error in upsertXrefIng multiple UserIDs in xref table')
+    if(LOCAL$userID != unique(from$USER_ID)) stop('Error in upsertXrefIng user ID does not match.')
 
     recordID <- from[i,] %>%
         mutate(RECORD_ID = paste(INGREDIENT_ID, MEAL_ID, sep = "_")) %>%
@@ -353,7 +359,8 @@ upsertXrefIng <- function(con = con, from = xrefIngsToAdd, data = LOCAL, row){
                  "`MEAL_NAME` = '",from$MEAL_NAME[i],"',",
                  "`UPTIME` = '",Sys.Date(),"',",
                  "`UPUSER` = '",LOCAL$userName,"',",
-                 "`USER_ID` = '",LOCAL$userID,"'",
+                 "`USER_ID` = '",from$USER_ID[i],"'",
+                 #"`USER_ID` = '",LOCAL$userID,"'", # TODO 10/15/2023 THis is problem need to check when this should be LOCAL$userID or from$USER_ID
                  " WHERE ",
                  "`MEAL_ID` = '",from$MEAL_ID[i],"'",
                  " AND INGREDIENT_ID = '", from$INGREDIENT_ID[i],"';"
@@ -379,6 +386,24 @@ upsertXrefIng <- function(con = con, from = xrefIngsToAdd, data = LOCAL, row){
     dbExecute(con,"commit;")
 }
 
+#' deleteXrefIng
+#' @description Deletes a meal from XREF_INGREDIENT in the DB
+#' @param con The database connection object
+#' @param mealId Numeric. The meal ID to delete from DB
+#' @param userId Numeric. The user ID who owns the meal. Must be
+#' the current active user and meal must be theirs to delete
+#'
+#' @noRd
+deleteXrefIng <- function(con = con, mealId, userId){
+    dbExecute(con, "start transaction;")
+    dbExecute(con,
+        paste0('DELETE FROM xref_ingredient WHERE USER_ID = ',
+            userId, ' AND MEAL_ID = ', mealId, ';'
+        )
+    )
+    dbExecute(con,"commit;")
+}
+
 #' upsertLuMeal
 #' @description Made to be used with map(). Inserts or updates lu_meal records in a loop.
 #' @param con The database connection object
@@ -388,8 +413,11 @@ upsertXrefIng <- function(con = con, from = xrefIngsToAdd, data = LOCAL, row){
 #' This is the .x object within map
 #' @noRd
 upsertLuMeal <- function(con = con, from = mealsToAdd, data = LOCAL, row){
+    
     LOCAL <- data
     i <- row
+
+    if(LOCAL$userID != from$USER_ID) stop('Error in upsertMeal user ID does not match.')
 
     recordID <- from[i,] %>%
         mutate(RECORD_ID = MEAL_ID) %>%
@@ -409,12 +437,14 @@ upsertLuMeal <- function(con = con, from = mealsToAdd, data = LOCAL, row){
                  "`MEAL_TYPE` = '",from$MEAL_TYPE[i],"',",
                  "`MEAL_DESCRIPTION` = '",from$MEAL_DESCRIPTION[i],"',",
                  "`TOOLS` = '",from$TOOLS[i],"',",
+                 "`INSTRUCTIONS` = '",from$INSTRUCTIONS[i],"',",
                  "`UPTIME` = '",Sys.Date(),"',",
                  "`UPUSER` = '",LOCAL$userName,"',",
-                 "`USER_ID` = '",LOCAL$userID,"',",
+                 "`USER_ID` = '",from$USER_ID[i],"',",
+                 #"`USER_ID` = '",LOCAL$userID,"',",
                  "`MEAL_TYPE_ID` = '",from$MEAL_TYPE_ID[i],"'",
                  " WHERE ",
-                 "`MEAL_ID` = '",from$MEAL_ID[i],"';"
+                 "`MEAL_ID` = '",from$MEAL_ID[i],"' AND `USER_ID`= '",LOCAL$userID,"';"
             )
         )
     }
@@ -440,22 +470,86 @@ upsertLuMeal <- function(con = con, from = mealsToAdd, data = LOCAL, row){
     dbExecute(con,"commit;")
 }
 
+#' deleteLuMeal
+#'
+#' @description Deletes a meal from LU_MEAL in the DB
+#' @param con The database connection object
+#' @param mealId Numeric. The meal ID to delete from DB
+#' @param userId Numeric. The user ID who owns the meal. Must be
+#' the current active user and meal must be theirs to delete
+#'
+#' @noRd
+deleteLuMeal <- function(con = con, mealId, userId){
+    dbExecute(con, "start transaction;")
+    dbExecute(con,
+        paste0('DELETE FROM lu_meal WHERE USER_ID = ',
+            userId, ' AND MEAL_ID = ', mealId, ';'
+        )
+    )
+    dbExecute(con,"commit;")
+}
+
 #' delMeal
 #' @description Removes a meal from XREF_TRIPS
-#' @param session,input,output Shiny session objects
-#' @param id The meal id taken from the delete button ID
-#' @param data The LOCAL reactive vaues data object
+#' @param session Shiny session object
+#' @param id The meal id taken from the delete button ID, or from LOCAL$XREF_TRIPS if no trip loaded
+#' @param data The LOCAL reactive values data object
+#' @param tripId Character. The trip ID to remove meal from
 #' @noRd
-delMeal <- function(session, input, output, id, data){
-    ns <- session$ns
+#delMeal <- function(session, input, output, id, data){
+delMeal <- function(id, data, tripId){
+    req(length(tripId) > 0)
+    
+    #ns <- session$ns
     LOCAL <- data
+
+
+
     con <- rivConnect()
+
+    dbExecute(con, "start transaction;")
+        toKill <- dbGetQuery(con, paste0(
+                'select distinct trip_id, meal_id from xref_trips where ',
+                'trip_id = ', tripId, ' and meal_id = ',
+                strsplit(id, "_")[[1]][1],';'
+            )
+
+        )
+
+        if(nrow(toKill) <= 1){
+            xrefT <- data.frame(
+                MEAL_ID = 0,
+                RIVER_DAY = 1,
+                INGREDIENT_ID = 1,
+                TRIP_ID = LOCAL$tripID,
+                MEAL_TYPE_ID = 1,
+                MEAL_NOTES = 'startup',
+                NO_ADULTS = LOCAL$noAdults,
+                NO_KIDS = LOCAL$noKids,
+                NO_PEOPLE_CALC = LOCAL$noPeopleCalc,
+                SERVING_SIZE_FACTOR = 1,
+                USER_ID = LOCAL$userID,
+                UPTIME = Sys.Date(),
+                UPUSER = LOCAL$userName
+            )
+            #add dummy record bc about to kill last of this meal in xref_trips
+            #this is so the trip record is not abandoned in lu_trips
+
+            #con <- rivConnect()
+            upsertXrefTrips(con = con, from = xrefT, data = LOCAL, row = 1)
+            #dbDisconnect(con)
+        }
+
+    dbExecute(con, "commit;")
+
+
         dbExecute(con, "start transaction;")
             dbExecute(con,
                 paste0(
                     "DELETE from xref_trips WHERE USER_ID = ",
                     LOCAL$userID, " AND TRIP_ID = ",
-                    LOCAL$tripID, " AND MEAL_ID = ",
+                    #LOCAL$tripID, " AND MEAL_ID = ",
+                    tripId, " AND MEAL_ID = ",
                     strsplit(id, "_")[[1]][1], " AND MEAL_TYPE_ID = '",
                     getMealTypeID(strsplit(id, "_")[[1]][2]),
                     "' AND RIVER_DAY = ", strsplit(id, "_")[[1]][3],";"

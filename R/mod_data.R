@@ -27,8 +27,8 @@ mod_data_ui <- function(id){
             #actionLink(inputId = ns('logOut'), label = "Log Out", class = "nav-link scrollto")
             a(class = "nav-link scrollto", style = "font-size:16px; color: #5cb874",
               tags$button(id = ns('logOut'),
-                          class = 'nav-link scrollto shiny-bound-input action-button btn btn-success',
-                          style = "margin:5px; color: #fff;", "Log Out"
+                  class = 'nav-link scrollto shiny-bound-input action-button btn btn-success',
+                  style = "margin:5px; color: #fff;", "Log Out"
               )
             )
         )
@@ -47,7 +47,6 @@ mod_data_ui <- function(id){
 mod_data_server <- function(id){
     moduleServer( id, function(input, output, session){
         ns <- session$ns
-
         # Get Auth0 username
         authPkg <- session$userData$auth0_info
         authType <- authPkg$sub
@@ -196,8 +195,23 @@ mod_data_server <- function(id){
             noPeopleCalc = 1,
             myMeals = data.frame(),
             editMealDF = data.frame(),
+
+            #rootEditMealDF = data.frame(),#can I use editMealDF for this?9/18/2023 am i even using this?
+            rootEditMeal = data.frame(),
+
+            # TODO 11/17/2023 This is new trying to prevent modal reload
+            rootEditMealButton = FALSE,
+
+            rootEditIngs = data.frame(),
+            #rootNoEditIngs = data.frame(),
+            rootEditXrefIngs = data.frame(),
+
             editMealModalSwitch = FALSE,
             editMealMealUniqueID = NULL,
+
+            rootEditMealModalSwitch = FALSE,
+            rootEditMealMealUniqueID = NULL,
+
             createMealDF = data.frame(),
             exportMenuModalSwitch = FALSE,
             ALL_DATA = ALL_DATA

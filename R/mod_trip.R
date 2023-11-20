@@ -108,8 +108,6 @@ mod_trip_server <- function(id, data){
             if(nrow(LOCAL$myMeals) == 0 | is.null(LOCAL$myMeals) | length(LOCAL$tripID) == 0){
             LOCAL$tripID <- getMaxTripID() + 1
 
-            #TODO Need to save a trip record in the DB here to reserve the trip ID quickly
-
             LOCAL$tripName <- input$tripName
             LOCAL$tripDesc <- input$tripDesc
             LOCAL$noAdults <- as.numeric(input$noAdults)
