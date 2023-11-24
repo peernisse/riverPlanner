@@ -648,3 +648,35 @@ dailyMenu <- function(session, id, data){
     )
 }
 
+#' collapseInstructions
+#' @description Creates collapsible div with icon and a tag itle to click on
+#' @param nmsp The ns to use. session$ns OR on inner modules use NS(id) to use the inner module id as ns
+#' @param id THe unique ID for the collapsible div. Gets namespaced
+#' @param ttl The title for the a tag to click on
+#' @param ... The HTML elements to include in the collapsible div
+#'
+#' @noRd
+collapseInstructions <- function(nmsp, id, ttl = '<Open Instructions>',
+                                 icon = 'circle-info', ...){
+    # TODO put checks here if nmsp is a function
+    #browser()
+    ns <- nmsp
+    tagList(
+        fluidRow(
+            p(tags$i(class = paste0("fa-solid fa-", icon)),
+              tags$a(`data-bs-toggle` = "collapse",
+                     href = paste0("#", ns(id)), role = "button",
+                     `aria-expanded` = "false", `aria-controls` = ns(id),
+                     ttl
+              )
+            ),
+            div(class = "collapse", id = ns(id), ...)
+        )
+    )
+}
+
+
+
+
+
+
