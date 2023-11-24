@@ -4,104 +4,114 @@
 #' @importFrom shiny NS tagList
 #' @noRd
 mod_meal_create_ui <- function(id,session){
-  ns <- NS(id)
-  tagList(
-    customModalDialog(
-        # Instructions -----
-        h5('New Meal Details'),
-        p('--Fill in your new meal details and add ingredients for your new meal.
-          The ingredient picker and new ingredient creation tool are available below.--',
-          style = 'font-style: italic;'),
+    ns <- NS(id)
+    tagList(
+        customModalDialog(
+            # Instructions -----
+            h5('New Meal Details'),
+            p('--Fill in your new meal details and add ingredients for your new meal.
+              The ingredient picker and new ingredient creation tool are available below.--',
+              style = 'font-style: italic;'),
 
-       # Create Meal Data Entry -----
+            # Create Meal Data Entry -----
 
-        div(class = "input-group", class = 'create-meal',
-            tags$span(class = "input-group-text", class = 'create-meal',
-                      'Meal Name',
-                      #style = 'background-color: #ed7000; border-color: #ed7000; color: #fff;'
+            div(class = "input-group", class = 'create-meal',
+                tags$span(class = "input-group-text", class = 'create-meal',
+                    'Meal Name',
+                    #style = 'background-color: #ed7000; border-color: #ed7000; color: #fff;'
+                ),
+                tags$input(id = ns('meal-new-name'),
+                    placeholder = 'New Meal Name', type = "text",
+                    `aria-label` = "New Meal Name", class = "form-control", class = 'create-meal')
             ),
-            tags$input(id = ns('meal-new-name'),
-                       placeholder = 'New Meal Name', type = "text",
-                       `aria-label` = "New Meal Name", class = "form-control", class = 'create-meal')
-        ),
 
-        div(class = "input-group", class = 'create-meal',
-            tags$label(class = "input-group-text", class = 'create-meal',
-                       `for` = ns('meal-new-type'),
-                       #style = "background-color: #ed7000; border-color: #ed7000; color: #fff;",
-                       'Meal Type'
+            div(class = "input-group", class = 'create-meal',
+                tags$label(class = "input-group-text", class = 'create-meal',
+                    `for` = ns('meal-new-type'),
+                    #style = "background-color: #ed7000; border-color: #ed7000; color: #fff;",
+                    'Meal Type'
+                ),
+                tags$select(id = ns('meal-new-type'), class = "form-select", class = 'create-meal',
+                    tags$option(selected = "selected", 'Choose meal type...'),
+                        map(c('Breakfast','Lunch','Dinner', 'Dessert','Appetizer','Cocktail'),
+                            ~ tags$option(value = .x,.x))
+                )
             ),
-            tags$select(id = ns('meal-new-type'), class = "form-select", class = 'create-meal',
-              tags$option(selected = "selected", 'Choose meal type...'),
-                map(c('Breakfast','Lunch','Dinner', 'Dessert','Appetizer','Cocktail'),
-                  ~ tags$option(value = .x,.x))
-            )
-        ),
-        customTextAreaInput(inputId = ns('meal-new-desc'), label = 'Meal Description',
-          labelColor = '#5cb874', width = '100%'
-        ),
+            customTextAreaInput(inputId = ns('meal-new-desc'), label = 'Meal Description',
+              labelColor = '#5cb874', width = '100%'
+            ),
 
-        fluidRow(style = 'margin-top:20px;',
-          column(width = 12,
-            h5('Ingredients/Quantities'),
-            uiOutput(ns('modalIngs'))
-          )
-        ),
-        fluidRow(style = 'margin-top:20px;',
-                 column(width = 12,
+            fluidRow(style = 'margin-top:20px;',
+                column(width = 12,
+                    h5('Add Ingredients'),
+                    uiOutput(ns('modalIngs'))
+                )
+            ),
+            fluidRow(style = 'margin-top:20px;',
+                column(width = 12,
                     uiOutput(ns('ttl2')),
                     p('--Start typing a word to filter the dropdown. Click + to add ingredient to this meal.--',
-                      style = 'font-style: italic;'),
+                        style = 'font-style: italic;'),
                     uiOutput(ns('modalSelIng'))
-                 )
-        ),
-        fluidRow(style = 'margin-top:20px;',
-                 column(width = 12,
-                        h5('Create New Ingredient'), #TODO make an i icon with info popover
-                        icon(name = 'info'),
-                        p('--Your new ingredient will appear in the Add Ingredient dropdown above.--',
-                          style = 'font-style: italic;'),
-                        uiOutput(ns('modalNewIng')),
-                        br()
-                 )
-        ),
+                )
+            ),
 
-        fluidRow(
-          column(width = 12,
-                 h5('Tools Needed'),
-                 p("Enter the general cooking tools needed, separated by semi-colons ';'",
-                   style = 'font-style: italic;'),
-                 customTextAreaInput(inputId = ns('meal-new-tools'), label = 'Tools',
-                   labelColor = '#5cb874', width = '100%',
-                   placeholder = "Separate tools with ';'"),
-          )
-        ),
+            h5('Create New Ingredient', style = 'margin-top:20px;'),
+            collapseInstructions(nmsp = ns, id = 'mealCreateInst-1',
+                ttl = '<Open Create Ingredient Instructions>', icon = 'circle-info',
+                    p('Below the input form in `Orange` allows you to create a new ingredient
+                        for your profile to use again and again.'),
+                    p('Use the `Multiplier Calculator` to determine the best multiplier
+                        for your ingredient and units.'),
+                    p('What you choose for Units is up to you. It may make sense to have
+                        units of "ounces", or it might make sense to use units such as
+                        "12 ounce can" or "Standard box of Zattaran\'s rice".'),
+                    p('-- Your new ingredient will be saved in the database when you click ` + `. --',
+                        style = 'font-style: italic;'),
+                    p('--Your new ingredient will appear in the Add Ingredient dropdown above.--',
+                        style = 'font-style: italic;'),
+            ),
+            fluidRow(style = 'margin-top:20px;',
+                column(width = 12,
+                    uiOutput(ns('modalNewIng')),
+                    br()
+                )
+            ),
 
-        fluidRow(
-          column(width = 12,
-                 h5('Instructions'),
-                 p("Enter the general cooking steps needed, separated by semi-colons ';'",
-                   style = 'font-style: italic;'),
-                 customTextAreaInput(inputId = ns('meal-new-inst'), label = 'Instructions',
-                   labelColor = '#5cb874', width = '100%',
-                   placeholder = "Separate steps with ';'"),
-          )
-        ),
+            fluidRow(
+                column(width = 12,
+                    h5('Tools Needed'),
+                    p("Enter the general cooking tools needed, separated by semi-colons ';'",
+                        style = 'font-style: italic;'),
+                    customTextAreaInput(inputId = ns('meal-new-tools'), label = 'Tools',
+                        labelColor = '#5cb874', width = '100%',
+                        placeholder = "Separate tools with ';'"),
+                )
+            ),
 
-        # customModalDialog arguments -----
+            fluidRow(
+                column(width = 12,
+                h5('Instructions'),
+                    p("Enter the general cooking steps needed, separated by semi-colons ';'",
+                        style = 'font-style: italic;'),
+                customTextAreaInput(inputId = ns('meal-new-inst'), label = 'Instructions',
+                    labelColor = '#5cb874', width = '100%', placeholder = "Separate steps with ';'"),
+                )
+            ),
 
-        session = session,
-        title = uiOutput(ns('ttl')),
-        size = 'fs',
-        easyClose = FALSE,
-        fade = FALSE,
-        footer = fluidRow(class = 'modal-footer-row',
-          actionButton(ns('createMeal'), label = 'Save', class = 'btn btn-success', class = 'riv'),
-          actionButton(ns('editMealModalClose_2'), label = 'Cancel', class = 'btn btn-default',
-                       class = 'riv', class = 'getstarted')
-        ) # end footer
+            # customModalDialog arguments -----
 
-      ) # End customModalDialog
+            session = session,
+            title = uiOutput(ns('ttl')),
+            size = 'fs',
+            easyClose = FALSE,
+            fade = FALSE,
+            footer = fluidRow(class = 'modal-footer-row',
+              actionButton(ns('createMeal'), label = 'Save', class = 'btn btn-success', class = 'riv'),
+              actionButton(ns('editMealModalClose_2'), label = 'Cancel', class = 'btn btn-default',
+                           class = 'riv', class = 'getstarted')
+            ) # end footer
+        ) # End customModalDialog
     ) # end tagList
 }
 

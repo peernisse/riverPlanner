@@ -23,7 +23,7 @@ rootEditMealIngredientInputs <- function(input, output, session,data, userID){
     # }
 
     if(recordUserID %in% userID){
-        
+
         # TODO 9/17/2023 The qty does not populate when editing if there is a trip loaded
         disabled <- NULL
         noPeopleCalc <- round(1/ ssf, 2)
@@ -47,7 +47,7 @@ rootEditMealIngredientInputs <- function(input, output, session,data, userID){
                 tags$input(id = ns(paste0('ing-new-hypPeople', ingUniqueID)),
                     placeholder = 'Qty. of Ing.', type = "text",
                     `aria-label` = "Quantity", class = "form-control",
-                    value = noPeopleCalc
+                    value = round(noPeopleCalc)
                 )
             )
 
@@ -56,7 +56,7 @@ rootEditMealIngredientInputs <- function(input, output, session,data, userID){
         ### Observe new ingredient quantity input and update multiplier -----
 
         observeEvent(input[[paste0('ing-new-qty-', ingUniqueID)]],{
-            
+
             #req(input[['ing-new-qty']] != '')
             req(
                 round(as.numeric(input[[paste0('ing-new-qty-', ingUniqueID)]])/
@@ -168,7 +168,7 @@ rootEditMealIngredientInputs <- function(input, output, session,data, userID){
 #' @param data The LOCAL data object containing the rootEditIngs object for the currently being edited meal
 #' @noRd
 rootEditMealDelIng <- function(session, id, data){
-    
+
     ns <- session$ns
     LOCAL<- data
     ingredientUniqueID <- gsub('del-ing-','', id)
@@ -191,7 +191,7 @@ rootEditMealDelIng <- function(session, id, data){
 #' @noRd
 NULL
 # rootEditMealEditIng <- function(input, session, id, data){
-#     
+#
 #     ns <- session$ns
 #     LOCAL<- data
 #     ingredientUniqueID <- gsub('edit-ing-','', id)
@@ -229,7 +229,7 @@ NULL
 rootEditMealAddIng <- function(input, output, session, data){
     ns <- session$ns
     LOCAL <- data
- 
+
     if(is.null(input[['selectIngredient']])) {return(NULL)}
 
     if(input[['selectIngredient']] == 'Start typing to search...'){
@@ -282,7 +282,7 @@ rootDeleteMeal <- function(session, rvObj, mealId){
     mealName <- LOCAL$LU_MEAL %>%
         filter(USER_ID == LOCAL$userID, MEAL_ID == mealId) %>%
         pull(MEAL_NAME)
-    
+
     req(
         LOCAL$LU_MEAL %>% filter(MEAL_ID == mealId) %>%
             pull(USER_ID) == userId

@@ -5,78 +5,92 @@
 #' @importFrom plyr round_any
 #' @noRd
 mod_meal_edit_ui <- function(id, session){
-  ns <- NS(id)
-  tagList(
-    customModalDialog(
+    ns <- NS(id)
+    tagList(
+        customModalDialog(
 
-      h5(textOutput(ns('desc'))),
-      p('If there will be a change of people during the trip, you can change the people inputs here
-           and they will just affect this meal on this day. You will need to do this for each meal that
-          has a change of people from the original numbers set up in `Trip Info`.'),
-      p('Each ingredient quantity can be edited and the multiplier will update for this meal only. This change
-          is not global and must be done again when using the same ingredient elsewhere, if desired.'),
-
-      uiOutput(ns('mealTripInfo')),
-
-      fluidRow(style = 'margin-top:20px;',
-               column(width = 12,
-                      h5('Ingredients/Quantities'),
-                      p('--If you don\'t like the calculated quantity for an ingredient, you can adjust it
-                and will adjust the multiplier for that ingredient for this meal.--',style = 'font-style: italic;'),
-                      p('--Click TRASH to remove an ingredient from this meal.--',style = 'font-style: italic;'),
-                      p('--To ADD a different ingredient, use the ingredient picker below.--', style = 'font-style: italic;'),
-                      uiOutput(ns('modalIngs'))
-               )
-      ),
-      fluidRow(style = 'margin-top:20px;',
-               column(width = 12,
-                      h5(textOutput(ns('modalTitle2'))),
-                      p('--Start typing a word to filter the dropdown. Click + to add ingredient to this meal.--',
+            h5(textOutput(ns('desc'))),
+            collapseInstructions(nmsp = ns, id = 'mealEditInst-1',
+                ttl = '<Open Instructions>', icon = 'circle-info',
+                p('If there will be a change of people during the trip, you can change the people inputs here
+                    and they will just affect this meal on this day. You will need to do this for each meal that
+                    has a change of people from the original numbers set up in `Trip Info`.'),
+                p('Each ingredient quantity can be edited and the multiplier will update for this meal only. This change
+                    is not global and must be done again when using the same ingredient elsewhere, if desired.'),
+            ),
+            uiOutput(ns('mealTripInfo')),
+            h5('Ingredients/Quantities', style = 'margin-top:20px;'),
+            collapseInstructions(nmsp = ns, id = 'mealEditInst-2',
+                ttl = '<Open Ingredient Instructions>', icon = 'circle-info',
+                p('--If you don\'t like the calculated quantity for an ingredient, you can adjust it
+                    and will adjust the multiplier for that ingredient for this meal.--',style = 'font-style: italic;'),
+                p('--Click TRASH to remove an ingredient from this meal.--',style = 'font-style: italic;'),
+                p('--To ADD a different ingredient, use the ingredient picker below.--', style = 'font-style: italic;')
+            ),
+            fluidRow(#style = 'margin-top:20px;',
+                column(width = 12,
+                    uiOutput(ns('modalIngs'))
+                )
+            ),
+            fluidRow(style = 'margin-top:20px;',
+                column(width = 12,
+                    h5(textOutput(ns('modalTitle2'))),
+                    p('--Start typing a word to filter the dropdown. Click + to add ingredient to this meal.--',
                         style = 'font-style: italic;'),
-                      uiOutput(ns('modalSelIng'))
-               )
-      ),
-      fluidRow(style = 'margin-top:20px;',
-         column(width = 12,
-                h5('Create New Ingredient'), #TODO make an i icon with info popover
-                icon(name = 'info'),
+                    uiOutput(ns('modalSelIng'))
+                )
+            ),
+            h5('Create New Ingredient', style = 'margin-top:20px;'),
+            collapseInstructions(nmsp = ns, id = 'mealEditInst-3',
+                ttl = '<Open Create Ingredient Instructions>', icon = 'circle-info',
+                p('Below the input form in `Orange` allows you to create a new ingredient
+                    for your profile to use again and again.'),
+                p('Use the `Multiplier Calculator` to determine the best multiplier
+                  for your ingredient and units.'),
+                p('What you choose for Units is up to you. It may make sense to have
+                    units of "ounces", or it might make sense to use units such as
+                    "12 ounce can" or "Standard box of Zattaran\'s rice".'),
+                p('-- Your new ingredient will be saved in the database when you click ` + `. --',
+                  style = 'font-style: italic;'),
                 p('--Your new ingredient will appear in the Add Ingredient dropdown above.--',
                   style = 'font-style: italic;'),
-                uiOutput(ns('modalNewIng'))
-         )
-      ),
+            ),
+            fluidRow(
+                column(width = 12,
+                    uiOutput(ns('modalNewIng'))
+                )
+            ),
+            fluidRow(style = 'margin-top:20px;',
+                column(width = 12,
+                    h5('Meal Notes'),
+                    uiOutput(ns('notes'))
+                )
+            ),
 
-      fluidRow(style = 'margin-top:20px;',
-        column(width = 12,
-           h5('Meal Notes'),
-           uiOutput(ns('notes'))
+            fluidRow(style = 'margin-top:20px;',
+                column(width = 12,
+                    h5('Tools'),
+                    uiOutput(ns('tools'))
+                )
+            ),
+            fluidRow(style = 'margin-top:20px;',
+                column(width = 12,
+                    h5('Instructions'),
+                    uiOutput(ns('inst'))
+                )
+            ),
+            session = session,
+            title = h4(textOutput(ns('modalTitle')), style = 'color: #5cb874'),
+            size = 'fs',
+            easyClose = FALSE,
+            fade = FALSE,
+            footer = fluidRow(class = 'modal-footer-row',
+                actionButton(ns('updateMeal'), label = 'Save', class = 'btn btn-success', class = 'riv'),
+                actionButton(ns('editMealModalClose_2'), label = 'Cancel', class = 'btn btn-default',
+                    class = 'riv', class = 'getstarted')
+            )
         )
-      ),
-
-      fluidRow(style = 'margin-top:20px;',
-        column(width = 12,
-          h5('Tools'),
-          uiOutput(ns('tools'))
-        )
-      ),
-      fluidRow(style = 'margin-top:20px;',
-        column(width = 12,
-          h5('Instructions'),
-          uiOutput(ns('inst'))
-        )
-      ),
-      session = session,
-      title = h4(textOutput(ns('modalTitle')), style = 'color: #5cb874'),
-      size = 'fs',
-      easyClose = FALSE,
-      fade = FALSE,
-      footer = fluidRow(class = 'modal-footer-row',
-        actionButton(ns('updateMeal'), label = 'Save', class = 'btn btn-success', class = 'riv'),
-        actionButton(ns('editMealModalClose_2'), label = 'Cancel', class = 'btn btn-default',
-          class = 'riv', class = 'getstarted')
-      )
     )
-  )
 }
 
 #' meal_edit Server Functions

@@ -6,81 +6,96 @@
 #' @importFrom shiny NS tagList
 #' @importFrom plyr round_any
 #' @noRd
+#mod_root_meal_edit_ui <- function(id, session){
 mod_root_meal_edit_ui <- function(id, session){
-    ns <- NS(id)
+    ns <- NS(id) #The session ns is meal- so we use NS(id) for rootEditMeal
+
     tagList(
         customModalDialog(
-            p('This meal, and the ingredients within it that YOU CREATED/OWN can
-              be edited within this form. You can edit meal information, edit the
-              ROOT INSTANCE of ingredients that YOU OWN, and remove any ingredients
-              from the ROOT INSTANCE of this meal.'),
-            p('NOTE: DELETING AN INGREDIENT removes it from the ROOT INSTANCE of
-                this meal but DOES NOT DELETE the ROOT INSTANCE of the ingredient.'
-            ),
-            p('NOTE: EDITING AN INGREDIENT WILL CHANGE the ROOT INSTANCE of
-                that ingredient. CAUTION! -- This WILL change this ingredient in your
-                other saved trips and meals, quantities will re-calculate with any
-                new multiplier changes, if applicable.'
-            ),
-            p('NOTE: Changing this meal and your ingredients here will likely affect
-              any instances of these you may have stored in a trip. To update those,
-              you need to edit those meal instances in your trip(s) and re-add the new
-              version of the meal, if needed.'
+
+            h5('Meal Title/Description'),
+            collapseInstructions(nmsp = ns, id = 'rootEditInst-1',
+                ttl = '<Open Instructions>', icon = 'circle-info',
+                p('This meal, and the ingredients within it that YOU CREATED/OWN can
+                    be edited within this form. You can edit meal information, edit the
+                    ROOT INSTANCE of ingredients that YOU OWN, and remove any ingredients
+                    from the ROOT INSTANCE of this meal.'
+                )
             ),
             fluidRow(
                 column(width = 12,
-                    h5('Meal Title/Description'),
+                    #h5('Meal Title/Description'),
                     p('Change the meal title or description'),
                     uiOutput(ns('mealTtl')),
                     uiOutput(ns('mealDesc')),
                     uiOutput(ns('mealType'))
                 )
             ),
-            fluidRow(style = 'margin-top:20px;',
-                column(width = 12,
-                    h5('Ingredients/Quantities'),
-                    p('-- Edit any ROOT INSTANCE ingredient info. Use the calculator
-                      to modify the ingredient multiplier. If no calculator is shown
-                      with the ingredient, it is not yours to modify. But you can still
-                      delete it from this ROOT INSTANCE of this meal, which you do own. --',
-                        style = 'font-style: italic;'
-                    ),
-
-                    # div(style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;
-                    #     display: inline; padding: .375rem .75rem; border-radius: 0.25rem;',
-                    #     'GREEN LABELED INGREDIENTS'),
-                    p( p(style = 'color: #5cb874; display: inline;', 'GREEN COLORED INGREDIENTS'),
+            h5('Ingredients/Multipliers', style = 'margin-top:20px;',),
+            collapseInstructions(nmsp = ns, id = 'rootEditInst-2',
+                ttl = '<Open Ingredient Instructions>', icon = 'circle-info',
+                p(tags$strong('NOTE:'), 'DELETING AN INGREDIENT removes it from the ROOT INSTANCE of
+                    this meal but DOES NOT DELETE the ROOT INSTANCE of the ingredient.'
+                ),
+                p(tags$strong('NOTE:'), 'EDITING AN INGREDIENT WILL CHANGE the ROOT INSTANCE of
+                    that ingredient. CAUTION! -- This WILL change this ingredient in your
+                    other saved trips and meals, EXCEPT for the MULTIPLIER, which is stored
+                    at the trip level for each trip. This could lead to unexpected consequences.
+                    To be safe, it it best to double check and re-add any edited meals or meals with edited ingredients
+                    to your saved trips, if necessary.'
+                ),
+                p('-- Edit any ROOT INSTANCE ingredient info. Use the calculator
+                    to modify the ingredient multiplier. If no calculator is shown
+                    with the ingredient, it is not yours to modify. But you can still
+                    delete it from this ROOT INSTANCE of this meal, which you do own. --',
+                    style = 'font-style: italic;'
+                ),
+                p( p(style = 'color: #5cb874; display: inline;', 'GREEN COLORED INGREDIENTS'),
                     style = 'font-style: italic;',
-                        ' are yours to edit. When clicking
-                        `Save` below, your changes will be saved to the ROOT INSTANCE of that ingredient.
-                        CAUTION! -- This WILL change this ingredient in your other saved trips and meals,
-                        quantities will re-calculate with any new multiplier changes, if applicable. --'
-                    ),
-                    p('-- Click TRASH to remove an ingredient from this ROOT
+                    ' are yours to edit. When clicking
+                    `Save` below, your changes will be saved to the ROOT INSTANCE of that ingredient.
+                    CAUTION! -- This WILL change this ingredient in your other saved trips and meals,
+                    quantities will re-calculate with any new multiplier changes, if applicable. --'
+                ),
+                p('-- Click TRASH to remove an ingredient from this ROOT
                       INSTANCE meal. --',style = 'font-style: italic;'),
-                    p('-- To ADD a different ingredient, use the ingredient
-                      picker below. --', style = 'font-style: italic;'),
+                p('-- To ADD a different ingredient, use the ingredient
+                      picker below. --', style = 'font-style: italic;')
+            ),
+            fluidRow(#style = 'margin-top:20px;',
+                column(width = 12,
                     uiOutput(ns('modalIngs')),
                     uiOutput(ns('modalIngsNoEdit')) # This is not being used 10/14/2023
                 )
             ),
-            fluidRow(style = 'margin-top:20px;',
+            hr(style = 'margin:20px;'),
+            h5('Add Ingredient to this Meal', style = 'margin-top:20px;'),
+            fluidRow(#style = 'margin-top:20px;',
                 column(width = 12,
                     # h5(textOutput(ns('modalTitle2'))),
-                    h5('Add Ingredient to this Meal'),
+
                     p('-- Start typing a word to filter the dropdown. Click + to add ingredient to this meal. --',
                         style = 'font-style: italic;'),
                     uiOutput(ns('modalSelIng'))
                 )
             ),
-            fluidRow(style = 'margin-top:20px;',
+            h5('Create New Ingredient', style = 'margin-top:20px;'),
+            collapseInstructions(nmsp = ns, id = 'rootEditInst-3',
+                ttl = '<Open Create Ingredient Instructions>', icon = 'circle-info',
+                p('Below the input form in `Orange` allows you to create a new ingredient
+                    for your profile to use again and again.'),
+                p('Use the `Multiplier Calculator` to determine the best multiplier
+                  for your ingredient and units.'),
+                p('What you choose for Units is up to you. It may make sense to have
+                    units of "ounces", or it might make sense to use units such as
+                    "12 ounce can" or "Standard box of Zattaran\'s rice".'),
+                p('-- Your new ingredient will be saved in the database when you click ` + `. --',
+                  style = 'font-style: italic;'),
+                p('--Your new ingredient will appear in the Add Ingredient dropdown above.--',
+                  style = 'font-style: italic;'),
+            ),
+            fluidRow(#style = 'margin-top:20px;',
                 column(width = 12,
-                    h5('Create New Ingredient'), #TODO make an i icon with info popover
-                        #icon(name = 'info'),
-                    p('-- Your new ingredient will be saved in the database when you click ` + `. --',
-                      style = 'font-style: italic;'),
-                    p('-- Your new ingredient will appear in the Add Ingredient dropdown above. --',
-                        style = 'font-style: italic;'),
                     uiOutput(ns('modalNewIng'))
                 )
             ),
@@ -90,6 +105,7 @@ mod_root_meal_edit_ui <- function(id, session){
             #         uiOutput(ns('notes'))
             #     )
             # ),
+            hr(style = 'margin:20px;'),
             fluidRow(style = 'margin-top:20px;',
                 column(width = 12,
                     h5('Tools'),
@@ -521,7 +537,7 @@ mod_root_meal_edit_server <- function(id, data = LOCAL){
             ## Editable Meal Type ----
 
             output$mealType <- renderUI({
-                
+
                 # TODO 11/17/2023 I put isolate around choices and selected here to prevent reload modal
                 customSelectInput(inputId = ns('rootEditMealType'), label = 'Edit Meal Type',
                     labelColor = '#5CB874', labelTextColor = '#fff',
@@ -577,7 +593,7 @@ mod_root_meal_edit_server <- function(id, data = LOCAL){
         ## Kill Meal Confirm Button ----
 
         observeEvent(input$confirmKillMeal, {
-            
+
             req(!is.null(input$checkMeal_Name) || input$checkMeal_Name != '')
             if(!input$checkMeal_Name == LOCAL$rootEditMeal$MEAL_NAME) {
                 showNotification('Names do not match...', type = 'error')
@@ -585,7 +601,7 @@ mod_root_meal_edit_server <- function(id, data = LOCAL){
             }
 
             if(input$checkMeal_Name == LOCAL$rootEditMeal$MEAL_NAME) {
-                
+
 
                 # get the meal id to be deleted from LOCAL
                 killMealId <- isolate(LOCAL$rootEditMeal$MEAL_ID)
