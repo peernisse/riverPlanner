@@ -658,8 +658,8 @@ dailyMenu <- function(session, id, data){
 #' @noRd
 collapseInstructions <- function(nmsp, id, ttl = '<Open Instructions>',
                                  icon = 'circle-info', ...){
-    # TODO put checks here if nmsp is a function
-    #browser()
+    e1 <- 'Namespace argument `nmsp` is not a function'
+    if(!typeof(nmsp) == 'closure' || !inherits(nmsp, 'function')) stop(e1)
     ns <- nmsp
     tagList(
         fluidRow(
