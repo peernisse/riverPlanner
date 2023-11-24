@@ -1,6 +1,6 @@
 Package: riverPlanner
 Title: River Trip Planner
-Version: 1.0.0.9001
+Version: 1.0.1.0000
 Authors@R: 
     person("Peter", "EerNisse", , "peernisse@gmail.com", role = c("cre", "aut"))
 Description: Modular application to plan gear, crew contacts, and menu.
