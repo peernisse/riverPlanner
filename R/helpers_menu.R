@@ -133,7 +133,8 @@ makeMealCards <- function(input, output, session, mtype, data = LOCAL){
 
     renderUI({
         ns <- session$ns
-        filtDat <- LOCAL$ALL_DATA %>% filter(MEAL_TYPE %in% mtype) %>%
+        filtDat <- LOCAL$ALL_DATA %>% filter(MEAL_TYPE %in% mtype, MEAL_ID != 0) %>% # removing meal_id 0 "startup"
+        #filtDat <- LOCAL$ALL_DATA %>% filter(MEAL_TYPE %in% mtype) %>% # old 11/28/2023
             select(MEAL_ID,MEAL_TYPE,MEAL_NAME,MEAL_DESCRIPTION) %>% unique(.)
         mapIndexRows <- which(filtDat$MEAL_TYPE == mtype)
 
