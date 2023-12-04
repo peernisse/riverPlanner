@@ -203,9 +203,9 @@ mod_meal_create_server <- function(id, data = LOCAL){
     observeEvent(input[['newIngredient']], {
       withProgress(message = 'New Ingredient Creation',
         detail = 'saving new ingredient to database...', {
-          map(1:5, ~ incProgress(.x/10))
+          setProgress(0.5)
             newIngredientResponse(input, output, session, data = LOCAL)
-          map(6:10, ~ incProgress(.x/10))
+          setProgress(0.9)
       })
     })
 
@@ -251,9 +251,9 @@ mod_meal_create_server <- function(id, data = LOCAL){
 
     observeEvent(input$createMeal, {
       withProgress(message = 'New Meal Creation', detail = 'saving to database...', {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
           createMealModalSave(input, output, session, data = LOCAL)
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
       })
     })
 

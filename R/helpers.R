@@ -65,11 +65,11 @@ delMealResponse <- function(id, data){
     # Remove the meal from XREF_TRIPS. delMealResponse() assumes trip is loaded
 
     withProgress(message = 'Deleting', detail = paste0('Deleting ', mealName, ' from menu...'), {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
             #delMeal(session, input, output, id = gsub('del-','',id), data = LOCAL)
             tripId <- isolate(LOCAL$tripID)
             delMeal(id = gsub('del-','',id), data = LOCAL, tripId = tripId)
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
     })
 
     # Notify meal removed
