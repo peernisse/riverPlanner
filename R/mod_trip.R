@@ -11,7 +11,6 @@ mod_trip_ui <- function(id){
     tags$section(id="trip", class="shiny section-bg",
         div(class="section-title",
             h2('Trip Details'),
-            helpText('This is dev test'),
             p('Enter your trip details. Your trip plan will be saved as you
               work on it to come back to, and if you ever want to use it again.'),
             tags$a(href="https://river-planner.com", target="_blank","< Click Here to goto Instructions >")
