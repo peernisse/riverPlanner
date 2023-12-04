@@ -414,7 +414,7 @@ mod_trip_server <- function(id, data){
 
       showNotification(paste0('Your Trip \"',LOCAL$tripName,
         '\" is now Loaded! Manage your trip components from the menus below.'),
-        type = 'message', duration = 10)
+        type = 'message', duration = NULL)
 
     })
 
