@@ -20,12 +20,11 @@ mod_root_meal_edit_ui <- function(id, session){
                     be edited within this form. You can edit meal information, edit the
                     ROOT INSTANCE of ingredients that YOU OWN, and remove any ingredients
                     from the ROOT INSTANCE of this meal.'
-                )
+                ),
+                p('Change the meal type, title or description...')
             ),
             fluidRow(
                 column(width = 12,
-                    #h5('Meal Title/Description'),
-                    p('Change the meal title or description'),
                     uiOutput(ns('mealTtl')),
                     uiOutput(ns('mealDesc')),
                     uiOutput(ns('mealType'))
@@ -38,11 +37,9 @@ mod_root_meal_edit_ui <- function(id, session){
                     this meal but DOES NOT DELETE the ROOT INSTANCE of the ingredient.'
                 ),
                 p(tags$strong('NOTE:'), 'EDITING AN INGREDIENT WILL CHANGE the ROOT INSTANCE of
-                    that ingredient. CAUTION! -- This WILL change this ingredient in your
-                    other saved trips and meals, EXCEPT for the MULTIPLIER, which is stored
-                    at the trip level for each trip. This could lead to unexpected consequences.
-                    To be safe, it it best to double check and re-add any edited meals or meals with edited ingredients
-                    to your saved trips, if necessary.'
+                    that ingredient. CAUTION! -- Changes may not take effect until the app is reloaded.
+                    To be safe, it is best to save, double check the meal in saved trips,
+                    remove, and re-add any edited meals in your saved trips.'
                 ),
                 p('-- Edit any ROOT INSTANCE ingredient info. Use the calculator
                     to modify the ingredient multiplier. If no calculator is shown
@@ -53,9 +50,10 @@ mod_root_meal_edit_ui <- function(id, session){
                 p( p(style = 'color: #5cb874; display: inline;', 'GREEN COLORED INGREDIENTS'),
                     style = 'font-style: italic;',
                     ' are yours to edit. When clicking
-                    `Save` below, your changes will be saved to the ROOT INSTANCE of that ingredient.
-                    CAUTION! -- This WILL change this ingredient in your other saved trips and meals,
-                    quantities will re-calculate with any new multiplier changes, if applicable. --'
+                    `Save` below, your changes will be saved to the ROOT INSTANCE of that
+                    ingredient, but may not extend to instances of the ingredient elsewhere in your
+                    saved trips. It is best to double check, remove, and re-add edited
+                    meals within your trips after editing.'
                 ),
                 p('-- Click TRASH to remove an ingredient from this ROOT
                       INSTANCE meal. --',style = 'font-style: italic;'),
