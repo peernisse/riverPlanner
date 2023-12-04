@@ -26,10 +26,12 @@ reserveNewUserID <- function(con, userName){
         pull() %>%
         as.integer(.)
 
-    dbExecute(con, paste0("insert into lu_users (USER_ID, USERNAME, EMAIL,
-                UPTIME, UPUSER) VALUES (",newid,",'",userName,
-                "', '", userName,"', now(), 'riverplanner@system.com');")
-              )
+    sql <- "insert into lu_users (USER_ID, USERNAME, EMAIL,
+                UPTIME, UPUSER) VALUES (?newID, ?uName, ?uName, now(), 'riverplanner@system.com');"
+
+    query <- DBI::sqlInterpolate(con, sql, newID = newid, uName = userName )
+
+    dbExecute(con, query)
 
     return(newid)
 }
@@ -162,52 +164,44 @@ upsertXrefTrips <- function(con = con, from = xrefT, data = LOCAL, row){
 
     dbExecute(con, "start transaction;")
     if(length(dbIDs) > 0 & recordID %in% dbIDs){
-        dbExecute(con,
-          paste0("UPDATE xref_trips SET MEAL_ID = '",from$MEAL_ID[i],"',",
-                 "`RIVER_DAY` = '",from$RIVER_DAY[i],"',",
-                 "`INGREDIENT_ID` = '",from$INGREDIENT_ID[i],"',",
-                 "`TRIP_ID` = '",from$TRIP_ID[i],"',",
-                 "`MEAL_TYPE_ID` = '",from$MEAL_TYPE_ID[i],"',",
-                 "`MEAL_NOTES` = '",from$MEAL_NOTES[i],"',",
-                 "`NO_ADULTS` = '",from$NO_ADULTS[i],"',",
-                 "`NO_KIDS` = '",from$NO_KIDS[i],"',",
-                 "`NO_PEOPLE_CALC` = '",from$NO_PEOPLE_CALC[i],"',",
-                 "`SERVING_SIZE_FACTOR` = '",from$SERVING_SIZE_FACTOR[i],"',",
-                 "`USER_ID` = '",LOCAL$userID,"',",
-                 "`UPTIME` = '",Sys.Date(),"',",
-                 "`UPUSER` = '",LOCAL$userName,"'",
-                 " WHERE ",
-                 "`MEAL_ID` = '",from$MEAL_ID[i],"' AND ",
-                 "`RIVER_DAY` = '",from$RIVER_DAY[i],"' AND ",
-                 "`INGREDIENT_ID` = '",from$INGREDIENT_ID[i],"' AND ",
-                 "`TRIP_ID` = '",from$TRIP_ID[i],"' AND ",
-                 "`MEAL_TYPE_ID` = '",from$MEAL_TYPE_ID[i],"' AND ",
-                 "`USER_ID` = '",from$USER_ID[i],"';"
-          )
-        )
+
+        sql <- "UPDATE xref_trips SET `MEAL_ID` = ?mealId, `RIVER_DAY` = ?riverDay,
+            `INGREDIENT_ID` = ?ingId, `TRIP_ID` = ?tripId, `MEAL_TYPE_ID` = ?mealTypeId,
+            `MEAL_NOTES` = ?mealNotes, `NO_ADULTS` = ?noAdults, `NO_KIDS` = ?noKids,
+            `NO_PEOPLE_CALC` = ?noPeopleCalc, `SERVING_SIZE_FACTOR` = ?ssf,
+            `USER_ID` = ?userId, `UPTIME` = ?uTime, `UPUSER` = ?uUser
+            WHERE `MEAL_ID` = ?mealId AND `RIVER_DAY` = ?riverDay AND
+            `INGREDIENT_ID` = ?ingId AND `TRIP_ID` = ?tripId AND `MEAL_TYPE_ID` = ?mealTypeId
+            AND `USER_ID` = ?userId;"
+
+        qry <- DBI::sqlInterpolate(con, sql, mealId = from$MEAL_ID[i],
+            riverDay = from$RIVER_DAY[i], ingId = from$INGREDIENT_ID[i],
+            tripId = from$TRIP_ID[i], mealTypeId = from$MEAL_TYPE_ID[i],
+            mealNotes = from$MEAL_NOTES[i], noAdults = from$NO_ADULTS[i],
+            noKids = from$NO_KIDS[i], noPeopleCalc = from$NO_PEOPLE_CALC[i],
+            ssf = from$SERVING_SIZE_FACTOR[i], userId = LOCAL$userID,
+            uTime = Sys.Date(), uUser = LOCAL$userName)
+
+        dbExecute(con, qry)
     }
 
     if(length(dbIDs) == 0 | !recordID %in% dbIDs){
-        dbExecute(con,
-            paste0("INSERT INTO xref_trips (",
-                "`MEAL_ID`,`RIVER_DAY`,`INGREDIENT_ID`,`TRIP_ID`,",
-                "`MEAL_TYPE_ID`,`MEAL_NOTES`,`NO_ADULTS`,`NO_KIDS`,",
-                "`NO_PEOPLE_CALC`,`SERVING_SIZE_FACTOR`,`USER_ID`,`UPTIME`,`UPUSER`) VALUES ('",
-                from$MEAL_ID[i],"','",
-                from$RIVER_DAY[i],"','",
-                from$INGREDIENT_ID[i],"','",
-                from$TRIP_ID[i],"','",
-                from$MEAL_TYPE_ID[i],"','",
-                from$MEAL_NOTES[i],"','",
-                from$NO_ADULTS[i],"','",
-                from$NO_KIDS[i],"','",
-                from$NO_PEOPLE_CALC[i],"','",
-                from$SERVING_SIZE_FACTOR[i],"','",
-                LOCAL$userID,"','",
-                Sys.Date(),"','",
-                LOCAL$userName,"');"
-            )
-        )
+
+        sql <- "INSERT INTO xref_trips (`MEAL_ID`,`RIVER_DAY`,`INGREDIENT_ID`,
+            `TRIP_ID`,`MEAL_TYPE_ID`,`MEAL_NOTES`,`NO_ADULTS`,`NO_KIDS`,
+            `NO_PEOPLE_CALC`,`SERVING_SIZE_FACTOR`,`USER_ID`,`UPTIME`,`UPUSER`)
+            VALUES (?mealId,?riverDay,?ingId,?tripId,?mealTypeId,?mealNotes,
+            ?noAdults,?noKids,?noPeopleCalc,?ssf,?userId,?uTime,?uUser);"
+
+        qry <- DBI::sqlInterpolate(con, sql, mealId = from$MEAL_ID[i],
+            riverDay = from$RIVER_DAY[i], ingId = from$INGREDIENT_ID[i],
+            tripId = from$TRIP_ID[i], mealTypeId = from$MEAL_TYPE_ID[i],
+            mealNotes = from$MEAL_NOTES[i], noAdults = from$NO_ADULTS[i],
+            noKids = from$NO_KIDS[i], noPeopleCalc = from$NO_PEOPLE_CALC[i],
+            ssf = from$SERVING_SIZE_FACTOR[i], userId = LOCAL$userID,
+            uTime = Sys.Date(), uUser = LOCAL$userName)
+
+        dbExecute(con, qry)
     }
     dbExecute(con,"commit;")
 }
@@ -224,19 +218,19 @@ upsertXrefTrips <- function(con = con, from = xrefT, data = LOCAL, row){
 #' @noRd
 deleteXrefTrips <- function(con = con, from = toDelete, data = LOCAL, row){
     LOCAL <- data
-
     i <- row
     df <- from[i,]
+
+    sql <- "DELETE FROM xref_trips WHERE USER_ID = ?userId AND MEAL_ID = ?mealId
+         AND RIVER_DAY = ?riverDay AND INGREDIENT_ID = ?ingId AND TRIP_ID = ?tripId
+        AND MEAL_TYPE_ID = ?mealTypeId;"
+
+    qry <- DBI::sqlInterpolate(con, sql, userId = LOCAL$userID, mealId = df$MEAL_ID,
+        riverDay = df$RIVER_DAY, ingId = df$INGREDIENT_ID, tripId = df$TRIP_ID,
+        mealTypeId = df$MEAL_TYPE_ID)
+
     dbExecute(con, "start transaction;")
-        dbExecute(con, paste0("DELETE FROM xref_trips WHERE ",
-            "USER_ID = ",LOCAL$userID, " AND ",
-            "MEAL_ID = ",df$MEAL_ID, " AND ",
-            "RIVER_DAY = ",df$RIVER_DAY, " AND ",
-            "INGREDIENT_ID = ",df$INGREDIENT_ID, " AND ",
-            "TRIP_ID = ",df$TRIP_ID, " AND ",
-            "MEAL_TYPE_ID = ",df$MEAL_TYPE_ID, ";"
-            )
-        )
+        dbExecute(con, qry)
     dbExecute(con,"commit;")
 }
 
@@ -266,57 +260,47 @@ deleteLuTrips <- function(con, id, data){
 #' This is the .x object within map
 #' @noRd
 upsertLuIngredients <- function(con = con, from = ingsToAdd, data = LOCAL, row){
-    
     LOCAL <- data
     i <- row
-
-    recordID <- from[i,] %>%
-        mutate(RECORD_ID = INGREDIENT_ID) %>%
-        select(RECORD_ID) %>%
-        pull(.)
-
-    dbIDs <- dbGetQuery(con, "SELECT INGREDIENT_ID FROM lu_ingredients;") %>%
-        mutate(DB_IDS = INGREDIENT_ID) %>%
-        select(DB_IDS) %>%
+    recordID <- from$INGREDIENT_ID[i]
+    dbIDs <- dbGetQuery(con, "SELECT DISTINCT INGREDIENT_ID FROM lu_ingredients;") %>%
         pull(.)
 
     dbExecute(con, "start transaction;")
     if(length(dbIDs) > 0 & recordID %in% dbIDs){
-        dbExecute(con,
-            paste0("UPDATE lu_ingredients SET INGREDIENT_ID = '",from$INGREDIENT_ID[i],"',",
-                 "`INGREDIENT_CATEGORY` = '",from$INGREDIENT_CATEGORY[i],"',",
-                 "`INGREDIENT` = '",from$INGREDIENT[i],"',",
-                 "`INGREDIENT_DESCRIPTION` = '",from$INGREDIENT_DESCRIPTION[i],"',",
-                 "`SERVING_SIZE_DESCRIPTION` = '",from$SERVING_SIZE_DESCRIPTION[i],"',",
-                 "`SERVING_SIZE_FACTOR` = '",from$SERVING_SIZE_FACTOR[i],"',",
-                 "`STORAGE_DESCRIPTION` = '",from$STORAGE_DESCRIPTION[i],"',",
-                 "`USER_ID` = '",from$USER_ID[i],"',",
-                 #"`USER_ID` = '",LOCAL$userID,"',",
-                 "`UPTIME` = '",Sys.Date(),"',",
-                 "`UPUSER` = '",LOCAL$userName,"'",
-                 " WHERE ",
-                 "`INGREDIENT_ID` = '",from$INGREDIENT_ID[i],"';"
-            )
+
+        sql <- "UPDATE lu_ingredients SET INGREDIENT_ID = ?ingID,
+            `INGREDIENT_CATEGORY` = ?ingCat, `INGREDIENT` = ?ing,
+            `INGREDIENT_DESCRIPTION` = ?ingDesc, `SERVING_SIZE_DESCRIPTION` = ?ssDesc,
+            `SERVING_SIZE_FACTOR` = ?ssF, `STORAGE_DESCRIPTION` = ?storDesc,
+            `USER_ID` = ?userID, `UPTIME` = ?uTime,
+            `UPUSER` = ?uUser WHERE `INGREDIENT_ID` = ?ingID"
+
+        query <- DBI::sqlInterpolate(con, sql, ingID = from$INGREDIENT_ID[i],
+            ingCat = from$INGREDIENT_CATEGORY[i], ing = from$INGREDIENT[i],
+            ingDesc = from$INGREDIENT_DESCRIPTION[i], ssDesc = from$SERVING_SIZE_DESCRIPTION[i],
+            ssF = from$SERVING_SIZE_FACTOR[i], storDesc = from$STORAGE_DESCRIPTION[i],
+            userID = from$USER_ID[i], uTime = Sys.Date(), uUser = LOCAL$userName
         )
+
+        dbExecute(con, query)
     }
 
     if(length(dbIDs) == 0 | !recordID %in% dbIDs){
-        dbExecute(con,
-            paste0("INSERT INTO lu_ingredients (",
-                 "`INGREDIENT_ID`,`INGREDIENT_CATEGORY`,`INGREDIENT`,`INGREDIENT_DESCRIPTION`,",
-                 "`SERVING_SIZE_DESCRIPTION`,`SERVING_SIZE_FACTOR`,`STORAGE_DESCRIPTION`,`USER_ID`,`UPTIME`,`UPUSER`) VALUES ('",
-                 from$INGREDIENT_ID[i],"','",
-                 from$INGREDIENT_CATEGORY[i],"','",
-                 from$INGREDIENT[i],"','",
-                 from$INGREDIENT_DESCRIPTION[i],"','",
-                 from$SERVING_SIZE_DESCRIPTION[i],"','",
-                 from$SERVING_SIZE_FACTOR[i],"','",
-                 from$STORAGE_DESCRIPTION[i],"','",
-                 LOCAL$userID,"','",
-                 Sys.Date(),"','",
-                 LOCAL$userName,"');"
-            )
-        )
+
+        sql <- "INSERT INTO lu_ingredients (`INGREDIENT_ID`,`INGREDIENT_CATEGORY`,
+            `INGREDIENT`,`INGREDIENT_DESCRIPTION`,`SERVING_SIZE_DESCRIPTION`,
+            `SERVING_SIZE_FACTOR`,`STORAGE_DESCRIPTION`,`USER_ID`,`UPTIME`,
+            `UPUSER`) VALUES (?ingID,?ingCat,?ing,?ingDesc,?ssDesc,?ssF,
+            ?storDesc,?userID,?uTime,?uUser);"
+
+        qry <- DBI::sqlInterpolate(con, sql, ingID = from$INGREDIENT_ID[i],
+            ingCat = from$INGREDIENT_CATEGORY[i], ing = from$INGREDIENT[i],
+            ingDesc = from$INGREDIENT_DESCRIPTION[i], ssDesc = from$SERVING_SIZE_DESCRIPTION[i],
+            ssF = from$SERVING_SIZE_FACTOR[i], storDesc = from$STORAGE_DESCRIPTION[i],
+            userID = from$USER_ID[i], uTime = Sys.Date(), uUser = LOCAL$userName)
+
+        dbExecute(con, qry)
     }
     dbExecute(con,"commit;")
 }
@@ -330,7 +314,6 @@ upsertLuIngredients <- function(con = con, from = ingsToAdd, data = LOCAL, row){
 #' This is the .x object within map
 #' @noRd
 upsertXrefIng <- function(con = con, from = xrefIngsToAdd, data = LOCAL, row){
-    
     LOCAL <- data
     i <- row
 
@@ -352,36 +335,32 @@ upsertXrefIng <- function(con = con, from = xrefIngsToAdd, data = LOCAL, row){
 
     dbExecute(con, "start transaction;")
     if(length(dbIDs) > 0 & recordID %in% dbIDs){
-        dbExecute(con,
-            paste0("UPDATE xref_ingredient SET INGREDIENT_ID = '",from$INGREDIENT_ID[i],"',",
-                 "`MEAL_ID` = '",from$MEAL_ID[i],"',",
-                 "`INGREDIENT` = '",from$INGREDIENT[i],"',",
-                 "`MEAL_NAME` = '",from$MEAL_NAME[i],"',",
-                 "`UPTIME` = '",Sys.Date(),"',",
-                 "`UPUSER` = '",LOCAL$userName,"',",
-                 "`USER_ID` = '",from$USER_ID[i],"'",
-                 #"`USER_ID` = '",LOCAL$userID,"'", # TODO 10/15/2023 THis is problem need to check when this should be LOCAL$userID or from$USER_ID
-                 " WHERE ",
-                 "`MEAL_ID` = '",from$MEAL_ID[i],"'",
-                 " AND INGREDIENT_ID = '", from$INGREDIENT_ID[i],"';"
-            )
-        )
+
+        sql <- "UPDATE xref_ingredient SET `INGREDIENT_ID` = ?ingId, `MEAL_ID` =
+            ?mealId, `INGREDIENT` = ?ing, `MEAL_NAME` = ?mealName, `UPTIME` = ?uTime,
+            `UPUSER` = ?uUser, `USER_ID` = ?userId WHERE `MEAL_ID` = ?mealId AND
+            `INGREDIENT_ID` = ?ingId;"
+
+        qry <- DBI::sqlInterpolate(con, sql, ingId = from$INGREDIENT_ID[i],
+            mealId = from$MEAL_ID[i], ing = from$INGREDIENT[i], mealName = from$MEAL_NAME[i],
+            uTime = Sys.Date(), uUser = LOCAL$userName, userId = from$USER_ID[i])
+
+        dbExecute(con, qry)
+
     }
 
     if(length(dbIDs) == 0 | !recordID %in% dbIDs){
-        dbExecute(con,
-            paste0("INSERT INTO xref_ingredient (",
-                 "`INGREDIENT_ID`,`MEAL_ID`,`INGREDIENT`,`MEAL_NAME`,",
-                 "`UPTIME`,`UPUSER`,`USER_ID`) VALUES ('",
-                 from$INGREDIENT_ID[i],"','",
-                 from$MEAL_ID[i],"','",
-                 from$INGREDIENT[i],"','",
-                 from$MEAL_NAME[i],"','",
-                 Sys.Date(),"','",
-                 LOCAL$userName,"','",
-                 LOCAL$userID,"');"
-            )
-        )
+
+        sql <- "INSERT INTO xref_ingredient (`INGREDIENT_ID`,`MEAL_ID`,
+            `INGREDIENT`,`MEAL_NAME`,`UPTIME`,`UPUSER`,`USER_ID`) VALUES (?ingId,
+            ?mealId, ?ing, ?mealName, ?uTime, ?uUser, ?userId);"
+
+        qry <- DBI::sqlInterpolate(con, sql, ingId = from$INGREDIENT_ID[i],
+            mealId = from$MEAL_ID[i], ing = from$INGREDIENT[i], mealName = from$MEAL_NAME[i],
+            uTime = Sys.Date(), uUser = LOCAL$userName, userId = from$USER_ID[i])
+
+        dbExecute(con, qry)
+
     }
     dbExecute(con,"commit;")
 }
@@ -413,7 +392,6 @@ deleteXrefIng <- function(con = con, mealId, userId){
 #' This is the .x object within map
 #' @noRd
 upsertLuMeal <- function(con = con, from = mealsToAdd, data = LOCAL, row){
-    
     LOCAL <- data
     i <- row
 
@@ -431,41 +409,38 @@ upsertLuMeal <- function(con = con, from = mealsToAdd, data = LOCAL, row){
 
     dbExecute(con, "start transaction;")
     if(length(dbIDs) > 0 & recordID %in% dbIDs){
-        dbExecute(con,
-            paste0("UPDATE lu_meal SET MEAL_ID = '",from$MEAL_ID[i],"',",
-                 "`MEAL_NAME` = '",from$MEAL_NAME[i],"',",
-                 "`MEAL_TYPE` = '",from$MEAL_TYPE[i],"',",
-                 "`MEAL_DESCRIPTION` = '",from$MEAL_DESCRIPTION[i],"',",
-                 "`TOOLS` = '",from$TOOLS[i],"',",
-                 "`INSTRUCTIONS` = '",from$INSTRUCTIONS[i],"',",
-                 "`UPTIME` = '",Sys.Date(),"',",
-                 "`UPUSER` = '",LOCAL$userName,"',",
-                 "`USER_ID` = '",from$USER_ID[i],"',",
-                 #"`USER_ID` = '",LOCAL$userID,"',",
-                 "`MEAL_TYPE_ID` = '",from$MEAL_TYPE_ID[i],"'",
-                 " WHERE ",
-                 "`MEAL_ID` = '",from$MEAL_ID[i],"' AND `USER_ID`= '",LOCAL$userID,"';"
-            )
-        )
+
+        sql <- "UPDATE lu_meal SET MEAL_ID = ?mealId, `MEAL_NAME` = ?mealName,
+            `MEAL_TYPE` = ?mealType, `MEAL_DESCRIPTION` = ?mealDesc,
+            `TOOLS` = ?tools, `INSTRUCTIONS` = ?inst, `UPTIME` = ?uTime,
+            `UPUSER` = ?uUser, `USER_ID` = ?userId, `MEAL_TYPE_ID` = ?mTypeId
+            WHERE `MEAL_ID` = ?mealId AND `USER_ID`= ?userId;"
+
+        qry <- DBI::sqlInterpolate(con, sql, mealId = from$MEAL_ID[i],
+            mealName = from$MEAL_NAME[i], mealType = from$MEAL_TYPE[i],
+            mealDesc = from$MEAL_DESCRIPTION[i], tools = from$TOOLS[i],
+            inst = from$INSTRUCTIONS[i], uTime = Sys.Date(), uUser = LOCAL$userName,
+            userId = from$USER_ID[i], mTypeId = from$MEAL_TYPE_ID[i])
+
+        dbExecute(con, qry)
+
     }
 
     if(length(dbIDs) == 0 | !recordID %in% dbIDs){
-        dbExecute(con,
-            paste0("INSERT INTO lu_meal (",
-                 "`MEAL_ID`,`MEAL_NAME`,`MEAL_TYPE`,`MEAL_DESCRIPTION`,",
-                 "`TOOLS`,`INSTRUCTIONS`,`UPTIME`,`UPUSER`,`USER_ID`,`MEAL_TYPE_ID`) VALUES ('",
-                 from$MEAL_ID[i],"','",
-                 from$MEAL_NAME[i],"','",
-                 from$MEAL_TYPE[i],"','",
-                 from$MEAL_DESCRIPTION[i],"','",
-                 from$TOOLS[i],"','",
-                 from$INSTRUCTIONS[i],"','",
-                 Sys.Date(),"','",
-                 LOCAL$userName,"','",
-                 LOCAL$userID,"','",
-                 from$MEAL_TYPE_ID,"');"
-            )
-        )
+
+        sql <- "INSERT INTO lu_meal (`MEAL_ID`,`MEAL_NAME`,`MEAL_TYPE`,
+            `MEAL_DESCRIPTION`,`TOOLS`,`INSTRUCTIONS`,`UPTIME`,`UPUSER`,`USER_ID`,
+            `MEAL_TYPE_ID`) VALUES (?mealId,?mealName,?mealType,?mealDesc,?tools,
+            ?inst,?uTime,?uUser,?userId,?mTypeId);"
+
+        qry <- DBI::sqlInterpolate(con, sql, mealId = from$MEAL_ID[i],
+            mealName = from$MEAL_NAME[i], mealType = from$MEAL_TYPE[i],
+            mealDesc = from$MEAL_DESCRIPTION[i], tools = from$TOOLS[i],
+            inst = from$INSTRUCTIONS[i], uTime = Sys.Date(), uUser = LOCAL$userName,
+            userId = from$USER_ID[i], mTypeId = from$MEAL_TYPE_ID[i])
+
+        dbExecute(con, qry)
+
     }
     dbExecute(con,"commit;")
 }
@@ -499,22 +474,20 @@ deleteLuMeal <- function(con = con, mealId, userId){
 #delMeal <- function(session, input, output, id, data){
 delMeal <- function(id, data, tripId){
     req(length(tripId) > 0)
-    
     #ns <- session$ns
     LOCAL <- data
-
-
 
     con <- rivConnect()
 
     dbExecute(con, "start transaction;")
-        toKill <- dbGetQuery(con, paste0(
-                'select distinct trip_id, meal_id from xref_trips where ',
-                'trip_id = ', tripId, ' and meal_id = ',
-                strsplit(id, "_")[[1]][1],';'
-            )
 
-        )
+        sql <- "SELECT distinct trip_id, meal_id FROM xref_trips WHERE trip_id = ?tripId
+            and meal_id = ?mealId"
+
+        qry <- DBI::sqlInterpolate(con, sql, tripId = tripId,
+            mealId = strsplit(id, "_")[[1]][1])
+
+        toKill <- dbGetQuery(con, qry)
 
         if(nrow(toKill) <= 1){
             xrefT <- data.frame(
@@ -532,8 +505,9 @@ delMeal <- function(id, data, tripId){
                 UPTIME = Sys.Date(),
                 UPUSER = LOCAL$userName
             )
-            #add dummy record bc about to kill last of this meal in xref_trips
-            #this is so the trip record is not abandoned in lu_trips
+            #add dummy record bc about to kill last of this meal/trip in xref_trips
+            #this is so the trip record is not abandoned in lu_trips if it has no meals
+            #Meal 0 stays in xref_trips until more meals are added but is not shown in the UI
 
             #con <- rivConnect()
             upsertXrefTrips(con = con, from = xrefT, data = LOCAL, row = 1)
@@ -542,20 +516,18 @@ delMeal <- function(id, data, tripId){
 
     dbExecute(con, "commit;")
 
+    dbExecute(con, "start transaction;")
+        sql <- "DELETE from xref_trips WHERE USER_ID = ?userId AND TRIP_ID = ?tripId
+            AND MEAL_ID = ?mealId AND MEAL_TYPE_ID = ?mealTypeId AND RIVER_DAY = ?riverDay;"
 
-        dbExecute(con, "start transaction;")
-            dbExecute(con,
-                paste0(
-                    "DELETE from xref_trips WHERE USER_ID = ",
-                    LOCAL$userID, " AND TRIP_ID = ",
-                    #LOCAL$tripID, " AND MEAL_ID = ",
-                    tripId, " AND MEAL_ID = ",
-                    strsplit(id, "_")[[1]][1], " AND MEAL_TYPE_ID = '",
-                    getMealTypeID(strsplit(id, "_")[[1]][2]),
-                    "' AND RIVER_DAY = ", strsplit(id, "_")[[1]][3],";"
-                )
-            )
-        dbExecute(con, "commit;")
+        qry <- DBI::sqlInterpolate(con, sql, userId = LOCAL$userID, tripId = tripId,
+            mealId = strsplit(id, "_")[[1]][1],
+            mealTypeId = getMealTypeID(strsplit(id, "_")[[1]][2]),
+            riverDay = strsplit(id, "_")[[1]][3])
+
+        dbExecute(con, qry)
+    dbExecute(con, "commit;")
+
     dbDisconnect(con)
 }
 
@@ -606,6 +578,7 @@ refreshLOCAL <- function(con, data, tables){
     LOCAL <- data
 
     # Refresh LOCAL tables -----
+
     dbExecute(con, "start transaction;")
         if('LU_INGREDIENTS' %in% tables){
             LOCAL$LU_INGREDIENTS <- dbGetQuery(con,

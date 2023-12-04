@@ -956,25 +956,35 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
             luT <- LOCAL$myMeals %>% select(names(LOCAL$LU_TRIPS_DB)) %>% unique()
         }
 
+        ## Upsert LU_TRIPS
+
         if(LOCAL$tripID %in% dbGetQuery(con, 'select trip_id from lu_trips;')$trip_id){
+
+            sql <- "UPDATE lu_trips SET `TRIP_ID` = ?tripId, `TRIPNAME` = ?tripName,
+                `TRIP_DESC` = ?tripDesc, USER_ID = ?userId, UPTIME = ?uTime,
+                UPUSER = ?uUser WHERE TRIP_ID = ?tripId;"
+
+            qry <- DBI::sqlInterpolate(con, sql, tripId = luT$TRIP_ID[1],
+                tripName = luT$TRIPNAME[1], tripDesc = luT$TRIP_DESC[1],
+                userId = luT$USER_ID[1], uTime = Sys.Date(), uUser = LOCAL$userName)
+
             dbExecute(con, "start transaction;")
-            dbExecute(con,
-                paste0("update lu_trips set `trip_id` = '",luT$TRIP_ID[1],"',`TRIPNAME` = '",
-                luT$TRIPNAME[1],"',`TRIP_DESC` = '",luT$TRIP_DESC[1],
-                "',USER_ID = '",luT$USER_ID[1],"', UPTIME = '",Sys.Date(),
-                "', UPUSER = '",LOCAL$userName,"' where trip_id = '",luT$TRIP_ID[1],"';")
-            )
+                dbExecute(con, qry)
             dbExecute(con,"commit;")
         }
 
         if(!LOCAL$tripID %in% dbGetQuery(con, 'select trip_id from lu_trips;')$trip_id){
+
+            sql <- "INSERT INTO lu_trips (`TRIP_ID`,`TRIPNAME`, `TRIP_DESC`,
+                `USER_ID`,`UPTIME`,`UPUSER`) VALUES (?tripId, ?tripName, ?tripDesc,
+                ?userId, ?uTime, ?uUser);"
+
+            qry <- DBI::sqlInterpolate(con, sql, tripId = luT$TRIP_ID[1],
+                tripName = luT$TRIPNAME[1], tripDesc = luT$TRIP_DESC[1],
+                userId = luT$USER_ID[1], uTime = Sys.Date(), uUser = LOCAL$userName)
+
             dbExecute(con, "start transaction;")
-            dbExecute(con,
-                paste0("insert into lu_trips (`TRIP_ID`,`TRIPNAME`,
-                    `TRIP_DESC`,`USER_ID`,`UPTIME`,`UPUSER`)
-                    values ('",luT$TRIP_ID[1],"','",luT$TRIPNAME[1],"','",luT$TRIP_DESC[1],
-                       "','",luT$USER_ID[1],"','",Sys.time(),"','",LOCAL$userName,"');")
-            )
+                dbExecute(con, qry)
             dbExecute(con,"commit;")
         }
 
@@ -1028,6 +1038,7 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
         map(1:nrow(xrefT), ~ upsertXrefTrips(con = con, from = xrefT, data = LOCAL, row = .x))
 
         # Refresh LOCAL tables -----
+
         refreshLOCAL(con = con, data = LOCAL, tables = c('LU_TRIPS', 'XREF_TRIPS'))
     }
 
