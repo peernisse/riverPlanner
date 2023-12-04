@@ -3,7 +3,7 @@
 #' Handles the username and logout button in the page header.#'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #' @importFrom shiny NS tagList
-#' @importFrom DBI dbConnect dbGetQuery dbExecute dbDisconnect dbIsValid
+#' @importFrom DBI dbConnect dbGetQuery dbExecute dbDisconnect dbIsValid sqlInterpolate
 #' @importFrom RMariaDB MariaDB
 #' @noRd
 mod_data_ui <- function(id){
@@ -273,27 +273,20 @@ mod_data_server <- function(id){
         # Observe feedback modal submit -----
 
         observeEvent(input$submitFeedback, {
-            req(length(LOCAL$userID) > 0)
-            userID <- LOCAL$userID
-            userName <- LOCAL$userName
-            type <- input$`feedback-type`
-            title <- input$`feedback-title`
-            desc <- input$`feedback-desc`
 
             con <- rivConnect()
+
+            sql <- "INSERT INTO feedback (USER_ID, F_TYPE, F_TITLE, F_DESC,
+                F_STATUS, UPTIME, UPUSER) VALUES (?userId, ?fType, ?fTitle,
+                ?fDesc, ?fStatus, ?uTime, ?uUser);"
+
+            qry <- DBI::sqlInterpolate(con, sql, userId = LOCAL$userID,
+                fType = input$`feedback-type`, fTitle = input$`feedback-title`,
+                fDesc = input$`feedback-desc`, fStatus = "OPEN", uTime = "now()",
+                uUser = LOCAL$userName)
+
             dbExecute(con, 'start transaction;')
-            dbExecute(con,
-                paste0("insert into feedback (",
-                       "USER_ID, F_TYPE, F_TITLE, F_DESC, F_STATUS, UPTIME, UPUSER) VALUES (",
-                       userID,", '",
-                       type,"', '",
-                       title,"', '",
-                       desc,"', '",
-                       "OPEN","', ",
-                       "now()",", '",
-                       userName,"');"
-                )
-            )
+                dbExecute(con, qry)
             dbExecute(con, 'commit;')
             dbDisconnect(con)
             showNotification("Thanks for your Feedback! We will follow up with any questions.",
