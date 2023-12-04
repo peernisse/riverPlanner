@@ -281,9 +281,9 @@ mod_meal_edit_server <- function(id, data = LOCAL){
 
     observeEvent(input[['newIngredient']], {
       withProgress(message = 'New Ingredient', detail = 'saving to database...', {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
         newIngredientResponse(input, output, session, data = LOCAL)
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
       })
     })
 
@@ -333,9 +333,9 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         # Update DB
 
         withProgress(message = 'Trip Info', detail = 'saving to database...', {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
             dbUpdate(con, from = trip, to = 'LU_TRIPS', data = LOCAL)
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
         })
 
         # Notify

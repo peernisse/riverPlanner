@@ -130,9 +130,9 @@ mod_trip_server <- function(id, data){
             # Save to database
 
             withProgress(message = 'Trip Info', detail = 'saving to database...', {
-                map(1:5, ~ incProgress(.x/10))
-                dbUpdate(from = tripStart, to = 'LU_TRIPS', data = LOCAL)
-                map(6:10, ~ incProgress(.x/10))
+                setProgress(0.5)
+                    dbUpdate(from = tripStart, to = 'LU_TRIPS', data = LOCAL)
+                setProgress(0.9)
             })
 
             showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
@@ -163,9 +163,9 @@ mod_trip_server <- function(id, data){
             # Save to database
 
             withProgress(message = 'Trip Info', detail = 'saving to database...', {
-              map(1:5, ~ incProgress(.x/10))
+              setProgress(0.5)
                 dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
-              map(6:10, ~ incProgress(.x/10))
+              setProgress(0.9)
             })
             showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
                              type = 'message', duration = 10)
@@ -226,11 +226,11 @@ mod_trip_server <- function(id, data){
             } else {
 
                 withProgress(message = 'Saving', detail = 'Saving trip...', {
-                  map(1:5, ~ incProgress(.x/10))
+                  setProgress(0.5)
                     saveTrip(input, output, session = session, data = LOCAL)
-                  tripSave <<-c()
-                  removeModal()
-                  map(6:10, ~ incProgress(.x/10))
+                    tripSave <<-c()
+                    removeModal()
+                  setProgress(0.9)
                 })
             }
     })
@@ -368,13 +368,13 @@ mod_trip_server <- function(id, data){
       #req(length(tripSave) > 0)
 
       withProgress(message = 'Saving', detail = 'Saving trip...', {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
 
         saveTrip(input, output, session = session, data = LOCAL)
 
         tripSave <<-c()
         removeModal()
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
       })
 
     })
@@ -385,13 +385,13 @@ mod_trip_server <- function(id, data){
       req(length(tripCopy) > 0)
 
       withProgress(message = 'Copying', detail = 'Copying trip...', {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
 
         copyTrip(session, id = tripCopy, data = LOCAL)
 
         tripCopy <<-c()
         removeModal()
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
       })
 
       showNotification('Trip Copied', type = 'message', duration = 5)
@@ -403,13 +403,13 @@ mod_trip_server <- function(id, data){
       req(length(tripLoad) > 0)
 
       withProgress(message = 'Loading', detail = 'Loading trip...', {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
 
         loadTrip(session = session, id = tripLoad, data = LOCAL)
 
         tripLoad <<-c()
         removeModal()
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
       })
 
       showNotification(paste0('Your Trip \"',LOCAL$tripName,
@@ -423,12 +423,12 @@ mod_trip_server <- function(id, data){
 
       req(length(tripDelete) > 0)
       withProgress(message = 'Deleting', detail = 'Deleting trip...', {
-        map(1:5, ~ incProgress(.x/10))
+        setProgress(0.5)
           deleteTrip(session, id = tripDelete, data = LOCAL)
         LOCAL$LU_TRIPS <- LOCAL$LU_TRIPS %>% filter(!TRIP_ID %in% tripDelete)
         tripDelete <<-c()
         removeModal()
-        map(6:10, ~ incProgress(.x/10))
+        setProgress(0.9)
       })
       showNotification('Trip Removed', type = 'message', duration = 5)
     })
