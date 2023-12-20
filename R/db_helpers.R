@@ -383,6 +383,26 @@ deleteXrefIng <- function(con = con, mealId, userId){
     dbExecute(con,"commit;")
 }
 
+#' delIngXrefIng
+#' @description Deletes an ingredient from XREF_INGREDIENT in the DB
+#' @param con The database connection object
+#' @param mealId Numeric. The meal ID to delete from DB
+#' @param ingId Numeric. The ingredient ID to delete from the meal
+#' @param userId Numeric. The user ID who owns the meal. Must be
+#' the current active user and meal must be theirs to delete
+#'
+#' @noRd
+delIngXrefIng <- function(con = con, mealId, ingId, userId){
+    dbExecute(con, "start transaction;")
+    dbExecute(con,
+              paste0('DELETE FROM xref_ingredient WHERE USER_ID = ',
+                     userId, ' AND MEAL_ID = ', mealId,
+                     ' AND INGREDIENT_ID = ', ingId, ';'
+              )
+    )
+    dbExecute(con,"commit;")
+}
+
 #' upsertLuMeal
 #' @description Made to be used with map(). Inserts or updates lu_meal records in a loop.
 #' @param con The database connection object

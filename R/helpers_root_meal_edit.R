@@ -168,7 +168,6 @@ rootEditMealIngredientInputs <- function(input, output, session,data, userID){
 #' @param data The LOCAL data object containing the rootEditIngs object for the currently being edited meal
 #' @noRd
 rootEditMealDelIng <- function(session, id, data){
-
     ns <- session$ns
     LOCAL<- data
     ingredientUniqueID <- gsub('del-ing-','', id)

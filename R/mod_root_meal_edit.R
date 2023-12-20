@@ -312,8 +312,6 @@ mod_root_meal_edit_server <- function(id, data = LOCAL){
 
         observeEvent(input$updateMeal,{
 
-
-
             req(nrow(LOCAL$rootEditMeal) == 1)
             req(nrow(LOCAL$rootEditXrefIngs) > 0)
             req(nrow(LOCAL$rootEditIngs) > 0)
@@ -451,6 +449,37 @@ mod_root_meal_edit_server <- function(id, data = LOCAL){
                         }
 
                         incProgress(.5, 'Querying database...')
+
+                        ## Remove any ingredients in xref_ingredient for this meal
+                        ## in case an ingredient has been deleted from the root meal
+
+                        mealId <- unique(LOCAL$rootEditXrefIngs$MEAL_ID)
+                        req(length(mealId) == 1)
+                        xrefIng <- LOCAL$rootEditXrefIngs
+
+                        dbExecute(con, "start transaction;")
+                        dbXrefIng <- dbGetQuery(con, paste0("SELECT * FROM xref_ingredient WHERE USER_ID = ",
+                            LOCAL$userID," AND MEAL_ID = ", mealId,";"))
+                        dbExecute(con,"commit;")
+
+                        # Check for records that have been deleted locally and delete from DB
+
+                        toDelete <- anti_join(dbXrefIng,xrefIng,
+                            by = c('MEAL_ID','INGREDIENT_ID')
+                        )
+
+                        if(nrow(toDelete) > 0){
+                            req(unique(toDelete$USER_ID) == LOCAL$userID)
+                            map(1:nrow(toDelete), ~
+                                delIngXrefIng(con = con,
+                                    mealId = toDelete$MEAL_ID[[.x]],
+                                    ingId = toDelete$INGREDIENT_ID[[.x]],
+                                    userId = toDelete$USER_ID[[.x]]
+                                )
+                            )
+                        }
+
+                        ## Upsert xref_ingredient AFTER any deletetions
 
                         map(1:nrow(LOCAL$rootEditXrefIngs), ~ upsertXrefIng(con = con,
                             from = LOCAL$rootEditXrefIngs, data = LOCAL, row = .x)

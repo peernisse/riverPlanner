@@ -44,7 +44,7 @@ devtools::install_github("peernisse/riverPlanner")
 
 ## Live Version
 
-Not up yet.
+[https://apps.river-planner.com/riverPlanner](https://apps.river-planner.com/riverPlanner)
 
 ## Code of Conduct
 
