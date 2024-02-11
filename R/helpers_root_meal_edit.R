@@ -47,7 +47,7 @@ rootEditMealIngredientInputs <- function(input, output, session,data, userID){
                 tags$input(id = ns(paste0('ing-new-hypPeople', ingUniqueID)),
                     placeholder = 'Qty. of Ing.', type = "text",
                     `aria-label` = "Quantity", class = "form-control",
-                    value = round(noPeopleCalc)
+                    value = noPeopleCalc
                 )
             )
 
