@@ -47,7 +47,7 @@ rootEditMealIngredientInputs <- function(input, output, session,data, userID){
                 tags$input(id = ns(paste0('ing-new-hypPeople', ingUniqueID)),
                     placeholder = 'Qty. of Ing.', type = "text",
                     `aria-label` = "Quantity", class = "form-control",
-                    value = round(noPeopleCalc)
+                    value = noPeopleCalc
                 )
             )
 
@@ -352,12 +352,16 @@ rootDeleteMeal <- function(session, rvObj, mealId){
                     by = c('TRIP_ID' = 'TRIP_ID', 'MEAL_ID' = 'MEAL_ID')
                 )
 
-            ## Delete from LOCAL$myMeals ----
+            ## Delete from LOCAL$myMeals if anything there ----
 
-            LOCAL$myMeals <- LOCAL$myMeals %>%
-                anti_join(., toKill,
-                    by = c('TRIP_ID' = 'TRIP_ID', 'MEAL_ID' = 'MEAL_ID')
-                )
+            if(nrow(LOCAL$myMeals) > 0){
+                LOCAL$myMeals <- LOCAL$myMeals %>%
+                    anti_join(., toKill,
+                        by = c('TRIP_ID' = 'TRIP_ID', 'MEAL_ID' = 'MEAL_ID')
+                    )
+            }
+
+
 
             ## Delete from LOCAL$ALL_DATA ----
 

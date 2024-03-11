@@ -127,6 +127,18 @@ mod_data_server <- function(id){
             paste0('select * from xref_trips where USER_ID in (',userID,');')
         )
 
+        LU_GEAR_CAT <- dbGetQuery(con,
+            paste0('select * from lu_gear_cat where USER_ID in (0,',userID,');')
+        )
+
+        LU_GEAR <- dbGetQuery(con,
+            paste0('select * from lu_gear where USER_ID in (0,',userID,');')
+        )
+
+        XREF_GEAR <- dbGetQuery(con,
+            paste0('select * from xref_gear where USER_ID in (0,',userID,');')
+        )
+
         dbDisconnect(con)
 
         # Create LU_TRIPS
@@ -175,6 +187,7 @@ mod_data_server <- function(id){
         ####INSTANTIATE REACTIVE VALUES DATA OBJECT#####
 
         LOCAL <- reactiveValues(
+ #LOCAL <- list(
             userName = userName,
             userID = userID,
             LU_USERS = LU_USERS,
@@ -185,6 +198,9 @@ mod_data_server <- function(id){
             LU_INGREDIENTS = LU_INGREDIENTS,
             LU_TRIPS_DB = LU_TRIPS_DB,
             XREF_TRIPS = XREF_TRIPS,
+            LU_GEAR_CAT = LU_GEAR_CAT,
+            LU_GEAR = LU_GEAR,
+            XREF_GEAR = XREF_GEAR,
             tripID = character(),
             tripName = character(),
             tripDesc = character(),
@@ -217,7 +233,9 @@ mod_data_server <- function(id){
             ALL_DATA = ALL_DATA
         )
 
-        rm(XREF_INGREDIENT,LU_USERS, XREF_TRIPS, LU_TRIPS, LU_TRIPS_DB, LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,ALL_DATA)
+        rm(XREF_INGREDIENT,LU_USERS, XREF_TRIPS, LU_TRIPS, LU_TRIPS_DB,
+           LU_MEAL_TYPE,LU_MEAL,LU_INGREDIENTS,LU_GEAR, LU_GEAR_CAT, XREF_GEAR,
+           ALL_DATA)
         gc()
 
 

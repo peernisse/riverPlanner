@@ -22,7 +22,7 @@ app_server <- function(input, output, session) {
 
     mod_menu_export_server('menuExport', data = LOCAL)
 
-    mod_gear_server('gear')
+    LOCAL <- mod_gear_server('gear', data = LOCAL)
 
     mod_travel_server('travel')
 

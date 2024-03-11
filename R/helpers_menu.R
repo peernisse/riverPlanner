@@ -133,9 +133,11 @@ makeMealCards <- function(input, output, session, mtype, data = LOCAL){
 
     renderUI({
         ns <- session$ns
+
         filtDat <- LOCAL$ALL_DATA %>% filter(MEAL_TYPE %in% mtype, MEAL_ID != 0) %>% # removing meal_id 0 "startup"
         #filtDat <- LOCAL$ALL_DATA %>% filter(MEAL_TYPE %in% mtype) %>% # old 11/28/2023
             select(MEAL_ID,MEAL_TYPE,MEAL_NAME,MEAL_DESCRIPTION) %>% unique(.)
+
         mapIndexRows <- which(filtDat$MEAL_TYPE == mtype)
 
         # Make cards
@@ -148,8 +150,8 @@ makeMealCards <- function(input, output, session, mtype, data = LOCAL){
             div(class = "d-flex flex-row flex-nowrap overflow-auto",
 
                 map(mapIndexRows, ~ mealCard(input, session,filtDat[.,'MEAL_ID'],data = LOCAL,
-                                             mtype = mtype, filtDat[.,'MEAL_NAME'],
-                                             NULL, filtDat[.,'MEAL_DESCRIPTION']))
+                    mtype = mtype, filtDat[.,'MEAL_NAME'],
+                    NULL, filtDat[.,'MEAL_DESCRIPTION']))
             )
 
         )

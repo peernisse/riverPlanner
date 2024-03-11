@@ -156,8 +156,15 @@ upsertXrefTrips <- function(con = con, from = xrefT, data = LOCAL, row){
         select(RECORD_ID) %>%
         pull(.)
 
+    # TODO 2/18/2024 Swapping LOCAL$tripID for from$TRIP_ID[i]
+    # dbIDs <- dbGetQuery(con,paste0("SELECT * from xref_trips WHERE USER_ID =",
+    #     LOCAL$userID," AND trip_id ='",LOCAL$tripID,"';")) %>%
+    #     mutate(DB_IDS = paste(MEAL_ID,RIVER_DAY,INGREDIENT_ID,TRIP_ID,MEAL_TYPE_ID, sep = "_")) %>%
+    #     select(DB_IDS) %>%
+    #     pull(.)
+
     dbIDs <- dbGetQuery(con,paste0("SELECT * from xref_trips WHERE USER_ID =",
-        LOCAL$userID," AND trip_id ='",LOCAL$tripID,"';")) %>%
+        LOCAL$userID," AND trip_id ='", from$TRIP_ID[i],"';")) %>%
         mutate(DB_IDS = paste(MEAL_ID,RIVER_DAY,INGREDIENT_ID,TRIP_ID,MEAL_TYPE_ID, sep = "_")) %>%
         select(DB_IDS) %>%
         pull(.)
@@ -494,6 +501,7 @@ deleteLuMeal <- function(con = con, mealId, userId){
 #delMeal <- function(session, input, output, id, data){
 delMeal <- function(id, data, tripId){
     req(length(tripId) > 0)
+    req(length(id) > 0)
     #ns <- session$ns
     LOCAL <- data
 
@@ -514,7 +522,7 @@ delMeal <- function(id, data, tripId){
                 MEAL_ID = 0,
                 RIVER_DAY = 1,
                 INGREDIENT_ID = 1,
-                TRIP_ID = LOCAL$tripID,
+                TRIP_ID = ifelse(length(LOCAL$tripID) == 0, tripId, LOCAL$tripID),
                 MEAL_TYPE_ID = 1,
                 MEAL_NOTES = 'startup',
                 NO_ADULTS = LOCAL$noAdults,
@@ -585,6 +593,87 @@ getMealTypeID <- function(mType){
     return(out)
 }
 
+#' upsertXrefGear
+#'
+#'
+#'
+#' @noRd
+upsertXrefGear <- function(con = con, from = xrefG, data = LOCAL, row) {
+    LOCAL <- data
+    i <- row
+
+    recordID <- from[i,] %>%
+        mutate(RECORD_ID = paste(TRIP_ID, GEAR_ID, sep = "_")) %>%
+        select(RECORD_ID) %>%
+        pull(.)
+
+    dbIDs <- dbGetQuery(con,paste0("SELECT * from xref_gear WHERE USER_ID =",
+        LOCAL$userID," AND trip_id ='", from$TRIP_ID[i],"';")) %>%
+        mutate(DB_IDS = paste(TRIP_ID, GEAR_ID, sep = "_")) %>%
+        select(DB_IDS) %>%
+        pull(.)
+
+    dbExecute(con, "start transaction;")
+    if(length(dbIDs) > 0 & recordID %in% dbIDs){
+
+        sql <- "UPDATE xref_gear SET `TRIP_ID` = ?tripId, `GEAR_ID` = ?gearId,
+            `GEAR_CAT_ID` = ?gearCatId, `GEAR_QTY` = ?gearQty,
+            `USER_ID` = ?userId, `UPTIME` = ?uTime, `UPUSER` = ?uUser
+            WHERE `TRIP_ID` = ?tripId AND `GEAR_ID` = ?gearId AND
+            `USER_ID` = ?userId;"
+
+        qry <- DBI::sqlInterpolate(con, sql, tripId = from$TRIP_ID[i],
+            gearId = from$GEAR_ID[i], gearCatId = from$GEAR_CAT_ID[i],
+            gearQty = from$GEAR_QTY[i], userId = LOCAL$userID,
+            uTime = Sys.Date(), uUser = LOCAL$userName)
+
+        dbExecute(con, qry)
+    }
+
+    if(length(dbIDs) == 0 | !recordID %in% dbIDs){
+
+        sql <- "INSERT INTO xref_gear (`TRIP_ID`,`GEAR_ID`,`GEAR_CAT_ID`,
+            `GEAR_QTY`,`USER_ID`,`UPTIME`,`UPUSER`)
+            VALUES (?tripId,?gearId,?gearCatId,?gearQty,?userId,?uTime,?uUser);"
+
+        qry <- DBI::sqlInterpolate(con, sql, tripId = from$TRIP_ID[i],
+            gearId = from$GEAR_ID[i], gearCatId = from$GEAR_CAT_ID[i],
+            gearQty = from$GEAR_QTY[i], userId = LOCAL$userID,
+            uTime = Sys.Date(), uUser = LOCAL$userName)
+
+        dbExecute(con, qry)
+    }
+    dbExecute(con,"commit;")
+
+
+}
+
+#' deleteXrefGear
+#' @description Deletes one record from xref_gear.
+#' Designed to be used in a loop or with map() to loop through
+#' rows of a dataframe of records to delete from the database
+#' @param con The database connection object
+#' @param from A dataframe of records that are in the DB but have been removed from
+#' the local session LOCAL$myMEals dataframe. Obtained with anti_join before calling this function
+#' @param data The LOCAL reactive values data onject
+#' @param row The row number of the `from` dataframe being looped
+#' @noRd
+deleteXrefGear <- function(con = con, from = toDelete, data = LOCAL, row){
+    LOCAL <- data
+    i <- row
+    df <- from[i,]
+
+    sql <- "DELETE FROM xref_gear WHERE USER_ID = ?userId AND TRIP_ID = ?tripId
+        AND GEAR_ID = ?gearId;"
+
+    qry <- DBI::sqlInterpolate(con, sql, userId = LOCAL$userID, tripId = df$TRIP_ID,
+                               gearId = df$GEAR_ID)
+
+    dbExecute(con, "start transaction;")
+    dbExecute(con, qry)
+    dbExecute(con,"commit;")
+}
+
 #' refreshLOCAL
 #' @description Used after upsert functions. Pulls new data sets
 #' from the database to the session LOCAL data object. Also creates new
@@ -627,6 +716,12 @@ refreshLOCAL <- function(con, data, tables){
         if('XREF_INGREDIENT' %in% tables){
             LOCAL$XREF_INGREDIENT <- dbGetQuery(con,
                 paste0('select * from xref_ingredient where USER_ID in (0,',LOCAL$userID,');')
+            )
+        }
+
+        if('XREF_GEAR' %in% tables) {
+            LOCAL$XREF_GEAR <- dbGetQuery(con,
+                paste0('select * from xref_gear where USER_ID in (0,',LOCAL$userID,');')
             )
         }
     dbExecute(con, "commit;")

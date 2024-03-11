@@ -31,7 +31,7 @@ WORKDIR /build_zone
 RUN R -e 'remotes::install_local(upgrade="never")'
 #RUN rm -rf /build_zone
 EXPOSE 80
-CMD R -e "options('shiny.port'=4242,shiny.host='0.0.0.0');library(riverPlanner);riverPlanner::run_app_auth0()"
+CMD R -e "options('shiny.port'=4242,shiny.host='0.0.0.0',auth0_config_file = './inst/app/_auth0.yml');library(riverPlanner);riverPlanner::run_app_auth0()"
 
 #CMD R -e "options('shiny.port' = 4242, shiny.host='0.0.0.0');library(riverPlanner);golem::run_dev()"
 

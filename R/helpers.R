@@ -1042,6 +1042,53 @@ dbUpdate <- function(con = NULL, from, to, data = LOCAL){
         refreshLOCAL(con = con, data = LOCAL, tables = c('LU_TRIPS', 'XREF_TRIPS'))
     }
 
+    # Case XREF_GEAR
+
+    if(to == 'XREF_GEAR') {
+
+        # get db version of xref_gear for this trip and user
+        dbExecute(con, "start transaction;")
+            currentGear <- dbGetQuery(con,
+                paste0("SELECT * FROM xref_gear WHERE USER_ID = ",
+                LOCAL$userID," AND TRIP_ID = ", LOCAL$tripID,";")
+            )
+        dbExecute(con, "commit;")
+
+        # case no gear exists in db for trip
+
+        if(nrow(currentGear) == 0) {
+            xrefG <- from
+
+
+        }
+
+        if(nrow(currentGear) > 0) {
+
+            # Check for records that have been deleted locally and delete from DB
+
+            toDelete <- anti_join(currentGear, from,
+                by = c('TRIP_ID', 'USER_ID', 'GEAR_ID')
+            )
+
+            if(nrow(toDelete) > 0){
+                map(1:nrow(toDelete), ~ deleteXrefGear(con = con, from = toDelete, data = LOCAL, row = .x))
+            }
+
+
+        }
+
+
+        #
+
+
+        # Upsert xref_gear with xrefG
+
+        map(1:nrow(from), ~ upsertXrefGear(con, from = from, data = LOCAL, row = .x))
+
+        # Refresh from database
+        refreshLOCAL(con = con, data = LOCAL, tables = c('XREF_GEAR'))
+    }
+
     dbDisconnect(con)
 }
 
