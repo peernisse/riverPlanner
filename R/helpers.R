@@ -786,13 +786,21 @@ deleteTrip <- function(session, id, data){
 
             map(1:nrow(toDelete), ~ deleteXrefTrips(con = con, from = toDelete, data = LOCAL, row = .x))
 
+            # Kill xref_gear
+
+            toDeleteGear <- LOCAL$XREF_GEAR %>%
+                filter(TRIP_ID == id)
+            if(nrow(toDeleteGear) > 0) {
+                map(1:nrow(toDeleteGear), ~ deleteXrefGear(con = con, from = toDeleteGear, data = LOCAL, row = .x))
+            }
+
             # Kill lu trips
 
             deleteLuTrips(con = con, id = id, data = LOCAL)
 
             # Refresh LOCAL trip tables
 
-            refreshLOCAL(con = con, data = LOCAL, tables = c('LU_TRIPS','XREF_TRIPS'))
+            refreshLOCAL(con = con, data = LOCAL, tables = c('LU_TRIPS','XREF_TRIPS', 'XREF_GEAR'))
 
         dbDisconnect(con)
     }

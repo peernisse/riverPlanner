@@ -80,7 +80,7 @@ mod_gear_server <- function(id, data){
                         using gear checklists.', type = 'error', duration = 10)
                     return(NULL)
                 }
-# TODO 3/16/2024 HERE you could update a LOCAL$gearCatActive value as `id`
+
                 LOCAL$gearCatActive <- id
                 viewChecklist(session, id = id, data = LOCAL)
             })
