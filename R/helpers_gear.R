@@ -54,8 +54,13 @@ viewChecklist <- function(session, id, data){
     ns <- session$ns
     LOCAL <- data
 
+# Validate gearCatActive is not empty
+if(!length(LOCAL$gearCatActive) > 0) stop('Error in obtaining gearCatActive.')
+if(id != LOCAL$gearCatActive) stop('gearCatActive does not match selected card.')
+
 # TODO 3/11/2024 Make this get any trip gear that is in xref_gear and
-# turn those witches on and fill in quantities
+# turn those switches on and fill in quantities
+
     ## Define Variables ----
 
     catrow <- which(LOCAL$LU_GEAR_CAT$GEAR_CAT_ID %in% id)
@@ -75,9 +80,9 @@ viewChecklist <- function(session, id, data){
     included <- LOCAL$XREF_GEAR %>%
         filter(GEAR_CAT_ID %in% id, TRIP_ID %in% LOCAL$tripID)
     values <- ifelse(gear_ids %in% included$GEAR_ID, TRUE, FALSE)
-    onQtys <- ifelse(gear_ids %in% included$GEAR_ID, included$GEAR_QTY, NA_real_)
-
-
+    onQtys <- data.frame(gear_ids) %>%
+        left_join(included, by = c('gear_ids' = 'GEAR_ID')) %>%
+        pull(GEAR_QTY)
 
     # SHOW MODAL
 
@@ -140,10 +145,12 @@ checkSwitch <- function(session, id, name, desc, status, qty){
 
     if(status == TRUE) {
         checkbox <- tags$input(class = "form-check-input", type = "checkbox",
+            onclick = "clearInput(this.id)",
             id = ns(slider_id), checked = 'checked'
         )
     } else {
         checkbox <- tags$input(class = "form-check-input", type = "checkbox",
+            onclick = "clearInput(this.id)",
             id = ns(slider_id)
         )
     }

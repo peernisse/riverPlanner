@@ -674,6 +674,30 @@ deleteXrefGear <- function(con = con, from = toDelete, data = LOCAL, row){
     dbExecute(con,"commit;")
 }
 
+#' deleteXrefGearCat
+#' @description Deletes any records of a given gea category ID from xref_gear
+#' Only used if user unchecks all items in a category and clicks save
+#' @param con The database connection object
+#' @param rvObj The LOCAL rv object
+#' @param catId The gear category to delete for the given tripId
+#' @noRd
+deleteXrefGearCat <- function(con, rvObj = LOCAL, catId) {
+    LOCAL <- rvObj
+    stopifnot(LOCAL$gearCatActive == catId)
+    userId <- LOCAL$userID
+    tripId <- LOCAL$tripID
+
+    sql <- "DELETE FROM xref_gear WHERE USER_ID = ?userId AND TRIP_ID = ?tripId
+        AND GEAR_CAT_ID = ?catId;"
+
+    qry <- DBI::sqlInterpolate(con, sql, userId = userId, tripId = tripId, catId = catId)
+
+    dbExecute(con, "start transaction;")
+    dbExecute(con, qry)
+    dbExecute(con,"commit;")
+
+}
+
 #' refreshLOCAL
 #' @description Used after upsert functions. Pulls new data sets
 #' from the database to the session LOCAL data object. Also creates new

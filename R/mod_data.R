@@ -204,6 +204,7 @@ mod_data_server <- function(id){
             tripID = character(),
             tripName = character(),
             tripDesc = character(),
+            gearCatActive = numeric(),
             loadTripMode = FALSE,
             noAdults = 1,
             noKids = 0,

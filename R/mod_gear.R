@@ -70,9 +70,7 @@ mod_gear_server <- function(id, data){
     observe({
 
         ## View Gear Checklists Buttons ----
-#TODO 2/25/2024 This will just go straight to editable form for the trip
-        # no need to add checklists to the trip then select items, just
-        #select/add new items here and save to trip
+
         purrr::map(seq_along(gearCatViewBtns()), ~
             observeEvent(input[[gearCatViewBtns()[[.x]]]], {
                 id <- gsub('view-', '', gearCatViewBtns()[[.x]])
@@ -82,31 +80,16 @@ mod_gear_server <- function(id, data){
                         using gear checklists.', type = 'error', duration = 10)
                     return(NULL)
                 }
-
+# TODO 3/16/2024 HERE you could update a LOCAL$gearCatActive value as `id`
+                LOCAL$gearCatActive <- id
                 viewChecklist(session, id = id, data = LOCAL)
-            })
-        )
-
-        ## View Gear Add Buttons ----
-#TODO 2/25/2024 This will prob go away
-        purrr::map(seq_along(gearCatAddBtns()), ~
-            observeEvent(input[[gearCatAddBtns()[[.x]]]], {
-                id <- gsub('add-', '', gearCatAddBtns()[[.x]])
-                #viewChecklist(session, id = id, data = LOCAL)
-
-                # Validate user has created a trip
-
-                if(length(LOCAL$tripName) == 0 & LOCAL$noAdults == 1){
-                    showNotification('Please load, or create and save a Trip before
-                        adding gear checklists.', type = 'error', duration = 10)
-                    return(NULL)
-                }
             })
         )
 
         ## Close Checklist Modal Button ----
 
         observeEvent(input$closeChecklist, {
+            LOCAL$gearCatActive <- numeric()
             removeModal()
         })
 
@@ -116,113 +99,107 @@ mod_gear_server <- function(id, data){
 
             ## Get List of Selected Gear IDs ----
 
-            sldrs <- names(input)[grep('sld-', names(input))]
-            sldvals <- map(sldrs, ~ input[[.x]]) %>% unlist()
-            item_ids <- sldrs[which(sldvals == TRUE)] %>%
-                gsub('sld-', '', .) %>%
-                as.numeric(.)
-            item_cat_ids <- LOCAL$LU_GEAR$GEAR_CAT_ID[which(LOCAL$LU_GEAR$GEAR_ID %in% item_ids)]
+            # TODO 3/16/2024 Need to account for which gear category is active
+            # bc it is listing all/any item IDs from input
+            # that have been checked in any category, so deletes during dbUpdate
+            # items other than the active category (HINT: look in the dbUpdate routine)
 
-            ## Get List of Selected Gear Quantities ----
-
-            gqty <- map(item_ids, ~ input[[paste0('gear-qty-', .x)]]) %>% unlist()
-
-            ## Validate all Checked have Values ----
-
-            if(any(gqty < 0)) {
-
-                neg_ids <- item_ids[which(gqty < 0)]
-                rows <- which(LOCAL$LU_GEAR$GEAR_ID %in% neg_ids)
-                neg_items <- LOCAL$LU_GEAR$GEAR_NAME[rows] %>% sort()
-
-                showNotification(
-                    p('Gearlist item quantities can not be negative:'),
-                    tags$ul(map(neg_items, ~ tags$li(.x))),
-                    type = 'error', duration = 10
-                )
-
-                return(NULL)
-            }
-
-            if(any(is.na(gqty))) {
-
-                empty_ids <- item_ids[which(is.na(gqty))]
-                rows <- which(LOCAL$LU_GEAR$GEAR_ID %in% empty_ids)
-                empty_items <- LOCAL$LU_GEAR$GEAR_NAME[rows] %>% sort()
-
-                showNotification(
-                    p('Active items are missing quantities:'),
-                    tags$ul(map(empty_items, ~ tags$li(.x))),
-                    type = 'error', duration = 10
-                )
-
-                return(NULL)
-            }
-
-            # TODO 2/17/2024 HERE WE MUST HAVE THE GEAR XREF TABLE
-
-            # update LOCAL$LU_GEAR with any new items
-            ## this requires making a temp table to hold new ites
-            ## look at how I did new ingredients?
-
-            # update xref_gear with any new items/quantities
-            ## run through xref_gear and compare item quantities to the inputs
-
-            # check <- LOCAL$XREF_GEAR %>%
-            #     filter(TRIP_ID %in% LOCAL$tripID, USER_ID %in% LOCAL$userID) %>%
-            #     select(TRIP_ID, GEAR_ID, GEAR_QTY)
-
-            ## case first gear list for trip
-            # if(nrow(check) == 0) {
-            #     rows <- which(LOCAL$LU_GEAR$GEAR_ID %in% item_ids)
-            #     toAdd <- data.frame(
-            #             TRIP_ID = LOCAL$tripID,
-            #             GEAR_ID = item_ids,
-            #             GEAR_CAT_ID = item_cat_ids,
-            #             GEAR_QTY = gqty,
-            #             USER_ID = LOCAL$userID,
-            #             UPTIME = Sys.Date(),
-            #             UPUSER = LOCAL$userName
-            #         )
-            #     #LOCAL$XREF_GEAR <- bind_rows(LOCAL$XREF_GEAR, toAdd)
-            #     dbUpdate(from = toAdd, to = 'XREF_GEAR', data = LOCAL)
-            # } else {
-            #
-            #     rows <- which(LOCAL$LU_GEAR$GEAR_ID %in% item_ids)
-            #     toAdd <- data.frame(
-            #         TRIP_ID = LOCAL$tripID,
-            #         GEAR_ID = item_ids,
-            #         GEAR_CAT_ID = item_cat_ids,
-            #         GEAR_QTY = gqty,
-            #         USER_ID = LOCAL$userID,
-            #         UPTIME = Sys.Date(),
-            #         UPUSER = LOCAL$userName
-            #     )
-            #     dbUpdate(from = toAdd, to = 'XREF_GEAR', data = LOCAL)
-            # }
-
-            ## case there are records in check, need to update new quantities
-            ## before upserting. Do this here before dbUpdate
+            sldIds <- LOCAL$LU_GEAR %>%
+                filter(GEAR_CAT_ID == LOCAL$gearCatActive) %>%
+                mutate(SLD_IDS = paste0('sld-', GEAR_ID)) %>%
+                pull(SLD_IDS)
 
 
+                #sldrs <- names(input)[grep('sld-', names(input))]
+                #sldvals <- map(sldrs, ~ input[[.x]]) %>% unlist()
+                sldvals <- map(sldIds, ~ input[[.x]]) %>% unlist()
+                item_ids <- sldIds[which(sldvals == TRUE)] %>%
+                    gsub('sld-', '', .) %>%
+                    as.numeric(.)
+                item_cat_ids <- LOCAL$LU_GEAR$GEAR_CAT_ID[which(LOCAL$LU_GEAR$GEAR_ID %in% item_ids)]
 
-            # run dbUpdate for lu_gear
+                ## Validate only one unique cat ID and that it matches ----
+                # LOCAL$gearCatActive
+                if(length(unique(item_cat_ids)) > 1) stop('Gear category is not unique')
 
-            # run dbUpdate for xref_gear
+                ## Save operations ----
 
-            toAdd <- data.frame(
-                TRIP_ID = LOCAL$tripID,
-                GEAR_ID = item_ids,
-                GEAR_CAT_ID = item_cat_ids,
-                GEAR_QTY = gqty,
-                USER_ID = LOCAL$userID,
-                UPTIME = Sys.Date(),
-                UPUSER = LOCAL$userName
-            )
-            dbUpdate(from = toAdd, to = 'XREF_GEAR', data = LOCAL)
+                ## Case all items in category have been switched off ----
+                ## Delete any records in xref_gear where gear_cat_id == LOCAL$GearCatActive
+                if(length(unique(item_cat_ids)) == 0) {
+                    withProgress({
+                        incProgress(.25)
+                        con <- rivConnect()
+                            deleteXrefGearCat(con = con, rvObj = LOCAL, catId = LOCAL$gearCatActive)
+                            refreshLOCAL(con = con, data = LOCAL, tables = c('XREF_GEAR'))
+                        dbDisconnect(con)
+                        incProgress(.75)
 
+                    }, message = 'Saving trip checklist updates...')
+
+                } else {
+
+                    if(unique(item_cat_ids) != LOCAL$gearCatActive) stop('Gear category mismatch')
+                    # run dbUpdate for xref_gear
+
+                    ## Get List of Selected Gear Quantities ----
+
+                    gqty <- map(item_ids, ~ input[[paste0('gear-qty-', .x)]]) %>% unlist()
+
+                    ## Validate all Checked have Values ----
+
+                    if(any(gqty[!is.na(gqty)] < 0)) {
+
+                        neg_ids <- item_ids[which(gqty < 0)]
+                        rows <- which(LOCAL$LU_GEAR$GEAR_ID %in% neg_ids)
+                        neg_items <- LOCAL$LU_GEAR$GEAR_NAME[rows] %>% sort()
+
+                        showNotification(
+                            p('Gearlist item quantities can not be negative:'),
+                            tags$ul(map(neg_items, ~ tags$li(.x))),
+                            type = 'error', duration = 10
+                        )
+
+                        return(NULL)
+                    }
+
+                    if(any(is.na(gqty))) {
+
+                        empty_ids <- item_ids[which(is.na(gqty))]
+                        rows <- which(LOCAL$LU_GEAR$GEAR_ID %in% empty_ids)
+                        empty_items <- LOCAL$LU_GEAR$GEAR_NAME[rows] %>% sort()
+
+                        showNotification(
+                            p('Active items are missing quantities:'),
+                            tags$ul(map(empty_items, ~ tags$li(.x))),
+                            type = 'error', duration = 10
+                        )
+
+                        return(NULL)
+                    }
+
+                    # Create records to be updated
+
+                    withProgress({
+                        incProgress(.25)
+                        toAdd <- data.frame(
+                            TRIP_ID = LOCAL$tripID,
+                            GEAR_ID = item_ids,
+                            GEAR_CAT_ID = item_cat_ids,
+                            GEAR_QTY = gqty,
+                            USER_ID = LOCAL$userID,
+                            UPTIME = Sys.Date(),
+                            UPUSER = LOCAL$userName
+                        )
+                        incProgress(.75)
+                        dbUpdate(from = toAdd, to = 'XREF_GEAR', data = LOCAL)
+                    }, message = 'Saving trip checklist updates...')
+                }
 
             removeModal()
+            #clear out LOCAL$gearCatActive
+            LOCAL$gearCatActive <- numeric()
+            showNotification('Trip gear checklist updated!', type = 'message')
         })
     })
 
