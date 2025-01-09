@@ -304,6 +304,8 @@ mod_meal_edit_server <- function(id, data = LOCAL){
         return(NULL)
         }
 
+        shinyjs::disable('updateMeal')
+
         # Update LOCAL$myMeals
         #TODO figure this data types discrepancy out better
         LOCAL$editMealDF$NO_ADULTS <- as.numeric(LOCAL$editMealDF$NO_ADULTS)
@@ -344,6 +346,7 @@ mod_meal_edit_server <- function(id, data = LOCAL){
 
         # Clean up and close modal
 
+        shinyjs::enable('updateMeal')
         LOCAL$editMealModalSwitch <- FALSE
         LOCAL$editMealDF <- data.frame()
         removeModal()

@@ -688,7 +688,7 @@ NULL
 #' @importFrom dbplyr sql_query_append
 dbUpdate <- function(con = NULL, from, to, data = LOCAL){
     LOCAL <- data
-browser()
+
     # Open DB connection
 
     con <- rivConnect()

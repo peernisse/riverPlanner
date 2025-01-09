@@ -330,6 +330,8 @@ mod_root_meal_edit_server <- function(id, data = LOCAL){
 
             # Update LOCAL$rootEditMeal ----
 
+            shinyjs::disable('updateMeal')
+
             ## Meal Name ----
 
             # CHECK ALL INPUTS AGAINST THE RESPECTIVE TABLES VALUES AND UPDATE ----
@@ -506,6 +508,7 @@ mod_root_meal_edit_server <- function(id, data = LOCAL){
 
             # CLOSE MODAL ----
 
+            shinyjs::enable('updateMeal')
             removeModal()
 
             # NOTIFY ----

@@ -250,11 +250,17 @@ mod_meal_create_server <- function(id, data = LOCAL){
     # Observe SAVE createMeal button -----
 
     observeEvent(input$createMeal, {
+
+      shinyjs::disable('createMeal')
+
       withProgress(message = 'New Meal Creation', detail = 'saving to database...', {
         setProgress(0.5)
           createMealModalSave(input, output, session, data = LOCAL)
         setProgress(0.9)
       })
+
+      shinyjs::enable('createMeal')
+
     })
 
     # Cancel create meal modal button upper right corner -----

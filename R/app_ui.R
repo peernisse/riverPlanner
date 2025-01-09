@@ -12,6 +12,7 @@ app_ui <- function(request) {
   golem_add_external_resources()
   htmlTemplate(
       filename = './inst/app/www/index.html',
+        alerts = alerts(),
         trip = mod_trip_ui('trip'),
         menu = mod_menu_ui('menu'),
         userName = mod_data_ui('data_gs'),
@@ -43,4 +44,5 @@ golem_add_external_resources <- function() {
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
   )
+
 }

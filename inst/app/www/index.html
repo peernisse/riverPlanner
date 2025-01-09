@@ -209,6 +209,273 @@
 
   <main id="main">
 
+    {{ alerts }}
+
+    <section id="instructions" class="shiny section-bg">
+      <div class="section-title">
+        <h2>Instructions</h2>
+        <p>Expand this section to view instructions for using the River-Planner application.</p>
+        <p style="margin-top:20px; font-size: larger;">
+          <a data-bs-toggle="collapse" href="#instructions_row" role="button" aria-expanded="false" aria-controls="instructions_row">
+            <-- Click Here to Expand/Collapse Instructions -->
+          </a>
+        </p>
+      </div>
+      
+      <div id="instructions_row" class="row no-gutters quickstart-col collapse multi-collapse">
+        
+        <div class="card content-item quickstart-card">
+          <span>01</span>
+          <h4>Login or Sign Up</h4>
+          <img src="www/assets/img/instructions/step_01.png" class="card-img-top" alt="Login or Sign Up">
+          <div class="card-body">
+            <p class="card-text">
+            The application needs your email address to customize your experience and save your work. 
+            When you launch the applicatiopn you will need to Sign Up or Login with 
+            our third-party authentication service Auth0. This provides the option to enter an email and password, 
+            or sign in with Google. We store your email address to create your database profile and that's it.
+            </p>
+          </div>
+          <span>Step 01 Login or Sign Up</span>
+        </div>
+        
+        <div class="card content-item quickstart-card">
+          <span>02</span>
+          <h4>Create a Trip</h4>
+          <img src="www/assets/img/instructions/step_02.png" class="card-img-top" alt="Create a Trip">
+          <div class="card-body">
+            <p class="card-text">
+            First step is to create a trip and click Save Trip. This starts a trip in the app, which can be saved to the database 
+            as soon as you have entered at least one meal. It is recommended that you scroll to and click Save Trip Often
+            to avoid losing work and having to re-enter things.
+            </p>
+          </div>
+          <span>Step 02 Create a Trip</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>03</span>
+          <h4>Add Meals to your Trip</h4>
+          <img src="www/assets/img/instructions/step_03b.png" class="card-img-top" alt="Add Meals to your Trip">
+          <div class="card-body">
+            <p class="card-text">
+              River-Planner has several meals loaded to choose from. These are basic templates
+              designed to be a basis for your own customization (you can also design your own meals 
+              as you will see). To add a meal to your trip, select a river day and click the "+" button to add 
+              it to your trip menu. Meals added will appear under "Customize Trip Menu...", grouped by river day.
+            </p>
+          </div>
+          <span>Step 03 Add Meals to your Trip</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>04</span>
+          <h4>Customize Trip Meals</h4>
+          <img src="www/assets/img/instructions/step_04a.png" class="card-img-top" alt="Customize Trip Meals">
+          <div class="card-body">
+            <p class="card-text">
+            Any meals added to your trip are listed by River Day and are fully customizable. Click the Pencil to open the Edit Meal Interface, 
+            Or click Trash to remove a meal from that day.
+            </p>
+          </div>
+          <span>Step 04 Customize Trip Meals</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>05</span>
+          <h4>Edit Meal Interface | Adjusting People</h4>
+          <img src="www/assets/img/instructions/step_04b.png" class="card-img-top" alt="Edit Meal Interface Adjusting People">
+          <div class="card-body">
+            <p class="card-text">
+              The number of adults and kids can be modified for a given meal. This is to accomodate times where people may join or exit a river trip 
+              at an intermediate point. This happens from time to time, so the River-Planner app can account for this. Changing the number of people in the 
+              Edit Meal Interface will re-calculate the ingredient quantities for the meal being edited.
+            </p>
+          </div>
+          <span>Step 05 Edit Meal Interface | Adjusting People</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>06</span>
+          <h4>Edit Meal Interface | Ingredient List</h4>
+          <img src="www/assets/img/instructions/step_04c.png" class="card-img-top" alt="Edit Meal Interface Ingredient List">
+          <div class="card-body">
+            <p class="card-text">
+              Ingredients are listed with the ingredient name, description, units of calculation, multiplier, and the 
+              current calculated quantity to have for the meal. Quantity is calculated based on the number of adults and 
+              kids entered when setting up the trip, or the adjusted number of people, if modified.
+            </p>
+            <br/>
+            <p>
+              If the quantity of an ingredient does not look right for what you have in mind, simply change the quantity value and the multiplier will adjust to accomodate 
+              future changes to the number of people. Changes to quantity apply only to the meal being edited, and would need to be repeated for other instances of the ingredient 
+              throughout the trip menu, if those changes are desired elsewhere as well. Click the Trash icon to
+              remove an ingredient from that meal.
+            </p>
+          </div>
+          <span>Step 06 Edit Meal Interface | Ingredient List</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>07</span>
+          <h4>Edit Meal Interface | Add Ingredients</h4>
+          <img src="www/assets/img/instructions/step_04d.png" class="card-img-top" alt="Edit Meal Interface Add Ingredients">
+          <div class="card-body">
+            <p>
+              The drop-down selector lists available ingredients. Select an ingredient from the drop-down picker, then Click the '+' icon to add that ingredient to the meal. 
+              If using a keyboard, typing zooms alphabetically to ingredients as you type, on mobile this is usually not the case and only the scrolling picker is available. 
+            </p>
+          </div>
+          <span>Step 07 Edit Meal Interface | Add Ingredients</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>08</span>
+          <h4>Edit Meal Interface | Create New Ingredients</h4>
+          <img src="www/assets/img/instructions/step_05.png" class="card-img-top" alt="Edit Meal Interface Create New Ingredients">
+          <div class="card-body">
+            <p>
+              Enter information for your new ingredient in the Orange Form Fields. Use the Orange Quantity Calculator Fields (Quantity, Serves) to calculate a multiplier 
+              for your ingredient. What you choose for Units is up to you. It may make sense to have units of "ounces", or it might make sense to use units such as 
+              "12 ounce can" or "Standard box of Zattaran's rice".
+            </p>
+            <br/>
+            <p>
+              Enter values for "Quantity" and "Serves" to calculate a multiplier for the ingredient. In this example, the user searched online for packaged dried dates 
+              and inspected the package weight and Serving Size information to ascertain that 12 ounces of dates serves 7 people, as per the package label. 
+              Click the '+' icon to save your new ingredient to the database. It will then be available in the ingredient drop-down picker and you can add it to your meal.
+              The ingredient will be available to you any time you use the River-Planner application.
+            </p>
+          </div>
+          <span>Step 08 Edit Meal Interface | Create New Ingredients</span>
+        </div>
+        
+        <div class="card content-item quickstart-card">
+          <span>09</span>
+          <h4>Edit Meal Interface | Add Your New Ingredient to the Meal</h4>
+          <img src="www/assets/img/instructions/step_05b.png" alt="Edit Meal Interface Add Your New Ingredient to the Meal" width = 300 height = 500>
+          <div class="card-body">
+            <p>In this example, the user then selected their new ingredient (Dates) from the Add Ingredient drop-down selector and added 
+              them to the meal by clicking the '+' icon. The quantity is calculated based on the number of people entered. Click Save at the 
+              bottom of the interface to save your meal edits. Click Cancel to close the inerface without saving.
+            </p>
+          </div>
+          <span>Step 09 Edit Meal Interface | Add Your New Ingredient to the Meal</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>10</span>
+          <h4>Create Meal Interface | Opening the Interface</h4>
+          <img src="www/assets/img/instructions/step_06.png" alt="Create Meal Interface Opening the Interface" width = 300 height = 500>
+          <div class="card-body">
+            <p>The Create New Meal Interface is accessed from the "Select Meals..." section by clicking "Create a New Meal".</p>
+          </div>
+          <span>Step 10 Create Meal Interface | Opening the Interface</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>11</span>
+          <h4>Create Meal Interface | Meal Information</h4>
+          <img src="www/assets/img/instructions/step_06b.png" alt="Create Meal Interface Meal Information" width = 300 height = 500>
+          <div class="card-body">
+            <p>Enter the basic meal information Meal Name, Meal Type, and Description. The description should list the main entree and any sides for clarity. 
+              Instructions on preparing the meal are entered elsewhere near the bottom of this form.
+            </p>
+          </div>
+          <span>Step 11 Create Meal Interface | Meal Information</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>12</span>
+          <h4>Create Meal Interface | Add Ingredients to the Meal</h4>
+          <img src="www/assets/img/instructions/step_06c.png" alt="Create Meal Interface Add Ingredients to the Meal" width = 300 height = 500>
+          <div class="card-body">
+            <p>Add ingredients to your new meal: Adding and Creating Ingredients works the same in this interface as in the Edit Meal Interface, described above. 
+              Note that quantities are not part of the Create New Meal process, and are not displayed since this meal will apply to any number of people 
+              when using it later. If added to your current trip, the quantities will be calculated for your entered number of people, for example.
+            </p>  
+          </div>
+          <span>Step 12 Create Meal Interface | Add Ingredients to the Meal</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>13</span>
+          <h4>Create Meal Interface | Tools and Instructions</h4>
+          <img src="www/assets/img/instructions/step_06d.png" alt="Create Meal Interface Tools and Instructions" width = 300 height = 500>
+          <div class="card-body">
+            <p>Enter the basic tools needed and instructions to prepare the meal. Each tool or preparation step should be separated by semi-colons.</p>
+            <br/>
+            <p>
+              Click Save at the bottom of the interface to save your new meal. The meal will now be available to you whenever you use the River-Planner 
+              application in the "Select Meals..." section under its Meal Type. Click Cancel to close the inerface without saving.
+            </p>
+          </div>
+          <span>Step 13 Create Meal Interface | Tools and Instructions</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>14</span>
+          <h4>Export Shopping List and Menu | Opening the Interface</h4>
+          <img src="www/assets/img/instructions/step_07.png" alt="Export Shopping List and Menu Opening the Interface" width = 300 height = 500>
+          <div class="card-body">
+            <p>The View and Download Interface is accessed from the "Customize Trip Menu..." section by clicking "View and Download".</p>
+          </div>
+          <span>Step 14 Export Shopping List and Menu | Opening the Interface</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>15</span>
+          <h4>Export Shopping List and Menu | View and Download Shopping List</h4>
+          <img src="www/assets/img/instructions/step_07b.png" alt="Export Shopping List and Menu View and Download Shopping List" width = 300 height = 500>
+          <div class="card-body">
+            <p>View the shopping list. Items are grouped by ingrdedient and quantities are summed up. "Meal Count" indicates how many 
+              meals the ingredient is used in. 
+            </p>
+            <p>
+              Click 'Export Shopping List' to download an HTML file of the shopping list. View this list with 
+              a browser on your mobile device while shopping for food.
+            </p>
+          </div>
+          <span>Step 15 Export Shopping List and Menu | View and Download Shopping List</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>16</span>
+          <h4>Export Shopping List and Menu | Cross out Shopping Items</h4>
+          <img src="www/assets/img/instructions/step_07bb.png" alt="Export Shopping List and Menu Cross out Shopping Items" width = 300 height = 500>
+          <div class="card-body">
+            <p>When viewing the downloaded HTML file of the shopping list in a browser (Microsoft Edge seems to work best), tap items to cross them out on the list.
+              If viewing the list in anything other than a browser, crossout is not supported. 
+            </p>
+            <p>
+              iPhone and Android phones differ in how to view an HTML file. The browser 
+              option is usually available right after downloading the file. You can always download the shopping list again from the application if needed, your crossouts 
+              will be remembered by the browser.
+            </p>
+          </div>
+          <span>Step 16 Export Shopping List and Menu | Cross out Shopping Items</span>
+        </div>
+
+        <div class="card content-item quickstart-card">
+          <span>17</span>
+          <h4>Export Shopping List and Menu | View and Download Daily Menu</h4>
+          <img src="www/assets/img/instructions/step_07d.png" alt="Export Shopping List and Menu View and Download Daily Menu" width = 300 height = 500>
+          <div class="card-body">
+            <p>Enter the basic tools needed and instructions to prepare the meal. Each tool or preparation step should be separated by semi-colons.</p>
+            <br/>
+            <p>
+              On-river Daily Menu does not have crossout functionality at this time.
+            </p>
+          </div>
+          <span>Step 17 Export Shopping List and Menu | View and Download Daily Menu</span>
+        </div>
+
+
+      </div>
+
+
+    </section>
+
     <!-- ======= Featured Services Section =======
     <section id="featured-services" class="featured-services section-bg">
       <div class="container">
@@ -895,7 +1162,7 @@
       </div>
       -->
       <div class="copyright">
-        &copy; Copyright <strong><span>Datatime LLC</span></strong>. All Rights Reserved
+        Copyright &copy; 2021 <strong><span>Datatime, LLC</span></strong>. All Rights Reserved
       </div>
 
     </div>

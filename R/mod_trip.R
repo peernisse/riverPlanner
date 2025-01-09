@@ -7,13 +7,14 @@
 mod_trip_ui <- function(id){
   ns <- NS(id)
   tagList(
-    alerts(),
+    shinyjs::useShinyjs(),
+    #alerts(),
     tags$section(id="trip", class="shiny section-bg",
         div(class="section-title",
             h2('Trip Details'),
             p('Enter your trip details. Your trip plan will be saved as you
-              work on it to come back to, and if you ever want to use it again.'),
-            tags$a(href="https://river-planner.com", target="_blank","< Click Here to goto Instructions >")
+              work on it to come back to, and if you ever want to use it again.'
+            )
         ),
         fluidRow(
             column(width = 12, style = 'display: grid; text-align: center;
@@ -84,8 +85,8 @@ mod_trip_server <- function(id, data){
     observeEvent(input$saveTrip,{
 
             if(is.null(input$tripName) | input$tripName == '') {
-            showNotification('Please enter trip name', type = 'error', duration = 5)
-            return(NULL)
+                showNotification('Please enter trip name', type = 'error', duration = 5)
+                return(NULL)
             }
 
             if(is.null(input$noAdults) | input$noAdults == 'No. People Age 12+') {
@@ -146,29 +147,29 @@ mod_trip_server <- function(id, data){
 
             if(nrow(LOCAL$myMeals) > 0 & is.null(LOCAL$myMeals$TRIPNAME)){
 
-            # Get Trip Info
+                # Get Trip Info
 
-            trip <- LOCAL$myMeals %>%
-              mutate(
-                TRIP_ID = LOCAL$tripID,
-                TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
-                TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
-                USERNAME = LOCAL$userName,
-                UPTIME = Sys.Date(),
-                UPUSER = LOCAL$userName
-              ) %>%
-              select(., names(LOCAL$LU_TRIPS))
+                trip <- LOCAL$myMeals %>%
+                  mutate(
+                    TRIP_ID = LOCAL$tripID,
+                    TRIPNAME = ifelse(length(LOCAL$tripName) > 0, LOCAL$tripName, as.character(Sys.Date())),
+                    TRIP_DESC = ifelse(length(LOCAL$tripDesc) > 0, LOCAL$tripDesc, 'unknown'),
+                    USERNAME = LOCAL$userName,
+                    UPTIME = Sys.Date(),
+                    UPUSER = LOCAL$userName
+                  ) %>%
+                  select(., names(LOCAL$LU_TRIPS))
 
-            # Save to database
+                # Save to database
 
-            withProgress(message = 'Trip Info', detail = 'saving to database...', {
-              setProgress(0.5)
-                dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
-              setProgress(0.9)
-            })
-            showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
-                             type = 'message', duration = 10)
-            return(NULL)
+                withProgress(message = 'Trip Info', detail = 'saving to database...', {
+                  setProgress(0.5)
+                    dbUpdate(trip, 'LU_TRIPS', data = LOCAL)
+                  setProgress(0.9)
+                })
+                showNotification(paste0('Trip ',LOCAL$tripName,' saved to database!'),
+                                 type = 'message', duration = 10)
+                return(NULL)
             }
 
             # For copying a trip or changing name - Check if input name matches myMeals
@@ -224,6 +225,7 @@ mod_trip_server <- function(id, data){
 
             } else {
 
+                shinyjs::disable('saveTrip')
                 withProgress(message = 'Saving', detail = 'Saving trip...', {
                   setProgress(0.5)
                     saveTrip(input, output, session = session, data = LOCAL)
@@ -231,6 +233,7 @@ mod_trip_server <- function(id, data){
                     removeModal()
                   setProgress(0.9)
                 })
+                shinyjs::enable('saveTrip')
             }
     })
 

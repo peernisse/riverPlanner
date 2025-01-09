@@ -49,24 +49,24 @@ gearCard <- function(session, gcat, id, ttl, subttl, desc){
 #' @param session The shiny session object
 #' @param id The GEAR_CAT_ID for that checklist category
 #' @param data The LOCAL data object
+#'
+#' @importFrom shinyjs useShinyjs disable enable
+#'
 #' @noRd
 viewChecklist <- function(session, id, data){
     ns <- session$ns
     LOCAL <- data
-
+#browser()
 # Validate gearCatActive is not empty
 if(!length(LOCAL$gearCatActive) > 0) stop('Error in obtaining gearCatActive.')
 if(id != LOCAL$gearCatActive) stop('gearCatActive does not match selected card.')
-
-# TODO 3/11/2024 Make this get any trip gear that is in xref_gear and
-# turn those switches on and fill in quantities
 
     ## Define Variables ----
 
     catrow <- which(LOCAL$LU_GEAR_CAT$GEAR_CAT_ID %in% id)
     rows <- which(LOCAL$LU_GEAR$GEAR_CAT_ID %in% id)
-    ttl <- paste(LOCAL$tripName, '|', LOCAL$LU_GEAR_CAT$GEAR_CAT_NAME[[catrow]],
-        'Checklist')
+    gearCat <- LOCAL$LU_GEAR_CAT[['GEAR_CAT_NAME']][catrow]
+    ttl <- paste(LOCAL$tripName, '|', gearCat, 'Checklist')
 
     gear_ids <- LOCAL$LU_GEAR$GEAR_ID[rows]
     names <- LOCAL$LU_GEAR$GEAR_NAME[rows]
@@ -97,10 +97,36 @@ if(id != LOCAL$gearCatActive) stop('gearCatActive does not match selected card.'
                 p('To create a new checklist item for this category,
                   use the "Create New Item" form.')
             ),
-            h3('Create New Item'),
+            h3(paste('Create New', gearCat, 'Item')),
             collapseInstructions(nmsp = ns, id = 'newItem-1',
                 ttl = '<Open Create New Item Form>', icon = 'wrench',
-                p('Here will be the form')
+
+                tags$div(class = "input-group mb-3", style = "margin-left: 10px;",
+                    tags$span(class = "input-group-text",
+                        style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                        id = ns("gearNewItemNameLabel"),
+                        "New Item Name"
+                    ),
+                    tags$input(id = ns("gearNewItem"), type = "text",
+                        class = "form-control",
+                        `aria-label` = "New item name",
+                        `aria-describedby` = ns("gearNewItemNameLabel")
+                    )
+                ),
+                tags$div(class = "input-group mb-3", style = "margin-left: 10px;",
+                    tags$span(class = "input-group-text",
+                        style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
+                        id = ns("gearNewItemDescLabel"),
+                        "New Item Description"
+                    ),
+                    tags$input(id = ns("gearNewDesc"), type = "text",
+                        class = "form-control",
+                        `aria-label` = "New item description",
+                        `aria-describedby` = ns("gearNewItemDescLabel")
+                    )
+                ),
+                actionButton(ns('saveGearNewItem'), label = 'Save New Item', class = 'btn btn-success', class = 'riv'),
+                hr()
             ),
             h3(paste(ttl,'Items')),
             div(style = "text-align: left; padding-left: 10px;",
@@ -128,7 +154,7 @@ if(id != LOCAL$gearCatActive) stop('gearCatActive does not match selected card.'
     )
 }
 
-#' Draw a sliding check button
+#' Draw a sliding check button and related inputs
 #' @description Draws one checkbox slider, description and qty input row
 #' @param session The shiny session object
 #' @param id Numeric Unique GEAR_ID from LU_GEAR

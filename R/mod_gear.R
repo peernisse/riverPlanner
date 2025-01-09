@@ -6,6 +6,7 @@
 mod_gear_ui <- function(id){
   ns <- NS(id)
   tagList(
+      #shinyjs::useShinyjs(),
       fluidRow(
       column(width = 12, style = 'text-align: center; margin: 5px;padding: 20px;',
         #hr(style = 'width: 33%; margin-left: 33%; margin-right: 33%;'),
@@ -96,6 +97,11 @@ mod_gear_server <- function(id, data){
         ## Save Checklist Modal Button ----
 
         observeEvent(input$saveChecklist, {
+            ns <- session$ns
+
+            ## Disable clicking of save button while this process runs ----
+
+            shinyjs::disable('saveChecklist')
 
             ## Get List of Selected Gear IDs ----
 
@@ -108,7 +114,6 @@ mod_gear_server <- function(id, data){
                 filter(GEAR_CAT_ID == LOCAL$gearCatActive) %>%
                 mutate(SLD_IDS = paste0('sld-', GEAR_ID)) %>%
                 pull(SLD_IDS)
-
 
                 #sldrs <- names(input)[grep('sld-', names(input))]
                 #sldvals <- map(sldrs, ~ input[[.x]]) %>% unlist()
@@ -159,7 +164,7 @@ mod_gear_server <- function(id, data){
                             tags$ul(map(neg_items, ~ tags$li(.x))),
                             type = 'error', duration = 10
                         )
-
+                        shinyjs::enable('saveChecklist')
                         return(NULL)
                     }
 
@@ -174,7 +179,7 @@ mod_gear_server <- function(id, data){
                             tags$ul(map(empty_items, ~ tags$li(.x))),
                             type = 'error', duration = 10
                         )
-
+                        shinyjs::enable('saveChecklist')
                         return(NULL)
                     }
 
@@ -196,6 +201,10 @@ mod_gear_server <- function(id, data){
                     }, message = 'Saving trip checklist updates...')
                 }
 
+            ## Enable button even though we are about to close the modal ----
+
+            shinyjs::enable('saveChecklist')
+
             removeModal()
             #clear out LOCAL$gearCatActive
             LOCAL$gearCatActive <- numeric()
@@ -203,9 +212,18 @@ mod_gear_server <- function(id, data){
         })
     })
 
+    ## Save New Gear Item Button ----
+
+    observeEvent(input$saveGearNewItem, {
+        if(!length(LOCAL$gearCatActive) > 0) stop('Gear category not recognized')
+        curGearCatId <- LOCAL$gearCatActive
+        showNotification(paste('Current gear cat is:', curGearCatId))
+
+    })
+
     # UI OUTPUTS ----
 
-    ## Ckeclists Title ----
+    ## Ckecklists Title ----
 
     output$checkTitle <- renderText({
 
