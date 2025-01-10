@@ -594,8 +594,12 @@ getMealTypeID <- function(mType){
 }
 
 #' upsertXrefGear
-#'
-#'
+#' @description Updates or inserts one record in XrefGear
+#' @param con The database connection object
+#' @param from A dataframe of records that are in the local session
+#' LOCAL$XREF_GEAR dataframe and the database needs to have records added or updated based on this
+#' @param data The LOCAL reactive values data onject
+#' @param row The row number of the `from` dataframe being looped
 #'
 #' @noRd
 upsertXrefGear <- function(con = con, from = xrefG, data = LOCAL, row) {
@@ -648,13 +652,54 @@ upsertXrefGear <- function(con = con, from = xrefG, data = LOCAL, row) {
 
 }
 
+#' getMaxGearID
+#' @description Gets the maximum INGREDIENT_ID from LU_INGREDIENTS.
+#' @noRd
+getMaxGearID <- function(){
+    con <- rivConnect()
+    dbExecute(con, "start transaction;")
+    maxGearID <- dbGetQuery(con, 'SELECT max(GEAR_ID) from lu_gear;')
+    dbExecute(con,"commit;")
+    dbDisconnect(con)
+    return(as.integer(maxGearID))
+}
+
+#' upsertLuGear
+#' @description Adds or updates one record in the LU_GEAR DB table
+#'
+#'
+#' @noRd
+upsertLuGear <- function(from = luG, data = LOCAL) {
+    LOCAL <- data
+
+    sql <- "INSERT INTO lu_gear (`GEAR_ID`,`GEAR_CAT_ID`,
+            `GEAR_NAME`,`GEAR_DESC`,`SERVES`,`DEFAULT_QTY`,`USER_ID`,`UPUSER`,`UPTIME`)
+            VALUES (?gearId,?gearCatId,?gearName,?gearDesc,?serves,?defaultQty,
+            ?userId,?uUser,?uTime);"
+
+    con <- rivConnect()
+
+    qry <- DBI::sqlInterpolate(con, sql, gearId = from$GEAR_ID,
+        gearCatId = from$GEAR_CAT_ID, gearName = from$GEAR_NAME,
+        gearDesc = from$GEAR_DESC, serves = from$SERVES,
+        defaultQty = from$DEFAULT_QTY,
+        userId = from$USER_ID, uUser = from$UPUSER, uTime = from$UPTIME
+    )
+
+
+    dbExecute(con, "start transaction;")
+    dbExecute(con, qry)
+    dbExecute(con,"commit;")
+    dbDisconnect(con)
+}
+
 #' deleteXrefGear
 #' @description Deletes one record from xref_gear.
 #' Designed to be used in a loop or with map() to loop through
 #' rows of a dataframe of records to delete from the database
 #' @param con The database connection object
 #' @param from A dataframe of records that are in the DB but have been removed from
-#' the local session LOCAL$myMEals dataframe. Obtained with anti_join before calling this function
+#' the local session LOCAL$XREF_GEAR dataframe. Obtained with anti_join before calling this function
 #' @param data The LOCAL reactive values data onject
 #' @param row The row number of the `from` dataframe being looped
 #' @noRd
@@ -748,13 +793,22 @@ refreshLOCAL <- function(con, data, tables){
                 paste0('select * from xref_gear where USER_ID in (0,',LOCAL$userID,');')
             )
         }
+
+        if('LU_GEAR' %in% tables) {
+            LOCAL$LU_GEAR <- dbGetQuery(con,
+                paste0('select * from lu_gear where USER_ID in (0,',LOCAL$userID,');')
+            )
+        }
+
     dbExecute(con, "commit;")
+    dbDisconnect(con)
 
     LOCAL$LU_TRIPS <- LOCAL$XREF_TRIPS %>%
         #select(-c(UPUSER, UPTIME)) %>%
         left_join(
-            LOCAL$LU_MEAL %>% select(c(MEAL_ID,MEAL_NAME,MEAL_DESCRIPTION,TOOLS,INSTRUCTIONS,
-                                       MEAL_ADD_ID,MEAL_DEL_ID,MEAL_VIEW_ID,MEAL_EDIT_ID)),
+            LOCAL$LU_MEAL %>%
+                select(c(MEAL_ID,MEAL_NAME,MEAL_DESCRIPTION,TOOLS,INSTRUCTIONS,
+                        MEAL_ADD_ID,MEAL_DEL_ID,MEAL_VIEW_ID,MEAL_EDIT_ID)),
             by = c('MEAL_ID')
         ) %>%
         left_join(

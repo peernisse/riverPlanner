@@ -215,10 +215,44 @@ mod_gear_server <- function(id, data){
     ## Save New Gear Item Button ----
 
     observeEvent(input$saveGearNewItem, {
+        shinyjs::disable('saveGearNewItem')
         if(!length(LOCAL$gearCatActive) > 0) stop('Gear category not recognized')
-        curGearCatId <- LOCAL$gearCatActive
-        showNotification(paste('Current gear cat is:', curGearCatId))
 
+        withProgress({
+            incProgress(.25)
+
+            luG <- data.frame(
+                "GEAR_ID" = getMaxGearID() + 1,
+                "GEAR_CAT_ID" = LOCAL$gearCatActive,
+                "GEAR_NAME" = input$gearNewItem,
+                "GEAR_DESC" = input$gearNewDesc,
+                "SERVES" = 1,
+                "DEFAULT_QTY" = 1,
+                "USER_ID" = LOCAL$userID,
+                "UPUSER" = LOCAL$userName,
+                "UPTIME" = Sys.Date()
+            )
+            incProgress(.75)
+
+            upsertLuGear(from = luG, data = LOCAL)
+
+        }, message = 'Saving new checklist item...')
+
+        # Refresh from database
+
+        refreshLOCAL(con = rivConnect(), data = LOCAL, tables = c('LU_GEAR'))
+
+        # TODO 1/9/2025 Here need to refresh the current list of items in the modal
+        # with the new item
+        # Actually just warn and close the modal, then they will reopen it
+        # and the new item checkbox will be there
+
+        shinyjs::enable('saveGearNewItem')
+        removeModal()
+        showNotification(
+            p(paste('New gear item added:', input$gearNewItem)),
+            p('Re-open the gear list to interact with the new item.')
+        )
     })
 
     # UI OUTPUTS ----

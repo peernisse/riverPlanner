@@ -12,23 +12,15 @@ alerts <- function(){
     tagList(
         alertIcon(icon = 'info', type = 'primary',
             style = 'margin: 10px; border-left-width: 10px;', dismissible = TRUE,
-            p(style = 'margin-top: 15px;', tags$strong('New!'),'You can now edit your personal meals at the base level.
-                Look for the `pencil` icon on your meal cards under `Select Meals`.'
-            )
-        ),
-        alertIcon(icon = 'info', type = 'primary',
-            style = 'margin: 10px; border-left-width: 10px;', dismissible = TRUE,
             p(style = 'margin-top: 15px;', tags$strong('New!'),
-                'Improved instructions on meal editing screens...
-                Look for the `<Open...Instructions>` clickable links when
-                editing/creating meals.'
-            )
+              'The EQUIPMENT PLANNER SECTION is ready for use!'
+            ),
+            p('Create custom downloadable checklist for your trips!')
         )
     )
-
 }
 
-# Define globa variables or get warned during package check
+# Define global variables or get warned during package check
 
 utils::globalVariables(
     c("<<-",".","pageNav", "INGREDIENT_ID", "INGREDIENT_CATEGORY" ,

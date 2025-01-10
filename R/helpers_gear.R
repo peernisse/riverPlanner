@@ -100,7 +100,14 @@ if(id != LOCAL$gearCatActive) stop('gearCatActive does not match selected card.'
             h3(paste('Create New', gearCat, 'Item')),
             collapseInstructions(nmsp = ns, id = 'newItem-1',
                 ttl = '<Open Create New Item Form>', icon = 'wrench',
-
+                alertIcon(icon = 'info', type = 'warning',
+                          style = 'margin: 10px; border-left-width: 10px;', dismissible = TRUE,
+                          p(style = 'margin-top: 15px;', tags$strong('NOTE:'),'Creating a new
+                            checklist item will cause this screen to close. Your new item
+                            will be shown in the list when you re-open it. PLEASE be thoughtful about
+                            creating new items, you will not be able to delete them from your profile.'
+                          )
+                ),
                 tags$div(class = "input-group mb-3", style = "margin-left: 10px;",
                     tags$span(class = "input-group-text",
                         style = 'background-color: #5cb874; border-color: #5cb874; color: #fff;',
@@ -109,6 +116,7 @@ if(id != LOCAL$gearCatActive) stop('gearCatActive does not match selected card.'
                     ),
                     tags$input(id = ns("gearNewItem"), type = "text",
                         class = "form-control",
+                        maxlength = "45",
                         `aria-label` = "New item name",
                         `aria-describedby` = ns("gearNewItemNameLabel")
                     )
@@ -121,6 +129,7 @@ if(id != LOCAL$gearCatActive) stop('gearCatActive does not match selected card.'
                     ),
                     tags$input(id = ns("gearNewDesc"), type = "text",
                         class = "form-control",
+                        maxlength = "100",
                         `aria-label` = "New item description",
                         `aria-describedby` = ns("gearNewItemDescLabel")
                     )
